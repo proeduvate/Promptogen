@@ -1,2 +1,2 @@
-# HackZen
+# Promtogen - Effective Prompt Delivery platform
 Readme
