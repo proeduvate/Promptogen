@@ -1,0 +1,11 @@
+﻿{
+  "id": "3f998be8",
+  "title": "i want to make ai agents to automate spo...",
+  "prompt": "Design a Python-based AI agent to automate sharing songs from Spotify as snaps on Snapchat, with the primary goal of securing and maintaining Snapchat streaks. The agent should utilize the Spotify Web API to retrieve song information and the Snapchat API to send snaps. Ensure the agent can handle authentication, song selection, and snap formatting, while also considering error handling and logging mechanisms. The desired outcome is to increase Snapchat engagement and maintain streaks without manual intervention.",
+  "category": "coding",
+  "tags": [
+    "snapchat"
+  ],
+  "created_at": "2026-04-29T10:51:27.457876",
+  "uses": 0
+}

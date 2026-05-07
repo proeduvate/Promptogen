@@ -1,0 +1,1593 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Promptgen AI v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#05080f;
+  --s1:#0a0f1e;
+  --s2:#0e1628;
+  --s3:#131d35;
+  --s4:#1a2540;
+  --b1:#1e2d50;
+  --b2:#2a3f6e;
+  --cyan:#00f0ff;
+  --cyan2:#00b8cc;
+  --violet:#8b5cf6;
+  --violet2:#6d28d9;
+  --green:#00e5a0;
+  --amber:#ffb700;
+  --red:#ff4757;
+  --txt:#dde6f5;
+  --txt2:#8899bb;
+  --txt3:#445577;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Outfit',sans-serif;
+  --r:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:
+  radial-gradient(ellipse 60% 40% at 10% 10%,rgba(0,240,255,.05) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 60% at 90% 90%,rgba(139,92,246,.06) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 30% at 50% 50%,rgba(0,229,160,.02) 0%,transparent 70%);
+  pointer-events:none;z-index:0}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--b1);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--cyan2)}
+
+/* ΓöÇΓöÇ SIDEBAR ΓöÇΓöÇ */
+.sidebar{position:fixed;left:0;top:0;width:230px;height:100vh;background:var(--s1);border-right:1px solid var(--b1);z-index:100;display:flex;flex-direction:column;overflow-y:auto}
+.logo-wrap{padding:22px 18px 16px;border-bottom:1px solid var(--b1)}
+.logo{font-size:20px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-version{font-size:9px;font-family:var(--mono);color:var(--txt3);letter-spacing:3px;margin-top:2px}
+.sidebar-model{padding:10px 18px;border-bottom:1px solid var(--b1)}
+.model-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:20px;background:var(--s2);border:1px solid var(--b1);font-size:10px;font-family:var(--mono);color:var(--txt2)}
+.model-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
+.model-dot.cloud{background:var(--violet)}
+.model-dot.off{background:var(--red);animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.nav-group{padding:10px 10px 4px;font-size:8px;font-family:var(--mono);color:var(--txt3);letter-spacing:3px;text-transform:uppercase}
+.nav-btn{display:flex;align-items:center;gap:9px;padding:8px 14px;margin:1px 6px;border-radius:7px;cursor:pointer;font-size:12px;color:var(--txt2);transition:all .15s;white-space:nowrap;border:1px solid transparent}
+.nav-btn:hover{background:var(--s2);color:var(--txt)}
+.nav-btn.active{background:linear-gradient(135deg,rgba(0,240,255,.1),rgba(139,92,246,.08));color:var(--cyan);border-color:rgba(0,240,255,.15)}
+.nav-btn .ni{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-btn .new-badge{margin-left:auto;font-size:8px;background:var(--violet);color:#fff;padding:1px 5px;border-radius:8px;font-family:var(--mono)}
+.sidebar-footer{margin-top:auto;padding:14px 16px;border-top:1px solid var(--b1)}
+.groq-status{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;font-size:11px;font-family:var(--mono)}
+.groq-status .gs-label{color:var(--txt3);font-size:9px;letter-spacing:2px;margin-bottom:4px}
+.groq-status .gs-val{color:var(--cyan);font-weight:700}
+
+/* ΓöÇΓöÇ MAIN ΓöÇΓöÇ */
+.main{margin-left:230px;min-height:100vh;position:relative;z-index:1}
+.topbar{padding:14px 28px;border-bottom:1px solid var(--b1);background:rgba(5,8,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px}
+.topbar-title{font-size:16px;font-weight:700;flex:1}
+.topbar-title span{color:var(--cyan)}
+.content{padding:28px}
+
+/* ΓöÇΓöÇ SECTION ΓöÇΓöÇ */
+.sec{display:none}
+.sec.active{display:block}
+
+/* ΓöÇΓöÇ CARDS ΓöÇΓöÇ */
+.card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:22px;margin-bottom:18px;position:relative;overflow:hidden}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:.3s}
+.card:hover::after{opacity:.3}
+.card-title{font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;letter-spacing:.3px}
+
+/* ΓöÇΓöÇ INPUTS ΓöÇΓöÇ */
+.inp,.ta,select{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:11px 14px;color:var(--txt);font-family:var(--mono);font-size:12px;outline:none;transition:all .2s}
+.inp:focus,.ta:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,240,255,.07)}
+.ta{resize:vertical;min-height:110px;line-height:1.65}
+select option{background:var(--s2)}
+.lbl{font-size:10px;color:var(--txt3);font-family:var(--mono);margin-bottom:5px;display:block;letter-spacing:.8px}
+
+/* ΓöÇΓöÇ BUTTONS ΓöÇΓöÇ */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:700;transition:all .2s;letter-spacing:.3px}
+.btn-c{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#000}
+.btn-c:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,240,255,.28)}
+.btn-v{background:linear-gradient(135deg,var(--violet),var(--violet2));color:#fff}
+.btn-v:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(139,92,246,.3)}
+.btn-g{background:linear-gradient(135deg,var(--green),#00b87a);color:#000}
+.btn-g:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,229,160,.28)}
+.btn-o{background:var(--s2);border:1px solid var(--b1);color:var(--txt)}
+.btn-o:hover{border-color:var(--cyan);color:var(--cyan)}
+.btn-r{background:linear-gradient(135deg,var(--red),#c0392b);color:#fff}
+.btn-sm{padding:5px 12px;font-size:11px}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
+
+/* ΓöÇΓöÇ GRIDS ΓöÇΓöÇ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+/* ΓöÇΓöÇ TAGS ΓöÇΓöÇ */
+.tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:12px;font-size:10px;font-family:var(--mono);background:var(--s3);color:var(--txt2);border:1px solid var(--b1)}
+.tag.c{background:rgba(0,240,255,.08);color:var(--cyan);border-color:rgba(0,240,255,.18)}
+.tag.v{background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.2)}
+.tag.g{background:rgba(0,229,160,.08);color:var(--green);border-color:rgba(0,229,160,.18)}
+.tag.a{background:rgba(255,183,0,.08);color:var(--amber);border-color:rgba(255,183,0,.18)}
+.tag.r{background:rgba(255,71,87,.08);color:var(--red);border-color:rgba(255,71,87,.18)}
+
+/* ΓöÇΓöÇ SPINNER ΓöÇΓöÇ */
+.spin{width:18px;height:18px;border:2px solid var(--b1);border-top-color:var(--cyan);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ΓöÇΓöÇ TOAST ΓöÇΓöÇ */
+#tc{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:10px 18px;font-size:12px;font-family:var(--mono);display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:tin .3s ease}
+.toast.s{border-left:3px solid var(--green)}
+.toast.e{border-left:3px solid var(--red)}
+.toast.i{border-left:3px solid var(--cyan)}
+@keyframes tin{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+
+/* ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+   CHAT PIPELINE  ΓÇö the new interactive feature
+ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
+.pipeline-hero{background:linear-gradient(135deg,rgba(0,240,255,.04),rgba(139,92,246,.07));border:1px solid rgba(0,240,255,.12);border-radius:14px;padding:28px;margin-bottom:22px;text-align:center}
+.pipeline-hero h1{font-size:32px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--cyan),#a78bfa,var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.pipeline-hero p{color:var(--txt2);font-size:14px;max-width:480px;margin:0 auto 16px}
+
+/* Stage tracker */
+.stage-track{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:24px}
+.stage-node{display:flex;flex-direction:column;align-items:center;gap:4px;position:relative}
+.stage-node:not(:last-child)::after{content:'';position:absolute;left:calc(50% + 18px);top:14px;width:calc(100% - 4px);height:2px;background:var(--b1);z-index:0;min-width:40px}
+.stage-node:not(:last-child).done::after{background:var(--green)}
+.stage-bubble{width:32px;height:32px;border-radius:50%;background:var(--s2);border:2px solid var(--b1);display:flex;align-items:center;justify-content:center;font-size:13px;z-index:1;transition:all .4s}
+.stage-bubble.active{border-color:var(--cyan);background:rgba(0,240,255,.1);box-shadow:0 0 12px rgba(0,240,255,.3);animation:stagePulse 1.5s infinite}
+.stage-bubble.done{border-color:var(--green);background:rgba(0,229,160,.12)}
+@keyframes stagePulse{0%,100%{box-shadow:0 0 12px rgba(0,240,255,.3)}50%{box-shadow:0 0 22px rgba(0,240,255,.6)}}
+.stage-lbl{font-size:8px;font-family:var(--mono);color:var(--txt3);letter-spacing:.5px;white-space:nowrap}
+.stage-node.active .stage-lbl{color:var(--cyan)}
+.stage-node.done .stage-lbl{color:var(--green)}
+
+/* Input area */
+.prompt-input-wrap{position:relative}
+.prompt-input-wrap .ta{padding-right:100px;min-height:90px;font-size:13px;background:var(--s2);border:1px solid var(--b1)}
+.prompt-input-wrap .ta:focus{border-color:var(--cyan)}
+.send-btn{position:absolute;right:10px;bottom:10px}
+
+/* Chat window */
+.chat-window{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);min-height:300px;max-height:600px;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.chat-msg{display:flex;gap:12px;animation:msgIn .3s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.chat-msg.user{flex-direction:row-reverse}
+.chat-avatar{width:32px;height:32px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px}
+.chat-avatar.ai-av{background:linear-gradient(135deg,var(--cyan),var(--violet));color:#000}
+.chat-avatar.user-av{background:linear-gradient(135deg,var(--amber),#ff6b35);color:#000}
+.chat-bubble{max-width:75%;padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.65}
+.chat-bubble.ai-b{background:var(--s3);border:1px solid var(--b1);color:var(--txt);border-radius:2px 12px 12px 12px}
+.chat-bubble.user-b{background:linear-gradient(135deg,rgba(0,240,255,.12),rgba(139,92,246,.1));border:1px solid rgba(0,240,255,.18);color:var(--txt);border-radius:12px 2px 12px 12px}
+
+/* Markdown-like rendering inside bubbles */
+.chat-bubble strong{color:var(--cyan)}
+.chat-bubble code{background:var(--s4);padding:1px 6px;border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--amber)}
+.chat-bubble hr{border:none;border-top:1px solid var(--b1);margin:10px 0}
+
+/* Quick reply chips */
+.quick-replies{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.qr-chip{padding:5px 12px;border-radius:16px;border:1px solid var(--b1);background:var(--s3);color:var(--txt2);cursor:pointer;font-size:11px;font-family:var(--mono);transition:all .2s}
+.qr-chip:hover{border-color:var(--cyan);color:var(--cyan);background:rgba(0,240,255,.06)}
+
+/* Progress bar */
+.progress-bar{height:3px;background:var(--s3);border-radius:2px;overflow:hidden;margin-bottom:16px}
+.progress-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width .5s ease}
+
+/* Result cards */
+.result-section{margin-top:16px}
+.result-block{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.rb-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;font-weight:700}
+.score-bars .sb{margin-bottom:8px}
+.score-bars .sb-row{display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:3px;font-family:var(--mono)}
+.score-bars .sb-track{height:5px;background:var(--s3);border-radius:3px;overflow:hidden}
+.score-bars .sb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--violet),var(--cyan));transition:width .6s ease}
+.grade-badge{font-size:40px;font-weight:900;font-family:var(--mono);text-align:center;padding:12px}
+.output-display{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:16px;font-size:13px;line-height:1.7;color:var(--txt);max-height:400px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;font-family:var(--mono)}
+
+/* Typing indicator */
+.typing-indicator{display:flex;align-items:center;gap:4px;padding:8px 12px}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--txt3);animation:td .8s infinite}
+.typing-dot:nth-child(2){animation-delay:.15s}
+.typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes td{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* API key setup banner */
+.api-banner{background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(0,240,255,.05));border:1px solid rgba(139,92,246,.25);border-radius:var(--r);padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.api-banner-text{flex:1;font-size:13px}
+.api-banner-text strong{color:var(--violet)}
+
+/* Score grade colors */
+.grade-A{color:var(--green)} .grade-B{color:var(--cyan)} .grade-C{color:var(--amber)} .grade-D{color:var(--red)} .grade-F{color:var(--red)}
+
+/* Stat cards */
+.stat-card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:18px;text-align:center}
+.stat-v{font-size:28px;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-family:var(--mono)}
+.stat-l{font-size:9px;color:var(--txt3);font-family:var(--mono);margin-top:3px;letter-spacing:1px}
+
+/* Prompt cards */
+.pc{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px;transition:all .2s;margin-bottom:10px}
+.pc:hover{border-color:var(--cyan)}
+.pc-title{font-size:13px;font-weight:700;margin-bottom:5px}
+.pc-text{font-size:11px;color:var(--txt2);font-family:var(--mono);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pc-foot{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+
+/* Version items */
+.vi{display:flex;gap:10px;padding:10px;background:var(--s2);border-radius:7px;margin-bottom:7px;border:1px solid var(--b1)}
+.vn{background:var(--violet2);color:#fff;border-radius:5px;padding:2px 7px;font-size:10px;font-family:var(--mono);flex-shrink:0;margin-top:2px}
+
+/* Issue items */
+.ii{padding:9px 11px;background:var(--s2);border-radius:6px;margin-bottom:7px;border-left:3px solid var(--red)}
+.ii.medium{border-left-color:var(--amber)}.ii.low{border-left-color:var(--green)}
+.ii-title{font-size:11px;font-weight:700;margin-bottom:2px}
+.ii-fix{font-size:10px;color:var(--txt2);font-family:var(--mono)}
+
+/* Health circle */
+.hc{width:90px;height:90px;border-radius:50%;background:conic-gradient(var(--green) var(--p,50%),var(--s3) 0);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;position:relative}
+.hc::before{content:'';position:absolute;inset:9px;border-radius:50%;background:var(--s1)}
+.hc-val{position:relative;z-index:1;font-size:18px;font-weight:900;font-family:var(--mono);color:var(--green)}
+
+/* Workflow */
+.wf-step{background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px;margin-bottom:9px}
+.wf-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.step-badge{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#000;flex-shrink:0;font-family:var(--mono)}
+
+/* Tabs */
+.tabs{display:flex;gap:3px;border-bottom:1px solid var(--b1);margin-bottom:18px}
+.tab{padding:7px 14px;cursor:pointer;font-size:12px;color:var(--txt3);border-bottom:2px solid transparent;transition:all .2s;font-weight:700}
+.tab:hover{color:var(--txt2)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+
+.var-chip{display:inline-block;background:rgba(255,183,0,.12);border:1px solid rgba(255,183,0,.25);border-radius:3px;padding:1px 5px;font-size:10px;font-family:var(--mono);color:var(--amber)}
+.char-count{font-size:9px;font-family:var(--mono);color:var(--txt3);text-align:right;margin-top:3px}
+
+@media(max-width:900px){.sidebar{width:54px}.sidebar .nav-btn span:not(.ni){display:none}.sidebar .nav-group,.logo-version,.groq-status,.model-pill span:not(.model-dot){display:none}.main{margin-left:54px}}
+@media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}.content{padding:14px}}
+
+/* ΓöÇΓöÇ LOGIN GATE (AUTH FIRST) ΓöÇΓöÇ */
+.gate{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(5,8,15,.92);backdrop-filter:blur(18px)}
+.gate[aria-hidden="true"]{display:none}
+.gate-card{width:min(520px,100%);background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:22px}
+.gate-title{font-size:18px;font-weight:900;letter-spacing:-.3px;margin-bottom:4px}
+.gate-sub{font-size:12px;color:var(--txt2);margin-bottom:14px}
+.gate-meta{font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:10px}
+
+/* ΓöÇΓöÇ USER BADGE ΓöÇΓöÇ */
+.user-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:var(--s2);border:1px solid var(--b1);font-size:11px;font-family:var(--mono);color:var(--txt2);max-width:220px}
+.user-badge{cursor:pointer;user-select:none}
+.user-badge:hover{border-color:var(--cyan);color:var(--txt)}
+.user-ic{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;color:#000;background:linear-gradient(135deg,var(--cyan),var(--violet))}
+.user-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.user-menu{position:absolute;right:0;top:calc(100% + 8px);min-width:180px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:8px;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+.user-menu[aria-hidden="true"]{display:none}
+.user-menu-item{width:100%;display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;background:transparent;border:1px solid transparent;color:var(--txt2);font-size:12px;font-family:var(--mono);cursor:pointer}
+.user-menu-item:hover{background:var(--s2);border-color:rgba(0,240,255,.15);color:var(--txt)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE (shown when backend auth is enabled and no JWT token is present) -->
+<div id="loginGate" class="gate" aria-hidden="false">
+  <div class="gate-card">
+    <div class="gate-title">Login Required</div>
+    <div class="gate-sub">Sign in to access Promptgen.</div>
+    <div class="g2" style="gap:12px">
+      <div>
+        <div class="lbl">USERNAME</div>
+        <input class="inp" id="gateUser" placeholder="admin" autocomplete="username" />
+      </div>
+      <div>
+        <div class="lbl">PASSWORD</div>
+        <input class="inp" id="gatePass" type="password" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" autocomplete="current-password" />
+      </div>
+    </div>
+    <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-v" onclick="loginFromGate()">≡ƒöÉ Login</button>
+      <button class="btn btn-o" id="gateSignupBtn" onclick="signupFromGate()">≡ƒåò Sign Up</button>
+      <span id="gateMsg" style="font-size:11px;font-family:var(--mono);color:var(--txt3)">LoadingΓÇª</span>
+    </div>
+    <div class="gate-meta">JWT token is stored in <span style="color:var(--txt2)">localStorage</span> as <span style="color:var(--txt2)">pg_token</span>.</div>
+  </div>
+</div>
+
+<div id="appShell" style="display:none">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <div class="logo">Promptgen</div>
+    <div class="logo-version">AI PLATFORM V2.0</div>
+  </div>
+  <div class="sidebar-model">
+    <div class="model-pill">
+      <div class="model-dot off" id="mdot"></div>
+      <span id="mLabel">Checking...</span>
+    </div>
+  </div>
+
+  <div class="nav-group">Core</div>
+  <div class="nav-btn active" onclick="nav('pipeline')"><span class="ni">ΓÜí</span><span>Pipeline</span><span class="new-badge">NEW</span></div>
+  <div class="nav-btn" onclick="nav('doctor')"><span class="ni">≡ƒ⌐║</span><span>AI Doctor</span></div>
+  <div class="nav-btn" onclick="nav('test')"><span class="ni">≡ƒº¬</span><span>Test Lab</span></div>
+
+  <div class="nav-group">Manage</div>
+  <div class="nav-btn" onclick="nav('library')"><span class="ni">≡ƒôÜ</span><span>Library</span></div>
+  <div class="nav-btn" onclick="nav('templates')"><span class="ni">≡ƒôï</span><span>Templates</span></div>
+  <div class="nav-btn" onclick="nav('versions')"><span class="ni">≡ƒöÇ</span><span>Versions</span></div>
+  <div class="nav-btn" onclick="nav('workflow')"><span class="ni">≡ƒöº</span><span>Workflows</span></div>
+
+  <div class="nav-group">Discover</div>
+  <div class="nav-btn" onclick="nav('gallery')"><span class="ni">≡ƒû╝∩╕Å</span><span>Gallery</span></div>
+  <div class="nav-btn" onclick="nav('potd')"><span class="ni">≡ƒîƒ</span><span>Prompt of Day</span></div>
+  <div class="nav-btn" onclick="nav('multiai')"><span class="ni">≡ƒñû</span><span>Models</span></div>
+  <div class="nav-btn" onclick="nav('settings')"><span class="ni">ΓÜÖ∩╕Å</span><span>Settings</span></div>
+
+  <div class="nav-group">Analytics</div>
+  <div class="nav-btn" onclick="nav('analytics')"><span class="ni">≡ƒôè</span><span>Dashboard</span></div>
+
+  <div class="sidebar-footer">
+    <div class="groq-status">
+      <div class="gs-label">ACTIVE MODEL</div>
+      <div class="gs-val" id="activeModelLabel">Loading...</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">ΓÜí <span>Interactive Pipeline</span></div>
+    <button class="btn btn-o btn-sm" onclick="nav('settings')">ΓÜÖ∩╕Å Setup Groq API</button>
+    <button class="btn btn-o btn-sm" onclick="nav('potd')">≡ƒîƒ Daily Prompt</button>
+    <div id="userMenuWrap" style="position:relative;display:none">
+      <div id="userBadge" class="user-badge" title="Account" onclick="toggleUserMenu(event)">
+        <div class="user-ic" id="userIcon">U</div>
+        <div class="user-name" id="userName">user</div>
+      </div>
+      <div id="userMenu" class="user-menu" aria-hidden="true">
+        <button class="user-menu-item" onclick="logout();hideUserMenu();">≡ƒÜ¬ Logout</button>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ PIPELINE (CHAT) ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec active" id="sec-pipeline">
+
+      <div class="pipeline-hero">
+        <h1>Promptgen AI</h1>
+        <p>Type your rough idea ΓÇö the AI will have a conversation with you, understand your intent, ask smart questions, then craft the perfect prompt.</p>
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+          <span class="tag c">≡ƒöì Intent Analysis</span>
+          <span class="tag v">Γ¥ô Smart Clarification</span>
+          <span class="tag g">Γ£¿ Auto Optimization</span>
+          <span class="tag a">≡ƒôè Quality Grade</span>
+        </div>
+      </div>
+
+      <!-- Stage tracker -->
+      <div class="stage-track" id="stageTrack">
+        <div class="stage-node" id="sn1"><div class="stage-bubble" id="sb1">≡ƒôÑ</div><div class="stage-lbl">INPUT</div></div>
+        <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl1"></div>
+        <div class="stage-node" id="sn2"><div class="stage-bubble" id="sb2">≡ƒöì</div><div class="stage-lbl">INTENT</div></div>
+        <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl2"></div>
+        <div class="stage-node" id="sn3"><div class="stage-bubble" id="sb3">Γ¥ô</div><div class="stage-lbl">CLARIFY</div></div>
+        <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl3"></div>
+        <div class="stage-node" id="sn4"><div class="stage-bubble" id="sb4">Γ£¿</div><div class="stage-lbl">OPTIMIZE</div></div>
+        <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl4"></div>
+        <div class="stage-node" id="sn5"><div class="stage-bubble" id="sb5">≡ƒôè</div><div class="stage-lbl">ASSESS</div></div>
+        <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl5"></div>
+        <div class="stage-node" id="sn6"><div class="stage-bubble" id="sb6">≡ƒÜÇ</div><div class="stage-lbl">OUTPUT</div></div>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+      <!-- Input area (shown before pipeline starts) -->
+      <div id="inputArea" class="card">
+        <div class="card-title">≡ƒô¥ What do you want to create or achieve?</div>
+        <div class="prompt-input-wrap">
+          <textarea class="ta" id="mainPromptInput"
+            placeholder="Type your rough idea here... e.g. 'I want an AI agent to automate my Spotify playlist' or 'help me study full stack development'"
+            oninput="document.getElementById('mainCharCount').textContent=this.value.length+' chars'"
+            onkeydown="if(event.key==='Enter'&&event.ctrlKey)startPipeline()"></textarea>
+          <button class="btn btn-c send-btn btn-sm" onclick="startPipeline()" id="startBtn">ΓÜí Start</button>
+        </div>
+        <div class="char-count" id="mainCharCount">0 chars</div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--txt3);font-family:var(--mono)">Try:</span>
+          <span class="qr-chip" onclick="document.getElementById('mainPromptInput').value=this.textContent">write a blog post</span>
+          <span class="qr-chip" onclick="document.getElementById('mainPromptInput').value=this.textContent">build a REST API</span>
+          <span class="qr-chip" onclick="document.getElementById('mainPromptInput').value=this.textContent">create a marketing plan</span>
+          <span class="qr-chip" onclick="document.getElementById('mainPromptInput').value=this.textContent">study machine learning</span>
+        </div>
+      </div>
+
+      <!-- Chat window (shown during/after pipeline) -->
+      <div id="chatArea" style="display:none">
+        <div class="chat-window" id="chatWindow"></div>
+        <!-- Reply input -->
+        <div id="replyArea" style="display:none;margin-top:12px">
+          <div style="position:relative">
+            <textarea class="ta" id="replyInput" placeholder="Type your answer here..." style="min-height:70px;padding-right:90px"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
+            <button class="btn btn-c btn-sm" style="position:absolute;right:10px;bottom:10px" onclick="sendReply()" id="replyBtn">Send ΓåÆ</button>
+          </div>
+          <div id="quickRepliesArea" style="margin-top:8px"></div>
+        </div>
+        <!-- Actions after complete -->
+        <div id="postActions" style="display:none;margin-top:12px;display:none">
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-c" onclick="saveResultToLibrary()">≡ƒÆ╛ Save to Library</button>
+            <button class="btn btn-o" onclick="copyLastOutput()">≡ƒôï Copy Output</button>
+            <button class="btn btn-v" onclick="resetPipeline()">≡ƒöä Start New</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ DOCTOR ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-doctor">
+      <div class="card">
+        <div class="card-title">≡ƒ⌐║ AI Prompt Doctor</div>
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">Submit any prompt for a full AI diagnosis using LangChain + Groq/Ollama.</p>
+        <div class="lbl">PATIENT PROMPT</div>
+        <textarea class="ta" id="doctorInput" placeholder="Paste any prompt here..." style="min-height:130px"></textarea>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-c" onclick="runDoctor()">≡ƒ⌐║ Diagnose</button>
+          <button class="btn btn-o" onclick="document.getElementById('doctorInput').value='';document.getElementById('doctorResult').innerHTML=''">Clear</button>
+        </div>
+      </div>
+      <div id="doctorResult"></div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ TEST LAB ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-test">
+      <div class="card">
+        <div class="card-title">≡ƒº¬ Prompt Testing Lab</div>
+        <div class="g2">
+          <div>
+            <div class="lbl">PROMPT TO TEST</div>
+            <textarea class="ta" id="testInput" style="min-height:130px" placeholder="Enter prompt..."></textarea>
+          </div>
+          <div>
+            <div class="lbl">ITERATIONS</div>
+            <select class="inp" id="testIter">
+              <option value="1">1 ΓÇö Single run</option>
+              <option value="2">2 ΓÇö Compare pair</option>
+              <option value="3" selected>3 ΓÇö Triple test</option>
+            </select>
+            <div style="margin-top:12px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;font-size:11px;color:var(--txt2);line-height:2">
+              ΓÅ▒ Response time<br>≡ƒô¥ Word count<br>≡ƒôè Consistency<br>≡ƒñû Model used
+            </div>
+            <button class="btn btn-c" style="margin-top:12px;width:100%" onclick="testPrompt()">≡ƒº¬ Run Tests</button>
+          </div>
+        </div>
+      </div>
+      <div id="testResult"></div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ LIBRARY ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-library">
+      <div class="g2">
+        <div class="card">
+          <div class="card-title">≡ƒÆ╛ Save Prompt</div>
+          <div class="lbl">TITLE</div><input class="inp" id="libTitle" placeholder="Prompt name..." style="margin-bottom:9px"/>
+          <div class="lbl">PROMPT</div><textarea class="ta" id="libPrompt" style="min-height:90px;margin-bottom:9px" placeholder="Prompt content..."></textarea>
+          <div class="lbl">CATEGORY</div>
+          <select class="inp" id="libCat" style="margin-bottom:9px">
+            <option value="general">General</option><option value="writing">Writing</option>
+            <option value="coding">Coding</option><option value="business">Business</option>
+            <option value="education">Education</option><option value="research">Research</option>
+            <option value="marketing">Marketing</option>
+          </select>
+          <div class="lbl">TAGS</div><input class="inp" id="libTags" placeholder="ai, blog, writing..." style="margin-bottom:12px"/>
+          <button class="btn btn-g" onclick="saveLib()">≡ƒÆ╛ Save</button>
+        </div>
+        <div class="card">
+          <div class="card-title">≡ƒôÜ My Library</div>
+          <div id="libList" style="max-height:480px;overflow-y:auto"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ TEMPLATES ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-templates">
+      <div class="tabs">
+        <div class="tab active" id="tb-browse" onclick="switchTab('browse')">Browse</div>
+        <div class="tab" id="tb-create" onclick="switchTab('create')">Create</div>
+      </div>
+      <div id="tmpl-browse"><div id="tmplList"></div></div>
+      <div id="tmpl-create" style="display:none">
+        <div class="card">
+          <div class="card-title">Γ₧ò New Template</div>
+          <div class="lbl">NAME</div><input class="inp" id="tn" placeholder="Template name..." style="margin-bottom:9px"/>
+          <div class="lbl">TEMPLATE (use {variable})</div><textarea class="ta" id="tb" placeholder="Write a {tone} post about {topic}..." style="margin-bottom:9px"></textarea>
+          <div class="lbl">VARIABLES (comma separated)</div><input class="inp" id="tv" placeholder="tone, topic, audience" style="margin-bottom:9px"/>
+          <div class="lbl">CATEGORY</div>
+          <select class="inp" id="tc2" style="margin-bottom:12px">
+            <option value="general">General</option><option value="writing">Writing</option>
+            <option value="coding">Coding</option><option value="business">Business</option>
+          </select>
+          <button class="btn btn-v" onclick="createTemplate()">Γ₧ò Create</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ VERSIONS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-versions">
+      <div class="g2">
+        <div class="card">
+          <div class="card-title">≡ƒöÇ Save Version</div>
+          <div class="lbl">PROMPT ID</div><input class="inp" id="vid" placeholder="e.g. myblogprompt" style="margin-bottom:9px"/>
+          <div class="lbl">CONTENT</div><textarea class="ta" id="vprompt" style="min-height:110px;margin-bottom:9px" placeholder="Prompt content..."></textarea>
+          <div class="lbl">LABEL</div><input class="inp" id="vlabel" placeholder="e.g. Added context" style="margin-bottom:12px"/>
+          <div style="display:flex;gap:9px">
+            <button class="btn btn-v" onclick="saveVer()">≡ƒÆ╛ Save</button>
+            <button class="btn btn-o" onclick="loadVer()">≡ƒôé Load History</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">≡ƒôé Version History</div>
+          <div id="verHistory"><div style="color:var(--txt3);font-size:12px;font-family:var(--mono);text-align:center;padding:28px">Enter ID ΓåÆ Load History</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ WORKFLOW ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-workflow">
+      <div class="card">
+        <div class="card-title">≡ƒöº Workflow Builder</div>
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">Chain AI steps ΓÇö each output feeds into the next.</p>
+        <div id="wfSteps">
+          <div class="wf-step" id="wfs-1">
+            <div class="wf-head">
+              <div class="step-badge">1</div>
+              <select class="inp" style="width:150px;flex-shrink:0" id="wft-1"><option value="generate">Generate</option><option value="optimize">Optimize</option><option value="assess">Assess</option></select>
+              <input class="inp" id="wfn-1" value="Draft Content" placeholder="Step name..."/>
+            </div>
+            <textarea class="ta" id="wfp-1" style="min-height:70px">Write a short introduction about artificial intelligence</textarea>
+          </div>
+        </div>
+        <div style="display:flex;gap:9px;margin-top:14px">
+          <button class="btn btn-o" onclick="addWfStep()">+ Add Step</button>
+          <button class="btn btn-c" onclick="runWorkflow()">Γû╢ Run Workflow</button>
+        </div>
+      </div>
+      <div id="wfResult"></div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ GALLERY ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-gallery">
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-title">≡ƒû╝∩╕Å Prompt Gallery</div>
+        <p style="font-size:12px;color:var(--txt2)">Community curated prompts. Click Use to load in pipeline.</p>
+      </div>
+      <div class="g3" id="galleryGrid"></div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ POTD ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-potd">
+      <div class="card" style="text-align:center;padding:44px 28px">
+        <div style="font-size:44px;margin-bottom:14px">≡ƒîƒ</div>
+        <div style="font-size:22px;font-weight:800;margin-bottom:6px">Prompt of the Day</div>
+        <div id="potdDate" style="font-size:11px;font-family:var(--mono);color:var(--txt3);margin-bottom:20px"></div>
+        <div id="potdText" class="output-display" style="text-align:left;margin-bottom:18px;font-size:14px;max-height:180px"></div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-c" onclick="usePotd()">ΓÜí Use in Pipeline</button>
+          <button class="btn btn-o" onclick="copyText(document.getElementById('potdText').textContent)">≡ƒôï Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ MODELS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-multiai">
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-title">≡ƒñû Supported Models</div>
+      </div>
+      <div class="g3">
+        <div style="background:var(--s2);border:1px solid rgba(0,240,255,.2);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">Llama 3.3 70B</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">GROQ CLOUD ΓÇó FREE</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--cyan)">≡ƒƒó Recommended</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:7px">Fast, powerful, free tier. Best quality responses. Set <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:10px">GROQ_API_KEY</code> in a <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:10px">.env</code> file.</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">phi3</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LOCAL ΓÇó OLLAMA</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--green)">≡ƒö╡ Fallback</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:7px">Runs locally. No API key. Private. Used when Groq not configured.</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">Mistral / Llama 3</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LOCAL ΓÇó OLLAMA</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--txt3)">ΓÜ¬ Optional</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:7px">Pull with: <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:10px">ollama pull mistral</code></div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">LangChain</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">ORCHESTRATION LAYER</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--violet)">≡ƒƒú Active</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:7px">Powers the optimization chains, prompt templates, and conversation memory.</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">GPT-4o / Claude</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">CLOUD ΓÇó PAID</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--amber)">≡ƒöæ Future</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:7px">Planned integration for enterprise tier. Requires paid API keys.</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:3px">Groq Free Tier</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LIMITS</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--green)">Γ£à Generous</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:7px">14,400 req/day free. 30 req/min. More than enough for development.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ SETTINGS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-settings">
+      <div class="card" style="border-color:rgba(139,92,246,.3)">
+        <div class="card-title" style="color:var(--violet)">ΓÜÖ∩╕Å Groq API Key (via .env)</div>
+        <p style="font-size:13px;color:var(--txt2);margin-bottom:18px">
+          Groq gives you <strong style="color:var(--green)">free access</strong> to Llama 3.3 70B ΓÇö one of the most powerful open models available.
+          It's much faster and smarter than local phi3. <strong style="color:var(--cyan)">Get your free key at console.groq.com</strong>
+        </p>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px;margin-bottom:16px;font-size:12px;font-family:var(--mono);line-height:2">
+          1. Go to <span style="color:var(--cyan)">console.groq.com</span><br>
+          2. Sign up free (GitHub/Google login works)<br>
+          3. Go to API Keys ΓåÆ Create API Key<br>
+          4. Create a <span style="color:var(--cyan)">.env</span> file and set: <span style="color:var(--cyan)">GROQ_API_KEY=gsk_...</span><br>
+          5. Restart the backend
+        </div>
+        <div class="lbl">.env Example</div>
+        <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;margin-bottom:14px;font-size:12px;font-family:var(--mono)">
+          GROQ_API_KEY=gsk_...
+        </div>
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--b1)">
+          <div class="card-title">≡ƒöî Current Configuration</div>
+          <div id="configDisplay" style="font-family:var(--mono);font-size:12px;line-height:2.2"></div>
+        </div>
+
+        <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--b1)">
+          <div class="card-title">≡ƒöÉ Authentication</div>
+          <div style="font-size:12px;color:var(--txt2);margin-bottom:12px">
+            If JWT auth is enabled on the backend (<span style="font-family:var(--mono)">AUTH_ENABLED=true</span>), log in here to use protected features.
+          </div>
+          <div class="g2" style="gap:12px">
+            <div>
+              <div class="lbl">USERNAME</div>
+              <input class="inp" id="authUser" placeholder="admin" autocomplete="username" />
+            </div>
+            <div>
+              <div class="lbl">PASSWORD</div>
+              <input class="inp" id="authPass" type="password" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" autocomplete="current-password" />
+            </div>
+          </div>
+          <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-v" onclick="loginFromSettings()">≡ƒöÉ Login</button>
+            <button class="btn btn-o" onclick="logout()">Logout</button>
+            <span id="authStatus" style="font-size:11px;font-family:var(--mono);color:var(--txt3)">Not logged in</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ ANALYTICS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <div class="sec" id="sec-analytics">
+      <div id="analyticsContent"></div>
+    </div>
+
+  </div>
+</main>
+
+</div>
+
+<div id="tc"></div>
+
+<script>
+const API = 'http://localhost:8000/api';
+let currentSession = null;
+let pipelineStage  = 'idle'; // idle | clarifying | complete
+let lastOutput     = '';
+let lastPrompt     = '';
+let wfCount        = 1;
+let authToken      = localStorage.getItem('pg_token') || '';
+let backendAuthEnabled = null; // null = unknown (not fetched yet)
+let backendDbConfigured = null; // null = unknown (not fetched yet)
+let currentUsername = localStorage.getItem('pg_username') || '';
+
+function setGateMessage(msg, isError=false) {
+  const el = document.getElementById('gateMsg');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.style.color = isError ? 'var(--red)' : 'var(--txt3)';
+}
+
+function showGate(msg) {
+  const gate = document.getElementById('loginGate');
+  const shell = document.getElementById('appShell');
+  if (shell) shell.style.display = 'none';
+  if (gate) gate.setAttribute('aria-hidden', 'false');
+  setGateMessage(msg || 'Login required');
+}
+
+function showApp() {
+  const gate = document.getElementById('loginGate');
+  const shell = document.getElementById('appShell');
+  if (gate) gate.setAttribute('aria-hidden', 'true');
+  if (shell) shell.style.display = '';
+}
+
+function applyAuthGate() {
+  // If backend auth is disabled, always show the app.
+  if (backendAuthEnabled === false) {
+    showApp();
+    updateUserBadge();
+    return;
+  }
+
+  // If backend auth is enabled, require a token.
+  if (backendAuthEnabled === true) {
+    if (authToken) showApp();
+    else showGate('Login required');
+    updateGateSignupAvailability();
+    updateUserBadge();
+    return;
+  }
+
+  // Unknown backend state: keep gate visible until we know.
+  showGate('Checking backendΓÇª');
+  updateGateSignupAvailability();
+  updateUserBadge();
+}
+
+function base64UrlToJson(b64url) {
+  const pad = '='.repeat((4 - (b64url.length % 4)) % 4);
+  const b64 = (b64url + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(b64);
+  // handle utf-8
+  const json = decodeURIComponent(Array.from(raw).map(c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0')).join(''));
+  return JSON.parse(json);
+}
+
+function getUsernameFromJwt(token) {
+  try {
+    const parts = String(token||'').split('.');
+    if (parts.length < 2) return '';
+    const payload = base64UrlToJson(parts[1]);
+    return String(payload.sub || '').trim();
+  } catch {
+    return '';
+  }
+}
+
+function setCurrentUsername(u) {
+  currentUsername = (u || '').trim();
+  if (currentUsername) localStorage.setItem('pg_username', currentUsername);
+  else localStorage.removeItem('pg_username');
+  updateUserBadge();
+}
+
+function updateUserBadge() {
+  const wrap = document.getElementById('userMenuWrap');
+  const badge = document.getElementById('userBadge');
+  const nameEl = document.getElementById('userName');
+  const iconEl = document.getElementById('userIcon');
+  if (!wrap || !badge || !nameEl || !iconEl) return;
+
+  const show = !!(authToken && currentUsername);
+  wrap.style.display = show ? '' : 'none';
+  if (!show) {
+    hideUserMenu();
+    return;
+  }
+
+  nameEl.textContent = currentUsername;
+  iconEl.textContent = currentUsername.slice(0,1).toUpperCase() || 'U';
+}
+
+function hideUserMenu() {
+  const menu = document.getElementById('userMenu');
+  if (!menu) return;
+  menu.setAttribute('aria-hidden', 'true');
+}
+
+function showUserMenu() {
+  const menu = document.getElementById('userMenu');
+  if (!menu) return;
+  menu.setAttribute('aria-hidden', 'false');
+}
+
+function toggleUserMenu(ev) {
+  if (ev) ev.stopPropagation();
+  const menu = document.getElementById('userMenu');
+  if (!menu) return;
+  const open = menu.getAttribute('aria-hidden') !== 'false';
+  if (open) showUserMenu();
+  else hideUserMenu();
+}
+
+document.addEventListener('click', (ev) => {
+  const wrap = document.getElementById('userMenuWrap');
+  if (!wrap) return;
+  if (!wrap.contains(ev.target)) hideUserMenu();
+});
+
+function updateGateSignupAvailability() {
+  const btn = document.getElementById('gateSignupBtn');
+  if (!btn) return;
+  const enabled = backendAuthEnabled === true && backendDbConfigured === true;
+  btn.disabled = !enabled;
+  btn.title = enabled ? 'Create account' : 'Sign up requires DATABASE_URL (DB mode)';
+}
+
+function setAuthToken(t) {
+  authToken = t || '';
+  if (authToken) localStorage.setItem('pg_token', authToken);
+  else localStorage.removeItem('pg_token');
+  if (authToken) {
+    const u = getUsernameFromJwt(authToken);
+    if (u) setCurrentUsername(u);
+  } else {
+    setCurrentUsername('');
+  }
+  updateAuthStatus();
+  applyAuthGate();
+}
+
+function updateAuthStatus() {
+  const el = document.getElementById('authStatus');
+  if (!el) return;
+  el.textContent = authToken ? 'Logged in' : 'Not logged in';
+  el.style.color = authToken ? 'var(--green)' : 'var(--txt3)';
+}
+updateAuthStatus();
+applyAuthGate();
+
+async function apiFetch(path, opts={}) {
+  const o = {...opts};
+  o.headers = {...(o.headers||{})};
+  if (authToken) o.headers['Authorization'] = `Bearer ${authToken}`;
+  const r = await fetch(`${API}${path}`, o);
+  if (r.status === 401) {
+    // Token missing/expired/invalid; force re-login.
+    setAuthToken('');
+    if (backendAuthEnabled !== false) showGate('Session expired. Please login again.');
+    toast('Authentication required. Please login.','e');
+  }
+  return r;
+}
+
+// ΓöÇΓöÇ NAV ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+function nav(s) {
+  document.querySelectorAll('.sec').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  document.getElementById('sec-'+s).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(x => {
+    if (x.getAttribute('onclick') && x.getAttribute('onclick').includes("'"+s+"'")) x.classList.add('active');
+  });
+  const titles = {
+    pipeline:'ΓÜí <span>Interactive Pipeline</span>',doctor:'≡ƒ⌐║ <span>AI Prompt Doctor</span>',
+    test:'≡ƒº¬ <span>Test Lab</span>',library:'≡ƒôÜ <span>Prompt Library</span>',
+    templates:'≡ƒôï <span>Templates</span>',versions:'≡ƒöÇ <span>Version Control</span>',
+    workflow:'≡ƒöº <span>Workflow Builder</span>',gallery:'≡ƒû╝∩╕Å <span>Gallery</span>',
+    potd:'≡ƒîƒ <span>Prompt of the Day</span>',multiai:'≡ƒñû <span>Models</span>',
+    settings:'ΓÜÖ∩╕Å <span>Settings</span>',analytics:'≡ƒôè <span>Analytics</span>'
+  };
+  document.getElementById('pageTitle').innerHTML = titles[s] || s;
+  if (s==='library')   loadLib();
+  if (s==='templates') loadTemplates();
+  if (s==='gallery')   loadGallery();
+  if (s==='potd')      loadPotd();
+  if (s==='analytics') loadAnalytics();
+  if (s==='settings')  loadConfig();
+}
+
+// ΓöÇΓöÇ STATUS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function checkStatus() {
+  try {
+    const r = await apiFetch(`/config`, {signal: AbortSignal.timeout(4000)});
+    if (r.ok) {
+      const d = await r.json();
+      backendAuthEnabled = !!d.auth_enabled;
+      backendDbConfigured = !!d.database_configured;
+      applyAuthGate();
+      updateGateSignupAvailability();
+      const dot   = document.getElementById('mdot');
+      const label = document.getElementById('mLabel');
+      const alabel= document.getElementById('activeModelLabel');
+      dot.classList.remove('off');
+      if (d.groq_configured) {
+        dot.classList.add('cloud'); dot.classList.remove('model-dot');
+        label.textContent = 'Llama 3.3 70B';
+        alabel.textContent = 'Llama 3.3 70B (Groq)';
+      } else {
+        dot.classList.remove('cloud');
+        label.textContent = 'phi3 (Local)';
+        alabel.textContent = 'phi3 (Ollama)';
+      }
+    }
+  } catch {
+    document.getElementById('mdot').classList.add('off');
+    document.getElementById('mLabel').textContent = 'Offline';
+    document.getElementById('activeModelLabel').textContent = 'Offline';
+
+    backendAuthEnabled = null;
+    backendDbConfigured = null;
+    showGate('Backend offline. Start the server.');
+    updateGateSignupAvailability();
+  }
+}
+checkStatus(); setInterval(checkStatus, 15000);
+
+// ΓöÇΓöÇ TOAST ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+function toast(msg, type='i') {
+  const c = document.getElementById('tc');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type==='s'?'Γ£ô':type==='e'?'Γ£ò':'Γä╣'}</span>${msg}`;
+  c.appendChild(t); setTimeout(()=>t.remove(), 3500);
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function copyText(t) { navigator.clipboard.writeText(t).then(()=>toast('Copied!','s')).catch(()=>toast('Failed','e')); }
+
+// ΓöÇΓöÇ STAGE TRACKER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+const STAGES = ['input','intent','clarify','optimize','assess','output'];
+function setStage(active) {
+  const idx = STAGES.indexOf(active);
+  for (let i=1;i<=6;i++) {
+    const sb = document.getElementById('sb'+i);
+    const sn = document.getElementById('sn'+i);
+    sb.classList.remove('active','done');
+    sn.classList.remove('active','done');
+    if (i-1 < idx) { sb.classList.add('done'); sn.classList.add('done'); }
+    else if (i-1 === idx) { sb.classList.add('active'); sn.classList.add('active'); }
+  }
+  const pct = Math.round(((idx+1)/6)*100);
+  document.getElementById('progressFill').style.width = pct+'%';
+}
+
+// ΓöÇΓöÇ PIPELINE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function startPipeline() {
+  const prompt = document.getElementById('mainPromptInput').value.trim();
+  if (!prompt) return toast('Enter a prompt first','e');
+  lastPrompt = prompt;
+
+  document.getElementById('inputArea').style.display = 'none';
+  document.getElementById('chatArea').style.display  = '';
+  document.getElementById('chatWindow').innerHTML    = '';
+  document.getElementById('replyArea').style.display = 'none';
+  document.getElementById('postActions').style.display = 'none';
+  setStage('input');
+
+  // Show user message
+  appendMsg('user', prompt);
+  // Show typing indicator
+  const typingId = showTyping();
+  setStage('intent');
+
+  try {
+    const r = await apiFetch(`/chat/start`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({prompt, use_groq: true})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Error');
+    removeTyping(typingId);
+    currentSession = d.session_id;
+    pipelineStage  = 'clarifying';
+    setStage('clarify');
+    appendMsg('ai', formatAiMsg(d.ai_message));
+    showReplyArea(d);
+    toast('Pipeline started!','s');
+  } catch(e) {
+    removeTyping(typingId);
+    appendMsg('ai', `<span style="color:var(--red)">Γ¥î ${esc(e.message)}</span><br><small>Make sure the backend is running and Ollama/Groq is configured.</small>`);
+    resetPipeline();
+    toast(e.message,'e');
+  }
+}
+
+async function sendReply(overrideMsg) {
+  const msg = overrideMsg || document.getElementById('replyInput').value.trim();
+  if (!msg || !currentSession) return;
+  document.getElementById('replyInput').value = '';
+  document.getElementById('quickRepliesArea').innerHTML = '';
+  appendMsg('user', msg);
+  document.getElementById('replyBtn').disabled = true;
+  const typingId = showTyping();
+  setStage('clarify');
+
+  try {
+    const r = await apiFetch(`/chat/reply`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({session_id: currentSession, message: msg})
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || 'Error');
+    removeTyping(typingId);
+
+    if (d.stage === 'clarifying') {
+      appendMsg('ai', formatAiMsg(d.ai_message));
+      // Show MCQ chips if next question has options
+      showReplyArea(d);
+    } else if (d.stage === 'complete') {
+      setStage('optimize');
+      await sleep(300); setStage('assess');
+      await sleep(300); setStage('output');
+      lastOutput = d.optimized_prompt || '';   // ΓåÉ the optimized prompt IS the output
+      pipelineStage = 'complete';
+      document.getElementById('replyArea').style.display   = 'none';
+      document.getElementById('postActions').style.display = 'flex';
+      showResultCards(d);
+      toast('Pipeline complete! ≡ƒÜÇ','s');
+    }
+  } catch(e) {
+    removeTyping(typingId);
+    appendMsg('ai', `<span style="color:var(--red)">Γ¥î ${esc(e.message)}</span>`);
+    toast(e.message,'e');
+  }
+  document.getElementById('replyBtn').disabled = false;
+}
+
+function showResultCards(d) {
+  const a  = d.assessment   || {};
+  const o  = d.optimization || {};
+  const op = d.optimized_prompt || '';
+  const tips     = d.usage_tips  || [];
+  const variants = d.variations  || [];
+  const gradeColor = {'A':'var(--green)','B':'var(--cyan)','C':'var(--amber)','D':'var(--red)','F':'var(--red)'}[a.grade]||'var(--txt2)';
+  const metrics = ['clarity','specificity','context','actionability','completeness'];
+
+  const div = document.createElement('div');
+  div.className = 'result-section';
+
+  // ΓöÇΓöÇ HERO: Optimized Prompt ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  div.innerHTML = `
+    <!-- HERO OUTPUT BOX -->
+    <div style="background:linear-gradient(135deg,rgba(0,240,255,.06),rgba(139,92,246,.08));border:2px solid rgba(0,240,255,.3);border-radius:12px;padding:22px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+        <div style="font-size:16px;font-weight:800;color:var(--cyan)">≡ƒÄ» Your Optimized Prompt</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tag a">Before: ${o.score_before||3}/10</span>
+          <span style="color:var(--txt3)">ΓåÆ</span>
+          <span class="tag g">After: ${o.score_after||8}/10</span>
+          <span class="tag" style="background:rgba(0,240,255,.1);color:var(--cyan);border-color:rgba(0,240,255,.25)">Grade ${a.grade||'B'}</span>
+        </div>
+      </div>
+      <div id="optimizedPromptBox" style="background:var(--s1);border:1px solid var(--b2);border-radius:8px;padding:18px;font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--txt);white-space:pre-wrap;word-break:break-word;margin-bottom:14px">${esc(op)}</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-c" onclick="copyOptimized()" id="copyOptBtn">≡ƒôï Copy Prompt</button>
+        <button class="btn btn-g btn-sm" onclick="saveResultToLibrary()">≡ƒÆ╛ Save to Library</button>
+        <button class="btn btn-v btn-sm" onclick="resetPipeline()">≡ƒöä Start New</button>
+      </div>
+    </div>
+
+    <!-- STATS ROW -->
+    <div class="g2" style="margin-bottom:16px">
+      <div class="result-block">
+        <div class="rb-header">≡ƒôè Quality Assessment</div>
+        <div class="grade-badge grade-${a.grade||'B'}" style="color:${gradeColor};font-size:36px;padding:8px">${a.grade||'B'}</div>
+        <div style="text-align:center;font-size:12px;color:var(--txt2);margin-bottom:12px">Overall: <strong style="color:var(--cyan)">${a.overall_score||0}/10</strong><br><span style="font-size:10px;font-family:var(--mono)">${esc(a.feedback||'')}</span></div>
+        <div class="score-bars">
+          ${metrics.map(m=>`<div class="sb"><div class="sb-row"><span>${m.charAt(0).toUpperCase()+m.slice(1)}</span><span>${a[m]||0}/10</span></div><div class="sb-track"><div class="sb-fill" style="width:${(a[m]||0)*10}%"></div></div></div>`).join('')}
+        </div>
+      </div>
+      <div class="result-block">
+        <div class="rb-header">Γ£¿ Improvements Made</div>
+        ${(o.improvements||[]).map(i=>`<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:8px"><span style="color:var(--green);font-size:12px;margin-top:1px">Γ£ô</span><span style="font-size:12px;color:var(--txt2)">${esc(i)}</span></div>`).join('')}
+        ${tips.length ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--b1)">
+          <div style="font-size:10px;font-family:var(--mono);color:var(--txt3);margin-bottom:8px;letter-spacing:1px">HOW TO USE THIS PROMPT</div>
+          ${tips.map(t=>`<div style="font-size:11px;color:var(--txt2);margin-bottom:5px">ΓÇó ${esc(t)}</div>`).join('')}
+        </div>`:''}
+      </div>
+    </div>
+
+    <!-- VARIATIONS -->
+    ${variants.length ? `<div class="result-block">
+      <div class="rb-header">≡ƒöÇ Suggested Variations</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${variants.map(v=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--txt2);font-family:var(--mono);line-height:1.6">${esc(v)}</div>`).join('')}
+      </div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('chatWindow').appendChild(div);
+  div.scrollIntoView({behavior:'smooth'});
+
+  // store for copy button
+  window._optimizedPrompt = op;
+}
+
+function copyOptimized() {
+  copyText(window._optimizedPrompt || '');
+  const btn = document.getElementById('copyOptBtn');
+  if (btn) { btn.textContent = 'Γ£ô Copied!'; setTimeout(()=>btn.textContent='≡ƒôï Copy Prompt', 2000); }
+}
+
+function appendMsg(role, html) {
+  const win  = document.getElementById('chatWindow');
+  const div  = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  div.innerHTML = `
+    <div class="chat-avatar ${role==='ai'?'ai-av':'user-av'}">${role==='ai'?'≡ƒñû':'≡ƒæñ'}</div>
+    <div class="chat-bubble ${role==='ai'?'ai-b':'user-b'}">${html}</div>`;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+function showTyping() {
+  const id = 'typing-'+Date.now();
+  const win = document.getElementById('chatWindow');
+  const div = document.createElement('div');
+  div.className = 'chat-msg'; div.id = id;
+  div.innerHTML = `<div class="chat-avatar ai-av">≡ƒñû</div>
+    <div class="chat-bubble ai-b"><div class="typing-indicator">
+      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div></div>`;
+  win.appendChild(div); win.scrollTop = win.scrollHeight;
+  return id;
+}
+
+function removeTyping(id) { const el=document.getElementById(id); if(el) el.remove(); }
+
+function showReplyArea(d) {
+  const ra = document.getElementById('replyArea');
+  ra.style.display = '';
+  document.getElementById('replyInput').focus();
+
+  // Render MCQ chips if current question has options
+  const qrArea = document.getElementById('quickRepliesArea');
+  qrArea.innerHTML = '';
+  const msg = d && d.ai_message ? d.ai_message : '';
+  const optMatch = msg.match(/\*Options:\s*([^*]+)\*/);
+  if (optMatch) {
+    const opts = optMatch[1].split('┬╖').map(o => o.trim()).filter(Boolean);
+    if (opts.length) {
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:10px;font-family:var(--mono);color:var(--txt3);margin-bottom:6px;letter-spacing:1px';
+      label.textContent = 'QUICK SELECT ΓÇö click to choose:';
+      qrArea.appendChild(label);
+      const chipWrap = document.createElement('div');
+      chipWrap.className = 'quick-replies';
+      opts.forEach(opt => {
+        const chip = document.createElement('div');
+        chip.className = 'qr-chip';
+        chip.textContent = opt;
+        chip.onclick = () => {
+          chipWrap.querySelectorAll('.qr-chip').forEach(c => { c.style.borderColor=''; c.style.color=''; });
+          chip.style.borderColor = 'var(--cyan)';
+          chip.style.color = 'var(--cyan)';
+          document.getElementById('replyInput').value = opt;
+          setTimeout(() => sendReply(opt), 250);
+        };
+        chipWrap.appendChild(chip);
+      });
+      qrArea.appendChild(chipWrap);
+    }
+  }
+}
+
+function formatAiMsg(text) {
+  if (!text) return '';
+  return esc(text)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`(.*?)`/g,'<code>$1</code>')
+    .replace(/---/g,'<hr>')
+    .replace(/\n/g,'<br>');
+}
+
+function resetPipeline() {
+  currentSession = null; pipelineStage = 'idle'; lastOutput = '';
+  document.getElementById('inputArea').style.display = '';
+  document.getElementById('chatArea').style.display  = 'none';
+  document.getElementById('mainPromptInput').value   = '';
+  document.getElementById('mainCharCount').textContent = '0 chars';
+  setStage('');
+  document.getElementById('progressFill').style.width = '0%';
+}
+
+function saveResultToLibrary() {
+  nav('library');
+  document.getElementById('libTitle').value  = lastPrompt.substring(0,40)+'...';
+  document.getElementById('libPrompt').value = lastOutput;
+  toast('Prefilled ΓÇö click Save to confirm','i');
+}
+
+function copyLastOutput() { copyText(lastOutput); }
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+// ΓöÇΓöÇ DOCTOR ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function runDoctor() {
+  const prompt = document.getElementById('doctorInput').value.trim();
+  if (!prompt) return toast('Enter a prompt','e');
+  document.getElementById('doctorResult').innerHTML = `<div class="card"><div style="display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:12px"><div class="spin"></div>Diagnosing...</div></div>`;
+  try {
+    const r = await apiFetch(`/doctor`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    const d = await r.json();
+    const pct = `${d.health_score||50}%`;
+    document.getElementById('doctorResult').innerHTML = `<div class="card"><div class="g2">
+      <div>
+        <div class="card-title">≡ƒö¼ Diagnosis</div>
+        <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">${esc(d.diagnosis||'')}</div>
+        <div class="card-title">≡ƒÜ¿ Issues</div>
+        ${(d.issues||[]).map(i=>`<div class="ii ${i.severity}"><div class="ii-title">${(i.severity||'').toUpperCase()} ΓÇö ${esc(i.problem)}</div><div class="ii-fix">≡ƒÆè ${esc(i.fix)}</div></div>`).join('')}
+        ${(d.recovery_tips||[]).length?`<div style="margin-top:10px">${d.recovery_tips.map(t=>`<div style="font-size:11px;color:var(--txt2);margin-bottom:3px">ΓåÆ ${esc(t)}</div>`).join('')}</div>`:''}
+      </div>
+      <div style="text-align:center">
+        <div class="card-title">≡ƒÆè Health Score</div>
+        <div class="hc" style="--p:${pct}"><div class="hc-val">${d.health_score||50}</div></div>
+        <div style="font-size:10px;color:var(--txt3);font-family:var(--mono)">out of 100</div>
+        <div class="card-title" style="margin-top:16px">≡ƒÆë Prescription</div>
+        <div class="output-display" style="text-align:left;min-height:60px;font-size:11px">${esc(d.prescription||'')}</div>
+        <button class="btn btn-g btn-sm" style="margin-top:8px" onclick="copyText(this.previousElementSibling.textContent)">≡ƒôï Use</button>
+      </div>
+    </div></div>`;
+    toast('Diagnosis complete!','s');
+  } catch(e) { document.getElementById('doctorResult').innerHTML=`<div class="card" style="border-color:var(--red);color:var(--red);font-size:12px">${esc(e.message)}</div>`; toast(e.message,'e'); }
+}
+
+// ΓöÇΓöÇ TEST LAB ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function testPrompt() {
+  const prompt = document.getElementById('testInput').value.trim();
+  const iters  = parseInt(document.getElementById('testIter').value);
+  if (!prompt) return toast('Enter a prompt','e');
+  document.getElementById('testResult').innerHTML = `<div class="card"><div style="display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:12px"><div class="spin"></div>Running ${iters} test(s)...</div></div>`;
+  try {
+    const r = await apiFetch(`/test`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,iterations:iters})});
+    const d = await r.json();
+    let html = `<div class="card"><div class="card-title">Results <span style="margin-left:auto;font-size:10px;font-family:var(--mono);color:var(--txt3)">Avg: ${d.avg_time}s</span></div>`;
+    (d.results||[]).forEach((res,i)=>{
+      html+=`<div style="margin-bottom:14px">${i>0?'<hr style="border-color:var(--b1);margin-bottom:14px"/>':''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          <span class="tag c">Run #${res.iteration}</span><span class="tag a">ΓÅ▒ ${res.time_seconds}s</span><span class="tag g">${res.word_count} words</span>
+        </div>
+        <div class="output-display" style="font-size:11px">${esc(res.output)}</div></div>`;
+    });
+    document.getElementById('testResult').innerHTML = html+'</div>';
+    toast(`${iters} test(s) complete!`,'s');
+  } catch(e) { document.getElementById('testResult').innerHTML=`<div class="card" style="border-color:var(--red);color:var(--red)">${esc(e.message)}</div>`; toast(e.message,'e'); }
+}
+
+// ΓöÇΓöÇ LIBRARY ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function loadLib() {
+  document.getElementById('libList').innerHTML='<div style="text-align:center;padding:20px"><div class="spin" style="margin:0 auto"></div></div>';
+  try {
+    const r=await apiFetch(`/library`); const d=await r.json();
+    const ps=d.prompts||[];
+    if (!ps.length) { document.getElementById('libList').innerHTML='<div style="color:var(--txt3);font-size:11px;font-family:var(--mono);text-align:center;padding:24px">No saved prompts yet.</div>'; return; }
+    document.getElementById('libList').innerHTML=ps.map(p=>`<div class="pc">
+      <div class="pc-title">${esc(p.title)}</div><div class="pc-text">${esc(p.prompt)}</div>
+      <div class="pc-foot"><span class="tag">${p.category}</span>${(p.tags||[]).map(t=>`<span class="tag v">${t}</span>`).join('')}
+        <span style="margin-left:auto;display:flex;gap:5px">
+          <button class="btn btn-sm btn-o" onclick="copyText('${esc(p.prompt).replace(/'/g,"\\'")}')">≡ƒôï</button>
+          <button class="btn btn-sm btn-r" onclick="delLib('${p.id}')">≡ƒùæ</button>
+        </span>
+      </div></div>`).join('');
+  } catch(e) { document.getElementById('libList').innerHTML=`<div style="color:var(--red);font-size:11px">${esc(e.message)}</div>`; }
+}
+
+async function saveLib() {
+  const title=document.getElementById('libTitle').value.trim();
+  const prompt=document.getElementById('libPrompt').value.trim();
+  const category=document.getElementById('libCat').value;
+  const tags=document.getElementById('libTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  if (!title||!prompt) return toast('Title and prompt required','e');
+  try {
+    const r=await apiFetch(`/library/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title,prompt,category,tags})});
+    if (r.ok) { toast('Saved!','s'); loadLib(); document.getElementById('libTitle').value=''; document.getElementById('libPrompt').value=''; document.getElementById('libTags').value=''; }
+  } catch(e) { toast(e.message,'e'); }
+}
+
+async function delLib(id) {
+  try { await apiFetch(`/library/${id}`,{method:'DELETE'}); toast('Deleted','s'); loadLib(); }
+  catch(e) { toast(e.message,'e'); }
+}
+
+// ΓöÇΓöÇ TEMPLATES ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function loadTemplates() {
+  const r=await apiFetch(`/templates`); const d=await r.json();
+  const cc={writing:'c',coding:'g',business:'a',education:'v',marketing:'c',research:'v',general:''};
+  document.getElementById('tmplList').innerHTML=`<div class="g3">${(d.templates||[]).map(t=>`<div class="pc">
+    <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+      <div class="pc-title" style="margin:0">${esc(t.name)}</div>${t.custom?'<span class="tag a" style="font-size:8px">CUSTOM</span>':''}
+    </div>
+    <div class="pc-text">${esc(t.template)}</div>
+    <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:4px">
+      <span class="tag ${cc[t.category]||''}">${t.category}</span>
+      ${(t.variables||[]).map(v=>`<span class="var-chip">{${v}}</span>`).join('')}
+    </div>
+    <button class="btn btn-c btn-sm" style="margin-top:9px;width:100%" onclick="useTemplate('${t.id}')">Use</button>
+  </div>`).join('')}</div>`;
+}
+
+function switchTab(tab) {
+  document.getElementById('tb-browse').classList.toggle('active',tab==='browse');
+  document.getElementById('tb-create').classList.toggle('active',tab==='create');
+  document.getElementById('tmpl-browse').style.display=tab==='browse'?'':'none';
+  document.getElementById('tmpl-create').style.display=tab==='create'?'':'none';
+}
+
+function useTemplate(id) {
+  apiFetch(`/templates`).then(r=>r.json()).then(d=>{
+    const t=(d.templates||[]).find(x=>x.id===id); if(!t) return;
+    let f=t.template;
+    (t.variables||[]).forEach(v=>{ const val=window.prompt(`Enter value for {${v}}:`); if(val) f=f.replace(new RegExp(`\\{${v}\\}`,'g'),val); });
+    nav('pipeline');
+    document.getElementById('mainPromptInput').value=f;
+    toast('Template loaded!','s');
+  });
+}
+
+async function createTemplate() {
+  const name=document.getElementById('tn').value.trim();
+  const template=document.getElementById('tb').value.trim();
+  const variables=document.getElementById('tv').value.split(',').map(v=>v.trim()).filter(Boolean);
+  const category=document.getElementById('tc2').value;
+  if (!name||!template) return toast('Name and template required','e');
+  try {
+    const r=await apiFetch(`/templates`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,template,variables,category})});
+    if (r.ok) { toast('Created!','s'); switchTab('browse'); loadTemplates(); }
+  } catch(e) { toast(e.message,'e'); }
+}
+
+// ΓöÇΓöÇ VERSIONS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function saveVer() {
+  const pid=document.getElementById('vid').value.trim();
+  const prompt=document.getElementById('vprompt').value.trim();
+  const label=document.getElementById('vlabel').value.trim();
+  if (!pid||!prompt) return toast('ID and prompt required','e');
+  try {
+    const r=await apiFetch(`/versions/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt_id:pid,prompt,label})});
+    const d=await r.json(); toast(`Version ${d.version} saved!`,'s'); loadVer();
+  } catch(e) { toast(e.message,'e'); }
+}
+
+async function loadVer() {
+  const pid=document.getElementById('vid').value.trim();
+  if (!pid) return toast('Enter a Prompt ID','e');
+  try {
+    const r=await apiFetch(`/versions/${pid}`); const d=await r.json();
+    const vs=d.versions||[];
+    document.getElementById('verHistory').innerHTML=vs.length?[...vs].reverse().map(v=>`<div class="vi">
+      <div class="vn">v${v.version}</div>
+      <div style="flex:1">
+        ${v.label?`<div style="font-size:11px;font-weight:700;margin-bottom:3px">${esc(v.label)}</div>`:''}
+        <div style="font-size:10px;font-family:var(--mono);color:var(--txt2);line-height:1.5">${esc(v.prompt.substring(0,150))}${v.prompt.length>150?'...':''}</div>
+        <div style="font-size:9px;color:var(--txt3);margin-top:3px">${new Date(v.saved_at).toLocaleString()}</div>
+      </div>
+      <button class="btn btn-sm btn-o" onclick="document.getElementById('vprompt').value=this.dataset.p" data-p="${esc(v.prompt)}">Restore</button>
+    </div>`).join(''):
+    '<div style="text-align:center;padding:20px;color:var(--txt3);font-size:11px;font-family:var(--mono)">No versions found</div>';
+  } catch(e) { toast(e.message,'e'); }
+}
+
+// ΓöÇΓöÇ WORKFLOW ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+function addWfStep() {
+  wfCount++;
+  const n=wfCount;
+  const d=document.createElement('div');
+  d.className='wf-step'; d.id=`wfs-${n}`;
+  d.innerHTML=`<div class="wf-head">
+    <div class="step-badge">${n}</div>
+    <select class="inp" style="width:150px;flex-shrink:0" id="wft-${n}"><option value="generate">Generate</option><option value="optimize">Optimize</option><option value="assess">Assess</option></select>
+    <input class="inp" id="wfn-${n}" value="Step ${n}" placeholder="Step name..."/>
+    <button class="btn btn-sm btn-r" onclick="this.closest('.wf-step').remove()">Γ£ò</button>
+  </div>
+  <textarea class="ta" id="wfp-${n}" style="min-height:70px" placeholder="Prompt..."></textarea>`;
+  document.getElementById('wfSteps').appendChild(d);
+}
+
+async function runWorkflow() {
+  const stepEls=document.querySelectorAll('.wf-step');
+  const steps=[];
+  stepEls.forEach((el,i)=>{
+    const n=i+1;
+    steps.push({name:el.querySelector(`[id^="wfn"]`)?.value||`Step ${n}`,type:el.querySelector(`[id^="wft"]`)?.value||'generate',prompt:el.querySelector('textarea')?.value||''});
+  });
+  if (!steps.length) return toast('Add at least one step','e');
+  document.getElementById('wfResult').innerHTML=`<div class="card"><div style="display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:12px"><div class="spin"></div>Running...</div></div>`;
+  try {
+    const r=await apiFetch(`/workflow`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({steps})});
+    const d=await r.json();
+    let html=`<div class="card"><div class="card-title">≡ƒöº Results</div>`;
+    (d.workflow_results||[]).forEach((res,i)=>{
+      html+=`<div style="margin-bottom:14px">${i>0?'<hr style="border-color:var(--b1);margin-bottom:14px"/>':''}
+        <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
+          <div class="step-badge">${i+1}</div>
+          <span style="font-weight:700;font-size:12px">${esc(res.step)}</span>
+          <span class="tag">${res.type}</span>
+        </div>
+        <div class="output-display" style="font-size:11px">${esc(res.output)}</div></div>`;
+    });
+    document.getElementById('wfResult').innerHTML=html+'</div>';
+    toast('Workflow complete!','s');
+  } catch(e) { document.getElementById('wfResult').innerHTML=`<div class="card" style="border-color:var(--red);color:var(--red)">${esc(e.message)}</div>`; toast(e.message,'e'); }
+}
+
+// ΓöÇΓöÇ GALLERY ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function loadGallery() {
+  const r=await apiFetch(`/gallery`); const d=await r.json();
+  const cc={writing:'c',coding:'g',business:'a',education:'v',marketing:'c',research:'v'};
+  document.getElementById('galleryGrid').innerHTML=(d.gallery||[]).map(p=>`<div class="pc">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+      <div class="pc-title">${esc(p.title)}</div>
+      <span style="color:var(--amber);font-size:11px;font-family:var(--mono)">Γÿà ${p.rating}</span>
+    </div>
+    <div class="pc-text">${esc(p.prompt)}</div>
+    <div class="pc-foot"><span class="tag ${cc[p.category]||''}">${p.category}</span><span style="font-size:10px;color:var(--txt3);font-family:var(--mono);margin-left:auto">${p.uses} uses</span></div>
+    <button class="btn btn-c btn-sm" style="margin-top:9px;width:100%" onclick="useGallery(this.dataset.p)" data-p="${esc(p.prompt)}">ΓÜí Use</button>
+  </div>`).join('');
+}
+
+function useGallery(p) { nav('pipeline'); document.getElementById('mainPromptInput').value=p; toast('Loaded!','s'); }
+
+// ΓöÇΓöÇ POTD ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function loadPotd() {
+  const r=await apiFetch(`/prompt-of-day`); const d=await r.json();
+  document.getElementById('potdDate').textContent=d.date;
+  document.getElementById('potdText').textContent=d.prompt;
+}
+function usePotd() { nav('pipeline'); document.getElementById('mainPromptInput').value=document.getElementById('potdText').textContent; toast('Loaded!','s'); }
+
+async function loadConfig() {
+  try {
+    const r=await apiFetch(`/config`); const d=await r.json();
+    backendAuthEnabled = !!d.auth_enabled;
+    backendDbConfigured = !!d.database_configured;
+    applyAuthGate();
+    updateGateSignupAvailability();
+    document.getElementById('configDisplay').innerHTML=`
+      <div>Provider: <span style="color:var(--cyan)">${esc(d.provider)}</span></div>
+      <div>Model: <span style="color:var(--cyan)">${esc(d.model)}</span></div>
+      <div>LangChain: <span style="color:var(--green)">${d.langchain}</span></div>
+      <div>Groq API: <span style="color:${d.groq_configured?'var(--green)':'var(--red)'}">${d.groq_configured?'Γ£ô Configured':'Γ£ù Not set (using Ollama)'}</span></div>
+      <div>Auth enabled: <span style="color:${d.auth_enabled?'var(--green)':'var(--txt3)'}">${d.auth_enabled}</span></div>`;
+    updateAuthStatus();
+  } catch {}
+}
+
+// ΓöÇΓöÇ ANALYTICS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+async function loadAnalytics() {
+  document.getElementById('analyticsContent').innerHTML=`<div style="display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:12px"><div class="spin"></div>Loading...</div>`;
+  try {
+    const r=await apiFetch(`/analytics`); const d=await r.json();
+    const cats=d.prompts_by_category||{};
+    document.getElementById('analyticsContent').innerHTML=`
+      <div class="g4" style="margin-bottom:18px">
+        <div class="stat-card"><div class="stat-v">${d.total_prompts_saved||0}</div><div class="stat-l">SAVED PROMPTS</div></div>
+        <div class="stat-card"><div class="stat-v">${d.total_versions||0}</div><div class="stat-l">VERSIONS</div></div>
+        <div class="stat-card"><div class="stat-v">${d.total_templates||0}</div><div class="stat-l">TEMPLATES</div></div>
+        <div class="stat-card"><div class="stat-v">6</div><div class="stat-l">PIPELINE STAGES</div></div>
+      </div>
+      <div class="g2">
+        <div class="card">
+          <div class="card-title">≡ƒôé By Category</div>
+          ${Object.keys(cats).length?Object.entries(cats).map(([k,v])=>`<div style="margin-bottom:8px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:3px;font-family:var(--mono)"><span>${k}</span><span>${v}</span></div>
+            <div style="height:5px;background:var(--s3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,v*20)}%;background:linear-gradient(90deg,var(--violet),var(--cyan));border-radius:3px"></div></div>
+          </div>`).join(''):'<div style="color:var(--txt3);font-size:11px;font-family:var(--mono)">Save prompts to see stats</div>'}
+        </div>
+        <div class="card">
+          <div class="card-title">≡ƒñû Platform</div>
+          <div style="font-family:var(--mono);font-size:11px;line-height:2.2">
+            <div>Model: <span class="tag c">${esc(d.model_used)}</span></div>
+            <div>LangChain: <span class="tag v">${esc(d.langchain)}</span></div>
+            <div>Backend: <span class="tag g">FastAPI</span></div>
+          </div>
+          <div style="margin-top:14px">
+            ${['ΓÜí Interactive Chat Pipeline','≡ƒöì Intent Analysis (LangChain)','Γ¥ô AI Clarification Engine','Γ£¿ LangChain Optimization','≡ƒôè Quality Assessment','≡ƒ⌐║ AI Doctor','≡ƒº¬ Test Lab','≡ƒôÜ Library','≡ƒôï Templates','≡ƒöÇ Version Control','≡ƒöº Workflows','≡ƒôè Analytics'].map(f=>`
+              <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+                <span style="color:var(--green);font-size:10px">Γ£ô</span>
+                <span style="font-size:11px">${f}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  } catch(e) { document.getElementById('analyticsContent').innerHTML=`<div class="card" style="border-color:var(--red);color:var(--red)">${esc(e.message)}</div>`; }
+}
+
+async function doLogin(u, p) {
+  const r = await apiFetch(`/auth/login`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({username:u, password:p})
+  });
+  const d = await r.json().catch(()=>({}));
+  if (!r.ok) throw new Error(d.detail || 'Login failed');
+  if (!d.access_token) throw new Error('Login failed (no token)');
+  setAuthToken(d.access_token);
+  setCurrentUsername(u);
+}
+
+async function loginFromSettings() {
+  const u = (document.getElementById('authUser')?.value || '').trim() || 'admin';
+  const p = (document.getElementById('authPass')?.value || '').trim();
+  if (!p) return toast('Enter password','e');
+  try {
+    await doLogin(u, p);
+    const passEl = document.getElementById('authPass');
+    if (passEl) passEl.value = '';
+    toast('Logged in','s');
+  } catch(e) {
+    toast(e.message,'e');
+  }
+}
+
+async function loginFromGate() {
+  const u = (document.getElementById('gateUser')?.value || '').trim() || 'admin';
+  const p = (document.getElementById('gatePass')?.value || '').trim();
+  if (!p) return setGateMessage('Enter password', true);
+  try {
+    setGateMessage('Logging inΓÇª');
+    await doLogin(u, p);
+    const passEl = document.getElementById('gatePass');
+    if (passEl) passEl.value = '';
+    showApp();
+    nav('pipeline');
+    toast('Logged in','s');
+  } catch(e) {
+    setGateMessage(e.message, true);
+    toast(e.message,'e');
+  }
+}
+
+async function signupFromGate() {
+  if (backendDbConfigured !== true) {
+    return setGateMessage('Sign up requires DATABASE_URL (DB mode).', true);
+  }
+  const u = (document.getElementById('gateUser')?.value || '').trim();
+  const p = (document.getElementById('gatePass')?.value || '').trim();
+  if (!u) return setGateMessage('Enter username', true);
+  if (!p) return setGateMessage('Enter password', true);
+  try {
+    setGateMessage('Creating accountΓÇª');
+    const r = await fetch(`${API}/auth/register`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username:u, password:p})
+    });
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok) throw new Error(d.detail || 'Sign up failed');
+
+    // After signup, send user to login (do not auto-login).
+    const passEl = document.getElementById('gatePass');
+    if (passEl) passEl.value = '';
+    setGateMessage('Account created. Now login.');
+    toast('Account created. Please login.','s');
+  } catch(e) {
+    setGateMessage(e.message, true);
+    toast(e.message,'e');
+  }
+}
+
+function logout() {
+  setAuthToken('');
+  if (backendAuthEnabled !== false) showGate('Logged out');
+  hideUserMenu();
+  toast('Logged out','s');
+}
+
+// Initialize username badge from stored token (if any)
+if (authToken && !currentUsername) {
+  const u = getUsernameFromJwt(authToken);
+  if (u) setCurrentUsername(u);
+}
+updateGateSignupAvailability();
+updateUserBadge();
+</script>
+</body>
+</html>
