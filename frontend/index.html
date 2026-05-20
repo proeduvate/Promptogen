@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -44,7 +44,7 @@ body::before{content:'';position:fixed;inset:0;background:
 ::-webkit-scrollbar-thumb{background:var(--b1);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:var(--cyan2)}
 
-/* ΓöÇΓöÇ SIDEBAR ΓöÇΓöÇ */
+/*  SIDEBAR  */
 .sidebar{position:fixed;left:0;top:0;width:230px;height:100vh;background:var(--s1);border-right:1px solid var(--b1);z-index:100;display:flex;flex-direction:column;overflow-y:auto}
 .logo-wrap{padding:22px 18px 16px;border-bottom:1px solid var(--b1)}
 .logo{font-size:20px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -66,31 +66,31 @@ body::before{content:'';position:fixed;inset:0;background:
 .groq-status .gs-label{color:var(--txt3);font-size:9px;letter-spacing:2px;margin-bottom:4px}
 .groq-status .gs-val{color:var(--cyan);font-weight:700}
 
-/* ΓöÇΓöÇ MAIN ΓöÇΓöÇ */
+/*  MAIN  */
 .main{margin-left:230px;min-height:100vh;position:relative;z-index:1}
 .topbar{padding:14px 28px;border-bottom:1px solid var(--b1);background:rgba(5,8,15,.85);backdrop-filter:blur(20px);position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px}
 .topbar-title{font-size:16px;font-weight:700;flex:1}
 .topbar-title span{color:var(--cyan)}
 .content{padding:28px}
 
-/* ΓöÇΓöÇ SECTION ΓöÇΓöÇ */
+/*  SECTION  */
 .sec{display:none}
 .sec.active{display:block}
 
-/* ΓöÇΓöÇ CARDS ΓöÇΓöÇ */
+/*  CARDS  */
 .card{background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);padding:22px;margin-bottom:18px;position:relative;overflow:hidden}
 .card::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transition:.3s}
 .card:hover::after{opacity:.3}
 .card-title{font-size:13px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;letter-spacing:.3px}
 
-/* ΓöÇΓöÇ INPUTS ΓöÇΓöÇ */
+/*  INPUTS  */
 .inp,.ta,select{width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:11px 14px;color:var(--txt);font-family:var(--mono);font-size:12px;outline:none;transition:all .2s}
 .inp:focus,.ta:focus,select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,240,255,.07)}
 .ta{resize:vertical;min-height:110px;line-height:1.65}
 select option{background:var(--s2)}
 .lbl{font-size:10px;color:var(--txt3);font-family:var(--mono);margin-bottom:5px;display:block;letter-spacing:.8px}
 
-/* ΓöÇΓöÇ BUTTONS ΓöÇΓöÇ */
+/*  BUTTONS  */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:8px;border:none;cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:700;transition:all .2s;letter-spacing:.3px}
 .btn-c{background:linear-gradient(135deg,var(--cyan),var(--cyan2));color:#000}
 .btn-c:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,240,255,.28)}
@@ -104,12 +104,12 @@ select option{background:var(--s2)}
 .btn-sm{padding:5px 12px;font-size:11px}
 .btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
 
-/* ΓöÇΓöÇ GRIDS ΓöÇΓöÇ */
+/*  GRIDS  */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 
-/* ΓöÇΓöÇ TAGS ΓöÇΓöÇ */
+/*  TAGS  */
 .tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:12px;font-size:10px;font-family:var(--mono);background:var(--s3);color:var(--txt2);border:1px solid var(--b1)}
 .tag.c{background:rgba(0,240,255,.08);color:var(--cyan);border-color:rgba(0,240,255,.18)}
 .tag.v{background:rgba(139,92,246,.1);color:#a78bfa;border-color:rgba(139,92,246,.2)}
@@ -117,11 +117,11 @@ select option{background:var(--s2)}
 .tag.a{background:rgba(255,183,0,.08);color:var(--amber);border-color:rgba(255,183,0,.18)}
 .tag.r{background:rgba(255,71,87,.08);color:var(--red);border-color:rgba(255,71,87,.18)}
 
-/* ΓöÇΓöÇ SPINNER ΓöÇΓöÇ */
+/*  SPINNER  */
 .spin{width:18px;height:18px;border:2px solid var(--b1);border-top-color:var(--cyan);border-radius:50%;animation:rot .7s linear infinite;flex-shrink:0}
 @keyframes rot{to{transform:rotate(360deg)}}
 
-/* ΓöÇΓöÇ TOAST ΓöÇΓöÇ */
+/*  TOAST  */
 #tc{position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:6px}
 .toast{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:10px 18px;font-size:12px;font-family:var(--mono);display:flex;align-items:center;gap:8px;box-shadow:0 8px 28px rgba(0,0,0,.5);animation:tin .3s ease}
 .toast.s{border-left:3px solid var(--green)}
@@ -129,9 +129,9 @@ select option{background:var(--s2)}
 .toast.i{border-left:3px solid var(--cyan)}
 @keyframes tin{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
 
-/* ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
-   CHAT PIPELINE  ΓÇö the new interactive feature
-ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
+/* 
+   CHAT PIPELINE   the new interactive feature
+ */
 .pipeline-hero{background:linear-gradient(135deg,rgba(0,240,255,.04),rgba(139,92,246,.07));border:1px solid rgba(0,240,255,.12);border-radius:14px;padding:28px;margin-bottom:22px;text-align:center}
 .pipeline-hero h1{font-size:32px;font-weight:900;letter-spacing:-1px;background:linear-gradient(135deg,var(--cyan),#a78bfa,var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
 .pipeline-hero p{color:var(--txt2);font-size:14px;max-width:480px;margin:0 auto 16px}
@@ -251,7 +251,7 @@ select option{background:var(--s2)}
 @media(max-width:900px){.sidebar{width:54px}.sidebar .nav-btn span:not(.ni){display:none}.sidebar .nav-group,.logo-version,.groq-status,.model-pill span:not(.model-dot){display:none}.main{margin-left:54px}}
 @media(max-width:680px){.g2,.g3,.g4{grid-template-columns:1fr}.content{padding:14px}}
 
-/* ΓöÇΓöÇ LOGIN GATE (AUTH FIRST) ΓöÇΓöÇ */
+/*  LOGIN GATE (AUTH FIRST)  */
 .gate{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(5,8,15,.92);backdrop-filter:blur(18px)}
 .gate[aria-hidden="true"]{display:none}
 .gate-card{width:min(520px,100%);background:var(--s1);border:1px solid var(--b1);border-radius:14px;padding:22px}
@@ -259,7 +259,7 @@ select option{background:var(--s2)}
 .gate-sub{font-size:12px;color:var(--txt2);margin-bottom:14px}
 .gate-meta{font-size:10px;color:var(--txt3);font-family:var(--mono);margin-top:10px}
 
-/* ΓöÇΓöÇ USER BADGE ΓöÇΓöÇ */
+/*  USER BADGE  */
 .user-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:var(--s2);border:1px solid var(--b1);font-size:11px;font-family:var(--mono);color:var(--txt2);max-width:220px}
 .user-badge{cursor:pointer;user-select:none}
 .user-badge:hover{border-color:var(--cyan);color:var(--txt)}
@@ -286,13 +286,13 @@ select option{background:var(--s2)}
       </div>
       <div>
         <div class="lbl">PASSWORD</div>
-        <input class="inp" id="gatePass" type="password" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" autocomplete="current-password" />
+        <input class="inp" id="gatePass" type="password" placeholder="" autocomplete="current-password" />
       </div>
     </div>
     <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap;align-items:center">
-      <button class="btn btn-v" onclick="loginFromGate()">≡ƒöÉ Login</button>
-      <button class="btn btn-o" id="gateSignupBtn" onclick="signupFromGate()">≡ƒåò Sign Up</button>
-      <span id="gateMsg" style="font-size:11px;font-family:var(--mono);color:var(--txt3)">LoadingΓÇª</span>
+      <button class="btn btn-v" onclick="loginFromGate()">Login</button>
+      <button class="btn btn-o" id="gateSignupBtn" onclick="signupFromGate()"> Sign Up</button>
+      <span id="gateMsg" style="font-size:11px;font-family:var(--mono);color:var(--txt3)">Loading</span>
     </div>
     <div class="gate-meta">JWT token is stored in <span style="color:var(--txt2)">localStorage</span> as <span style="color:var(--txt2)">pg_token</span>.</div>
   </div>
@@ -314,24 +314,24 @@ select option{background:var(--s2)}
   </div>
 
   <div class="nav-group">Core</div>
-  <div class="nav-btn active" onclick="nav('pipeline')"><span class="ni">ΓÜí</span><span>Pipeline</span><span class="new-badge">NEW</span></div>
-  <div class="nav-btn" onclick="nav('doctor')"><span class="ni">≡ƒ⌐║</span><span>AI Doctor</span></div>
-  <div class="nav-btn" onclick="nav('test')"><span class="ni">≡ƒº¬</span><span>Test Lab</span></div>
+  <div class="nav-btn active" onclick="nav('pipeline')"><span class="ni"><img src="/images/nav-pipeline.svg" alt="Pipeline" style="width:14px;height:14px;"></span><span>Pipeline</span><span class="new-badge">NEW</span></div>
+  <div class="nav-btn" onclick="nav('doctor')"><span class="ni"><img src="/images/nav-doctor.svg" alt="AI Doctor" style="width:14px;height:14px;"></span><span>AI Doctor</span></div>
+  <div class="nav-btn" onclick="nav('test')"><span class="ni"><img src="/images/nav-test.svg" alt="Test Lab" style="width:14px;height:14px;"></span><span>Test Lab</span></div>
 
   <div class="nav-group">Manage</div>
-  <div class="nav-btn" onclick="nav('library')"><span class="ni">≡ƒôÜ</span><span>Library</span></div>
-  <div class="nav-btn" onclick="nav('templates')"><span class="ni">≡ƒôï</span><span>Templates</span></div>
-  <div class="nav-btn" onclick="nav('versions')"><span class="ni">≡ƒöÇ</span><span>Versions</span></div>
-  <div class="nav-btn" onclick="nav('workflow')"><span class="ni">≡ƒöº</span><span>Workflows</span></div>
+  <div class="nav-btn" onclick="nav('library')"><span class="ni"><img src="/images/nav-library.svg" alt="Library" style="width:14px;height:14px;"></span><span>Library</span></div>
+  <div class="nav-btn" onclick="nav('templates')"><span class="ni"><img src="/images/nav-templates.svg" alt="Templates" style="width:14px;height:14px;"></span><span>Templates</span></div>
+  <div class="nav-btn" onclick="nav('versions')"><span class="ni"><img src="/images/nav-versions.svg" alt="Versions" style="width:14px;height:14px;"></span><span>Versions</span></div>
+  <div class="nav-btn" onclick="nav('workflow')"><span class="ni"><img src="/images/nav-workflow.svg" alt="Workflows" style="width:14px;height:14px;"></span><span>Workflows</span></div>
 
   <div class="nav-group">Discover</div>
-  <div class="nav-btn" onclick="nav('gallery')"><span class="ni">≡ƒû╝∩╕Å</span><span>Gallery</span></div>
-  <div class="nav-btn" onclick="nav('potd')"><span class="ni">≡ƒîƒ</span><span>Prompt of Day</span></div>
-  <div class="nav-btn" onclick="nav('multiai')"><span class="ni">≡ƒñû</span><span>Models</span></div>
-  <div class="nav-btn" onclick="nav('settings')"><span class="ni">ΓÜÖ∩╕Å</span><span>Settings</span></div>
+  <div class="nav-btn" onclick="nav('gallery')"><span class="ni"><img src="/images/nav-gallery.svg" alt="Gallery" style="width:14px;height:14px;"></span><span>Gallery</span></div>
+  <div class="nav-btn" onclick="nav('potd')"><span class="ni"><img src="/images/nav-potd.svg" alt="Prompt of Day" style="width:14px;height:14px;"></span><span>Prompt of Day</span></div>
+  <div class="nav-btn" onclick="nav('multiai')"><span class="ni"><img src="/images/nav-models.svg" alt="Models" style="width:14px;height:14px;"></span><span>Models</span></div>
+  <div class="nav-btn" onclick="nav('settings')"><span class="ni"><img src="/images/nav-settings.svg" alt="Settings" style="width:14px;height:14px;"></span><span>Settings</span></div>
 
   <div class="nav-group">Analytics</div>
-  <div class="nav-btn" onclick="nav('analytics')"><span class="ni">≡ƒôè</span><span>Dashboard</span></div>
+  <div class="nav-btn" onclick="nav('analytics')"><span class="ni"><img src="/images/nav-analytics.svg" alt="Dashboard" style="width:14px;height:14px;"></span><span>Dashboard</span></div>
 
   <div class="sidebar-footer">
     <div class="groq-status">
@@ -344,48 +344,48 @@ select option{background:var(--s2)}
 <!-- MAIN -->
 <main class="main">
   <div class="topbar">
-    <div class="topbar-title" id="pageTitle">ΓÜí <span>Interactive Pipeline</span></div>
-    <button class="btn btn-o btn-sm" onclick="nav('settings')">ΓÜÖ∩╕Å Setup Groq API</button>
-    <button class="btn btn-o btn-sm" onclick="nav('potd')">≡ƒîƒ Daily Prompt</button>
+    <div class="topbar-title" id="pageTitle"><span>Interactive Pipeline</span></div>
+    <button class="btn btn-o btn-sm" onclick="nav('settings')">Setup Groq API</button>
+    <button class="btn btn-o btn-sm" onclick="nav('potd')"> Daily Prompt</button>
     <div id="userMenuWrap" style="position:relative;display:none">
       <div id="userBadge" class="user-badge" title="Account" onclick="toggleUserMenu(event)">
         <div class="user-ic" id="userIcon">U</div>
         <div class="user-name" id="userName">user</div>
       </div>
       <div id="userMenu" class="user-menu" aria-hidden="true">
-        <button class="user-menu-item" onclick="logout();hideUserMenu();">≡ƒÜ¬ Logout</button>
+        <button class="user-menu-item" onclick="logout();hideUserMenu();"> Logout</button>
       </div>
     </div>
   </div>
   <div class="content">
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ PIPELINE (CHAT) ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  PIPELINE (CHAT)  -->
     <div class="sec active" id="sec-pipeline">
 
       <div class="pipeline-hero">
         <h1>Promptgen AI</h1>
-        <p>Type your rough idea ΓÇö the AI will have a conversation with you, understand your intent, ask smart questions, then craft the perfect prompt.</p>
+        <p>Type your rough idea the AI will have a conversation with you, understand your intent, ask smart questions, then craft the perfect prompt.</p>
         <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-          <span class="tag c">≡ƒöì Intent Analysis</span>
-          <span class="tag v">Γ¥ô Smart Clarification</span>
-          <span class="tag g">Γ£¿ Auto Optimization</span>
-          <span class="tag a">≡ƒôè Quality Grade</span>
+          <span class="tag c"> Intent Analysis</span>
+          <span class="tag v">Smart Clarification</span>
+          <span class="tag g"> Auto Optimization</span>
+          <span class="tag a">Quality Grade</span>
         </div>
       </div>
 
       <!-- Stage tracker -->
       <div class="stage-track" id="stageTrack">
-        <div class="stage-node" id="sn1"><div class="stage-bubble" id="sb1">≡ƒôÑ</div><div class="stage-lbl">INPUT</div></div>
+        <div class="stage-node" id="sn1"><div class="stage-bubble" id="sb1"><img src="/images/stage-input.svg" alt="Input" style="width:18px;height:18px;"></div><div class="stage-lbl">INPUT</div></div>
         <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl1"></div>
-        <div class="stage-node" id="sn2"><div class="stage-bubble" id="sb2">≡ƒöì</div><div class="stage-lbl">INTENT</div></div>
+        <div class="stage-node" id="sn2"><div class="stage-bubble" id="sb2"><img src="/images/stage-intent.svg" alt="Intent" style="width:18px;height:18px;"></div><div class="stage-lbl">INTENT</div></div>
         <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl2"></div>
-        <div class="stage-node" id="sn3"><div class="stage-bubble" id="sb3">Γ¥ô</div><div class="stage-lbl">CLARIFY</div></div>
+        <div class="stage-node" id="sn3"><div class="stage-bubble" id="sb3"><img src="/images/stage-clarify.svg" alt="Clarify" style="width:18px;height:18px;"></div><div class="stage-lbl">CLARIFY</div></div>
         <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl3"></div>
-        <div class="stage-node" id="sn4"><div class="stage-bubble" id="sb4">Γ£¿</div><div class="stage-lbl">OPTIMIZE</div></div>
+        <div class="stage-node" id="sn4"><div class="stage-bubble" id="sb4"><img src="/images/stage-optimize.svg" alt="Optimize" style="width:18px;height:18px;"></div><div class="stage-lbl">OPTIMIZE</div></div>
         <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl4"></div>
-        <div class="stage-node" id="sn5"><div class="stage-bubble" id="sb5">≡ƒôè</div><div class="stage-lbl">ASSESS</div></div>
+        <div class="stage-node" id="sn5"><div class="stage-bubble" id="sb5"><img src="/images/stage-assess.svg" alt="Assess" style="width:18px;height:18px;"></div><div class="stage-lbl">ASSESS</div></div>
         <div style="width:40px;height:2px;background:var(--b1);margin-top:-14px" id="sl5"></div>
-        <div class="stage-node" id="sn6"><div class="stage-bubble" id="sb6">≡ƒÜÇ</div><div class="stage-lbl">OUTPUT</div></div>
+        <div class="stage-node" id="sn6"><div class="stage-bubble" id="sb6"><img src="/images/stage-output.svg" alt="Output" style="width:18px;height:18px;"></div><div class="stage-lbl">OUTPUT</div></div>
       </div>
 
       <!-- Progress bar -->
@@ -393,13 +393,13 @@ select option{background:var(--s2)}
 
       <!-- Input area (shown before pipeline starts) -->
       <div id="inputArea" class="card">
-        <div class="card-title">≡ƒô¥ What do you want to create or achieve?</div>
+        <div class="card-title"> What do you want to create or achieve?</div>
         <div class="prompt-input-wrap">
           <textarea class="ta" id="mainPromptInput"
             placeholder="Type your rough idea here... e.g. 'I want an AI agent to automate my Spotify playlist' or 'help me study full stack development'"
             oninput="document.getElementById('mainCharCount').textContent=this.value.length+' chars'"
             onkeydown="if(event.key==='Enter'&&event.ctrlKey)startPipeline()"></textarea>
-          <button class="btn btn-c send-btn btn-sm" onclick="startPipeline()" id="startBtn">ΓÜí Start</button>
+          <button class="btn btn-c send-btn btn-sm" onclick="startPipeline()" id="startBtn"> Start</button>
         </div>
         <div class="char-count" id="mainCharCount">0 chars</div>
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -419,41 +419,41 @@ select option{background:var(--s2)}
           <div style="position:relative">
             <textarea class="ta" id="replyInput" placeholder="Type your answer here..." style="min-height:70px;padding-right:90px"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendReply()}"></textarea>
-            <button class="btn btn-c btn-sm" style="position:absolute;right:10px;bottom:10px" onclick="sendReply()" id="replyBtn">Send ΓåÆ</button>
+            <button class="btn btn-c btn-sm" style="position:absolute;right:10px;bottom:10px" onclick="sendReply()" id="replyBtn">Send </button>
           </div>
           <div id="quickRepliesArea" style="margin-top:8px"></div>
         </div>
         <!-- Actions after complete -->
         <div id="postActions" style="display:none;margin-top:12px;display:none">
           <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-c" onclick="saveResultToLibrary()">≡ƒÆ╛ Save to Library</button>
-            <button class="btn btn-o" onclick="copyLastOutput()">≡ƒôï Copy Output</button>
-            <button class="btn btn-v" onclick="resetPipeline()">≡ƒöä Start New</button>
+            <button class="btn btn-c" onclick="saveResultToLibrary()"> Save to Library</button>
+            <button class="btn btn-o" onclick="copyLastOutput()"> Copy Output</button>
+            <button class="btn btn-v" onclick="resetPipeline()"> Start New</button>
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ DOCTOR ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  DOCTOR  -->
     <div class="sec" id="sec-doctor">
       <div class="card">
-        <div class="card-title">≡ƒ⌐║ AI Prompt Doctor</div>
+        <div class="card-title"> AI Prompt Doctor</div>
         <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">Submit any prompt for a full AI diagnosis using LangChain + Groq/Ollama.</p>
         <div class="lbl">PATIENT PROMPT</div>
         <textarea class="ta" id="doctorInput" placeholder="Paste any prompt here..." style="min-height:130px"></textarea>
         <div style="display:flex;gap:10px;margin-top:12px">
-          <button class="btn btn-c" onclick="runDoctor()">≡ƒ⌐║ Diagnose</button>
+          <button class="btn btn-c" onclick="runDoctor()">Diagnose</button>
           <button class="btn btn-o" onclick="document.getElementById('doctorInput').value='';document.getElementById('doctorResult').innerHTML=''">Clear</button>
         </div>
       </div>
       <div id="doctorResult"></div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ TEST LAB ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  TEST LAB  -->
     <div class="sec" id="sec-test">
       <div class="card">
-        <div class="card-title">≡ƒº¬ Prompt Testing Lab</div>
+        <div class="card-title"> Prompt Testing Lab</div>
         <div class="g2">
           <div>
             <div class="lbl">PROMPT TO TEST</div>
@@ -462,25 +462,25 @@ select option{background:var(--s2)}
           <div>
             <div class="lbl">ITERATIONS</div>
             <select class="inp" id="testIter">
-              <option value="1">1 ΓÇö Single run</option>
-              <option value="2">2 ΓÇö Compare pair</option>
-              <option value="3" selected>3 ΓÇö Triple test</option>
+              <option value="1">1  Single run</option>
+              <option value="2">2  Compare pair</option>
+              <option value="3" selected>3  Triple test</option>
             </select>
             <div style="margin-top:12px;background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:12px;font-size:11px;color:var(--txt2);line-height:2">
-              ΓÅ▒ Response time<br>≡ƒô¥ Word count<br>≡ƒôè Consistency<br>≡ƒñû Model used
+               Response time<br> Word count<br> Consistency<br> Model used
             </div>
-            <button class="btn btn-c" style="margin-top:12px;width:100%" onclick="testPrompt()">≡ƒº¬ Run Tests</button>
+            <button class="btn btn-c" style="margin-top:12px;width:100%" onclick="testPrompt()"> Run Tests</button>
           </div>
         </div>
       </div>
       <div id="testResult"></div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ LIBRARY ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  LIBRARY  -->
     <div class="sec" id="sec-library">
       <div class="g2">
         <div class="card">
-          <div class="card-title">≡ƒÆ╛ Save Prompt</div>
+          <div class="card-title"> Save Prompt</div>
           <div class="lbl">TITLE</div><input class="inp" id="libTitle" placeholder="Prompt name..." style="margin-bottom:9px"/>
           <div class="lbl">PROMPT</div><textarea class="ta" id="libPrompt" style="min-height:90px;margin-bottom:9px" placeholder="Prompt content..."></textarea>
           <div class="lbl">CATEGORY</div>
@@ -491,16 +491,16 @@ select option{background:var(--s2)}
             <option value="marketing">Marketing</option>
           </select>
           <div class="lbl">TAGS</div><input class="inp" id="libTags" placeholder="ai, blog, writing..." style="margin-bottom:12px"/>
-          <button class="btn btn-g" onclick="saveLib()">≡ƒÆ╛ Save</button>
+          <button class="btn btn-g" onclick="saveLib()"> Save</button>
         </div>
         <div class="card">
-          <div class="card-title">≡ƒôÜ My Library</div>
+          <div class="card-title"> My Library</div>
           <div id="libList" style="max-height:480px;overflow-y:auto"></div>
         </div>
       </div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ TEMPLATES ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  TEMPLATES  -->
     <div class="sec" id="sec-templates">
       <div class="tabs">
         <div class="tab active" id="tb-browse" onclick="switchTab('browse')">Browse</div>
@@ -509,7 +509,7 @@ select option{background:var(--s2)}
       <div id="tmpl-browse"><div id="tmplList"></div></div>
       <div id="tmpl-create" style="display:none">
         <div class="card">
-          <div class="card-title">Γ₧ò New Template</div>
+          <div class="card-title"> New Template</div>
           <div class="lbl">NAME</div><input class="inp" id="tn" placeholder="Template name..." style="margin-bottom:9px"/>
           <div class="lbl">TEMPLATE (use {variable})</div><textarea class="ta" id="tb" placeholder="Write a {tone} post about {topic}..." style="margin-bottom:9px"></textarea>
           <div class="lbl">VARIABLES (comma separated)</div><input class="inp" id="tv" placeholder="tone, topic, audience" style="margin-bottom:9px"/>
@@ -518,36 +518,36 @@ select option{background:var(--s2)}
             <option value="general">General</option><option value="writing">Writing</option>
             <option value="coding">Coding</option><option value="business">Business</option>
           </select>
-          <button class="btn btn-v" onclick="createTemplate()">Γ₧ò Create</button>
+          <button class="btn btn-v" onclick="createTemplate()"> Create</button>
         </div>
       </div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ VERSIONS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  VERSIONS  -->
     <div class="sec" id="sec-versions">
       <div class="g2">
         <div class="card">
-          <div class="card-title">≡ƒöÇ Save Version</div>
+          <div class="card-title"> Save Version</div>
           <div class="lbl">PROMPT ID</div><input class="inp" id="vid" placeholder="e.g. myblogprompt" style="margin-bottom:9px"/>
           <div class="lbl">CONTENT</div><textarea class="ta" id="vprompt" style="min-height:110px;margin-bottom:9px" placeholder="Prompt content..."></textarea>
           <div class="lbl">LABEL</div><input class="inp" id="vlabel" placeholder="e.g. Added context" style="margin-bottom:12px"/>
           <div style="display:flex;gap:9px">
-            <button class="btn btn-v" onclick="saveVer()">≡ƒÆ╛ Save</button>
-            <button class="btn btn-o" onclick="loadVer()">≡ƒôé Load History</button>
+            <button class="btn btn-v" onclick="saveVer()"> Save</button>
+            <button class="btn btn-o" onclick="loadVer()"> Load History</button>
           </div>
         </div>
         <div class="card">
-          <div class="card-title">≡ƒôé Version History</div>
-          <div id="verHistory"><div style="color:var(--txt3);font-size:12px;font-family:var(--mono);text-align:center;padding:28px">Enter ID ΓåÆ Load History</div></div>
+          <div class="card-title"> Version History</div>
+          <div id="verHistory"><div style="color:var(--txt3);font-size:12px;font-family:var(--mono);text-align:center;padding:28px">Enter ID  Load History</div></div>
         </div>
       </div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ WORKFLOW ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  WORKFLOW  -->
     <div class="sec" id="sec-workflow">
       <div class="card">
-        <div class="card-title">≡ƒöº Workflow Builder</div>
-        <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">Chain AI steps ΓÇö each output feeds into the next.</p>
+        <div class="card-title"> Workflow Builder</div>
+        <p style="font-size:12px;color:var(--txt2);margin-bottom:14px">Chain AI steps  each output feeds into the next.</p>
         <div id="wfSteps">
           <div class="wf-step" id="wfs-1">
             <div class="wf-head">
@@ -560,92 +560,92 @@ select option{background:var(--s2)}
         </div>
         <div style="display:flex;gap:9px;margin-top:14px">
           <button class="btn btn-o" onclick="addWfStep()">+ Add Step</button>
-          <button class="btn btn-c" onclick="runWorkflow()">Γû╢ Run Workflow</button>
+          <button class="btn btn-c" onclick="runWorkflow()"> Run Workflow</button>
         </div>
       </div>
       <div id="wfResult"></div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ GALLERY ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  GALLERY  -->
     <div class="sec" id="sec-gallery">
       <div class="card" style="margin-bottom:18px">
-        <div class="card-title">≡ƒû╝∩╕Å Prompt Gallery</div>
+        <div class="card-title"> Prompt Gallery</div>
         <p style="font-size:12px;color:var(--txt2)">Community curated prompts. Click Use to load in pipeline.</p>
       </div>
       <div class="g3" id="galleryGrid"></div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ POTD ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  POTD  -->
     <div class="sec" id="sec-potd">
       <div class="card" style="text-align:center;padding:44px 28px">
-        <div style="font-size:44px;margin-bottom:14px">≡ƒîƒ</div>
+        <div style="font-size:44px;margin-bottom:14px"></div>
         <div style="font-size:22px;font-weight:800;margin-bottom:6px">Prompt of the Day</div>
         <div id="potdDate" style="font-size:11px;font-family:var(--mono);color:var(--txt3);margin-bottom:20px"></div>
         <div id="potdText" class="output-display" style="text-align:left;margin-bottom:18px;font-size:14px;max-height:180px"></div>
         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-          <button class="btn btn-c" onclick="usePotd()">ΓÜí Use in Pipeline</button>
-          <button class="btn btn-o" onclick="copyText(document.getElementById('potdText').textContent)">≡ƒôï Copy</button>
+          <button class="btn btn-c" onclick="usePotd()"> Use in Pipeline</button>
+          <button class="btn btn-o" onclick="copyText(document.getElementById('potdText').textContent)"> Copy</button>
         </div>
       </div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ MODELS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  MODELS  -->
     <div class="sec" id="sec-multiai">
       <div class="card" style="margin-bottom:18px">
-        <div class="card-title">≡ƒñû Supported Models</div>
+        <div class="card-title"> Supported Models</div>
       </div>
       <div class="g3">
         <div style="background:var(--s2);border:1px solid rgba(0,240,255,.2);border-radius:8px;padding:14px">
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">Llama 3.3 70B</div>
-          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">GROQ CLOUD ΓÇó FREE</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--cyan)">≡ƒƒó Recommended</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">GROQ CLOUD  FREE</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--cyan)"> Recommended</div>
           <div style="font-size:11px;color:var(--txt2);margin-top:7px">Fast, powerful, free tier. Best quality responses. Set <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:10px">GROQ_API_KEY</code> in a <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:10px">.env</code> file.</div>
         </div>
         <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">phi3</div>
-          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LOCAL ΓÇó OLLAMA</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--green)">≡ƒö╡ Fallback</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LOCAL  OLLAMA</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--green)"> Fallback</div>
           <div style="font-size:11px;color:var(--txt2);margin-top:7px">Runs locally. No API key. Private. Used when Groq not configured.</div>
         </div>
         <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">Mistral / Llama 3</div>
-          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LOCAL ΓÇó OLLAMA</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--txt3)">ΓÜ¬ Optional</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LOCAL  OLLAMA</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--txt3)"> Optional</div>
           <div style="font-size:11px;color:var(--txt2);margin-top:7px">Pull with: <code style="background:var(--s3);padding:1px 5px;border-radius:3px;font-size:10px">ollama pull mistral</code></div>
         </div>
         <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">LangChain</div>
           <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">ORCHESTRATION LAYER</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--violet)">≡ƒƒú Active</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--violet)"> Active</div>
           <div style="font-size:11px;color:var(--txt2);margin-top:7px">Powers the optimization chains, prompt templates, and conversation memory.</div>
         </div>
         <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">GPT-4o / Claude</div>
-          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">CLOUD ΓÇó PAID</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--amber)">≡ƒöæ Future</div>
+          <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">CLOUD  PAID</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--amber)"> Future</div>
           <div style="font-size:11px;color:var(--txt2);margin-top:7px">Planned integration for enterprise tier. Requires paid API keys.</div>
         </div>
         <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px">
           <div style="font-size:13px;font-weight:700;margin-bottom:3px">Groq Free Tier</div>
           <div style="font-size:9px;font-family:var(--mono);color:var(--txt3);margin-bottom:7px">LIMITS</div>
-          <div style="font-size:11px;font-family:var(--mono);color:var(--green)">Γ£à Generous</div>
+          <div style="font-size:11px;font-family:var(--mono);color:var(--green)"> Generous</div>
           <div style="font-size:11px;color:var(--txt2);margin-top:7px">14,400 req/day free. 30 req/min. More than enough for development.</div>
         </div>
       </div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ SETTINGS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  SETTINGS  -->
     <div class="sec" id="sec-settings">
       <div class="card" style="border-color:rgba(139,92,246,.3)">
-        <div class="card-title" style="color:var(--violet)">ΓÜÖ∩╕Å Groq API Key (via .env)</div>
+        <div class="card-title" style="color:var(--violet)"> Groq API Key (via .env)</div>
         <p style="font-size:13px;color:var(--txt2);margin-bottom:18px">
-          Groq gives you <strong style="color:var(--green)">free access</strong> to Llama 3.3 70B ΓÇö one of the most powerful open models available.
+          Groq gives you <strong style="color:var(--green)">free access</strong> to Llama 3.3 70B  one of the most powerful open models available.
           It's much faster and smarter than local phi3. <strong style="color:var(--cyan)">Get your free key at console.groq.com</strong>
         </p>
         <div style="background:var(--s2);border:1px solid var(--b1);border-radius:8px;padding:14px;margin-bottom:16px;font-size:12px;font-family:var(--mono);line-height:2">
           1. Go to <span style="color:var(--cyan)">console.groq.com</span><br>
           2. Sign up free (GitHub/Google login works)<br>
-          3. Go to API Keys ΓåÆ Create API Key<br>
+          3. Go to API Keys  Create API Key<br>
           4. Create a <span style="color:var(--cyan)">.env</span> file and set: <span style="color:var(--cyan)">GROQ_API_KEY=gsk_...</span><br>
           5. Restart the backend
         </div>
@@ -654,12 +654,12 @@ select option{background:var(--s2)}
           GROQ_API_KEY=gsk_...
         </div>
         <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--b1)">
-          <div class="card-title">≡ƒöî Current Configuration</div>
+          <div class="card-title"> Current Configuration</div>
           <div id="configDisplay" style="font-family:var(--mono);font-size:12px;line-height:2.2"></div>
         </div>
 
         <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--b1)">
-          <div class="card-title">≡ƒöÉ Authentication</div>
+          <div class="card-title"> Authentication</div>
           <div style="font-size:12px;color:var(--txt2);margin-bottom:12px">
             If JWT auth is enabled on the backend (<span style="font-family:var(--mono)">AUTH_ENABLED=true</span>), log in here to use protected features.
           </div>
@@ -670,11 +670,11 @@ select option{background:var(--s2)}
             </div>
             <div>
               <div class="lbl">PASSWORD</div>
-              <input class="inp" id="authPass" type="password" placeholder="ΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇóΓÇó" autocomplete="current-password" />
+              <input class="inp" id="authPass" type="password" placeholder="" autocomplete="current-password" />
             </div>
           </div>
           <div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap;align-items:center">
-            <button class="btn btn-v" onclick="loginFromSettings()">≡ƒöÉ Login</button>
+            <button class="btn btn-v" onclick="loginFromSettings()"> Login</button>
             <button class="btn btn-o" onclick="logout()">Logout</button>
             <span id="authStatus" style="font-size:11px;font-family:var(--mono);color:var(--txt3)">Not logged in</span>
           </div>
@@ -682,7 +682,7 @@ select option{background:var(--s2)}
       </div>
     </div>
 
-    <!-- ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ ANALYTICS ΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉΓòÉ -->
+    <!--  ANALYTICS  -->
     <div class="sec" id="sec-analytics">
       <div id="analyticsContent"></div>
     </div>
@@ -746,7 +746,7 @@ function applyAuthGate() {
   }
 
   // Unknown backend state: keep gate visible until we know.
-  showGate('Checking backendΓÇª');
+  showGate('Checking backend');
   updateGateSignupAvailability();
   updateUserBadge();
 }
@@ -868,7 +868,7 @@ async function apiFetch(path, opts={}) {
   return r;
 }
 
-// ΓöÇΓöÇ NAV ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  NAV 
 function nav(s) {
   document.querySelectorAll('.sec').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
@@ -877,12 +877,12 @@ function nav(s) {
     if (x.getAttribute('onclick') && x.getAttribute('onclick').includes("'"+s+"'")) x.classList.add('active');
   });
   const titles = {
-    pipeline:'ΓÜí <span>Interactive Pipeline</span>',doctor:'≡ƒ⌐║ <span>AI Prompt Doctor</span>',
-    test:'≡ƒº¬ <span>Test Lab</span>',library:'≡ƒôÜ <span>Prompt Library</span>',
-    templates:'≡ƒôï <span>Templates</span>',versions:'≡ƒöÇ <span>Version Control</span>',
-    workflow:'≡ƒöº <span>Workflow Builder</span>',gallery:'≡ƒû╝∩╕Å <span>Gallery</span>',
-    potd:'≡ƒîƒ <span>Prompt of the Day</span>',multiai:'≡ƒñû <span>Models</span>',
-    settings:'ΓÜÖ∩╕Å <span>Settings</span>',analytics:'≡ƒôè <span>Analytics</span>'
+    pipeline:' <span>Interactive Pipeline</span>',doctor:' <span>AI Prompt Doctor</span>',
+    test:' <span>Test Lab</span>',library:' <span>Prompt Library</span>',
+    templates:' <span>Templates</span>',versions:' <span>Version Control</span>',
+    workflow:' <span>Workflow Builder</span>',gallery:' <span>Gallery</span>',
+    potd:' <span>Prompt of the Day</span>',multiai:' <span>Models</span>',
+    settings:' <span>Settings</span>',analytics:' <span>Analytics</span>'
   };
   document.getElementById('pageTitle').innerHTML = titles[s] || s;
   if (s==='library')   loadLib();
@@ -893,7 +893,7 @@ function nav(s) {
   if (s==='settings')  loadConfig();
 }
 
-// ΓöÇΓöÇ STATUS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  STATUS 
 async function checkStatus() {
   try {
     const r = await apiFetch(`/config`, {signal: AbortSignal.timeout(4000)});
@@ -930,12 +930,12 @@ async function checkStatus() {
 }
 checkStatus(); setInterval(checkStatus, 15000);
 
-// ΓöÇΓöÇ TOAST ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  TOAST 
 function toast(msg, type='i') {
   const c = document.getElementById('tc');
   const t = document.createElement('div');
   t.className = `toast ${type}`;
-  t.innerHTML = `<span>${type==='s'?'Γ£ô':type==='e'?'Γ£ò':'Γä╣'}</span>${msg}`;
+  t.innerHTML = `<span>${type==='s'?'':type==='e'?'':''}</span>${msg}`;
   c.appendChild(t); setTimeout(()=>t.remove(), 3500);
 }
 
@@ -944,7 +944,7 @@ function esc(s) {
 }
 function copyText(t) { navigator.clipboard.writeText(t).then(()=>toast('Copied!','s')).catch(()=>toast('Failed','e')); }
 
-// ΓöÇΓöÇ STAGE TRACKER ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  STAGE TRACKER 
 const STAGES = ['input','intent','clarify','optimize','assess','output'];
 function setStage(active) {
   const idx = STAGES.indexOf(active);
@@ -960,7 +960,7 @@ function setStage(active) {
   document.getElementById('progressFill').style.width = pct+'%';
 }
 
-// ΓöÇΓöÇ PIPELINE ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  PIPELINE 
 async function startPipeline() {
   const prompt = document.getElementById('mainPromptInput').value.trim();
   if (!prompt) return toast('Enter a prompt first','e');
@@ -995,7 +995,7 @@ async function startPipeline() {
     toast('Pipeline started!','s');
   } catch(e) {
     removeTyping(typingId);
-    appendMsg('ai', `<span style="color:var(--red)">Γ¥î ${esc(e.message)}</span><br><small>Make sure the backend is running and Ollama/Groq is configured.</small>`);
+    appendMsg('ai', `<span style="color:var(--red)"> ${esc(e.message)}</span><br><small>Make sure the backend is running and Ollama/Groq is configured.</small>`);
     resetPipeline();
     toast(e.message,'e');
   }
@@ -1028,16 +1028,16 @@ async function sendReply(overrideMsg) {
       setStage('optimize');
       await sleep(300); setStage('assess');
       await sleep(300); setStage('output');
-      lastOutput = d.optimized_prompt || '';   // ΓåÉ the optimized prompt IS the output
+      lastOutput = d.optimized_prompt || '';   //  the optimized prompt IS the output
       pipelineStage = 'complete';
       document.getElementById('replyArea').style.display   = 'none';
       document.getElementById('postActions').style.display = 'flex';
       showResultCards(d);
-      toast('Pipeline complete! ≡ƒÜÇ','s');
+      toast('Pipeline complete! ','s');
     }
   } catch(e) {
     removeTyping(typingId);
-    appendMsg('ai', `<span style="color:var(--red)">Γ¥î ${esc(e.message)}</span>`);
+    appendMsg('ai', `<span style="color:var(--red)"> ${esc(e.message)}</span>`);
     toast(e.message,'e');
   }
   document.getElementById('replyBtn').disabled = false;
@@ -1055,31 +1055,31 @@ function showResultCards(d) {
   const div = document.createElement('div');
   div.className = 'result-section';
 
-  // ΓöÇΓöÇ HERO: Optimized Prompt ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+  //  HERO: Optimized Prompt 
   div.innerHTML = `
     <!-- HERO OUTPUT BOX -->
     <div style="background:linear-gradient(135deg,rgba(0,240,255,.06),rgba(139,92,246,.08));border:2px solid rgba(0,240,255,.3);border-radius:12px;padding:22px;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-        <div style="font-size:16px;font-weight:800;color:var(--cyan)">≡ƒÄ» Your Optimized Prompt</div>
+        <div style="font-size:16px;font-weight:800;color:var(--cyan)"> Your Optimized Prompt</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <span class="tag a">Before: ${o.score_before||3}/10</span>
-          <span style="color:var(--txt3)">ΓåÆ</span>
+          <span style="color:var(--txt3)"></span>
           <span class="tag g">After: ${o.score_after||8}/10</span>
           <span class="tag" style="background:rgba(0,240,255,.1);color:var(--cyan);border-color:rgba(0,240,255,.25)">Grade ${a.grade||'B'}</span>
         </div>
       </div>
       <div id="optimizedPromptBox" style="background:var(--s1);border:1px solid var(--b2);border-radius:8px;padding:18px;font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--txt);white-space:pre-wrap;word-break:break-word;margin-bottom:14px">${esc(op)}</div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-c" onclick="copyOptimized()" id="copyOptBtn">≡ƒôï Copy Prompt</button>
-        <button class="btn btn-g btn-sm" onclick="saveResultToLibrary()">≡ƒÆ╛ Save to Library</button>
-        <button class="btn btn-v btn-sm" onclick="resetPipeline()">≡ƒöä Start New</button>
+        <button class="btn btn-c" onclick="copyOptimized()" id="copyOptBtn"> Copy Prompt</button>
+        <button class="btn btn-g btn-sm" onclick="saveResultToLibrary()"> Save to Library</button>
+        <button class="btn btn-v btn-sm" onclick="resetPipeline()"> Start New</button>
       </div>
     </div>
 
     <!-- STATS ROW -->
     <div class="g2" style="margin-bottom:16px">
       <div class="result-block">
-        <div class="rb-header">≡ƒôè Quality Assessment</div>
+        <div class="rb-header"> Quality Assessment</div>
         <div class="grade-badge grade-${a.grade||'B'}" style="color:${gradeColor};font-size:36px;padding:8px">${a.grade||'B'}</div>
         <div style="text-align:center;font-size:12px;color:var(--txt2);margin-bottom:12px">Overall: <strong style="color:var(--cyan)">${a.overall_score||0}/10</strong><br><span style="font-size:10px;font-family:var(--mono)">${esc(a.feedback||'')}</span></div>
         <div class="score-bars">
@@ -1087,18 +1087,18 @@ function showResultCards(d) {
         </div>
       </div>
       <div class="result-block">
-        <div class="rb-header">Γ£¿ Improvements Made</div>
-        ${(o.improvements||[]).map(i=>`<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:8px"><span style="color:var(--green);font-size:12px;margin-top:1px">Γ£ô</span><span style="font-size:12px;color:var(--txt2)">${esc(i)}</span></div>`).join('')}
+        <div class="rb-header"> Improvements Made</div>
+        ${(o.improvements||[]).map(i=>`<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:8px"><span style="color:var(--green);font-size:12px;margin-top:1px"></span><span style="font-size:12px;color:var(--txt2)">${esc(i)}</span></div>`).join('')}
         ${tips.length ? `<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--b1)">
           <div style="font-size:10px;font-family:var(--mono);color:var(--txt3);margin-bottom:8px;letter-spacing:1px">HOW TO USE THIS PROMPT</div>
-          ${tips.map(t=>`<div style="font-size:11px;color:var(--txt2);margin-bottom:5px">ΓÇó ${esc(t)}</div>`).join('')}
+          ${tips.map(t=>`<div style="font-size:11px;color:var(--txt2);margin-bottom:5px"> ${esc(t)}</div>`).join('')}
         </div>`:''}
       </div>
     </div>
 
     <!-- VARIATIONS -->
     ${variants.length ? `<div class="result-block">
-      <div class="rb-header">≡ƒöÇ Suggested Variations</div>
+      <div class="rb-header"> Suggested Variations</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         ${variants.map(v=>`<div style="background:var(--s2);border:1px solid var(--b1);border-radius:6px;padding:10px 14px;font-size:12px;color:var(--txt2);font-family:var(--mono);line-height:1.6">${esc(v)}</div>`).join('')}
       </div>
@@ -1115,7 +1115,7 @@ function showResultCards(d) {
 function copyOptimized() {
   copyText(window._optimizedPrompt || '');
   const btn = document.getElementById('copyOptBtn');
-  if (btn) { btn.textContent = 'Γ£ô Copied!'; setTimeout(()=>btn.textContent='≡ƒôï Copy Prompt', 2000); }
+  if (btn) { btn.textContent = ' Copied!'; setTimeout(()=>btn.textContent=' Copy Prompt', 2000); }
 }
 
 function appendMsg(role, html) {
@@ -1123,7 +1123,7 @@ function appendMsg(role, html) {
   const div  = document.createElement('div');
   div.className = `chat-msg ${role}`;
   div.innerHTML = `
-    <div class="chat-avatar ${role==='ai'?'ai-av':'user-av'}">${role==='ai'?'≡ƒñû':'≡ƒæñ'}</div>
+    <div class="chat-avatar ${role==='ai'?'ai-av':'user-av'}">${role==='ai'?'':''}</div>
     <div class="chat-bubble ${role==='ai'?'ai-b':'user-b'}">${html}</div>`;
   win.appendChild(div);
   win.scrollTop = win.scrollHeight;
@@ -1134,7 +1134,7 @@ function showTyping() {
   const win = document.getElementById('chatWindow');
   const div = document.createElement('div');
   div.className = 'chat-msg'; div.id = id;
-  div.innerHTML = `<div class="chat-avatar ai-av">≡ƒñû</div>
+  div.innerHTML = `<div class="chat-avatar ai-av"></div>
     <div class="chat-bubble ai-b"><div class="typing-indicator">
       <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
     </div></div>`;
@@ -1155,11 +1155,11 @@ function showReplyArea(d) {
   const msg = d && d.ai_message ? d.ai_message : '';
   const optMatch = msg.match(/\*Options:\s*([^*]+)\*/);
   if (optMatch) {
-    const opts = optMatch[1].split('┬╖').map(o => o.trim()).filter(Boolean);
+    const opts = optMatch[1].split('').map(o => o.trim()).filter(Boolean);
     if (opts.length) {
       const label = document.createElement('div');
       label.style.cssText = 'font-size:10px;font-family:var(--mono);color:var(--txt3);margin-bottom:6px;letter-spacing:1px';
-      label.textContent = 'QUICK SELECT ΓÇö click to choose:';
+      label.textContent = 'QUICK SELECT  click to choose:';
       qrArea.appendChild(label);
       const chipWrap = document.createElement('div');
       chipWrap.className = 'quick-replies';
@@ -1204,13 +1204,13 @@ function saveResultToLibrary() {
   nav('library');
   document.getElementById('libTitle').value  = lastPrompt.substring(0,40)+'...';
   document.getElementById('libPrompt').value = lastOutput;
-  toast('Prefilled ΓÇö click Save to confirm','i');
+  toast('Prefilled  click Save to confirm','i');
 }
 
 function copyLastOutput() { copyText(lastOutput); }
 function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
 
-// ΓöÇΓöÇ DOCTOR ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  DOCTOR 
 async function runDoctor() {
   const prompt = document.getElementById('doctorInput').value.trim();
   if (!prompt) return toast('Enter a prompt','e');
@@ -1221,26 +1221,26 @@ async function runDoctor() {
     const pct = `${d.health_score||50}%`;
     document.getElementById('doctorResult').innerHTML = `<div class="card"><div class="g2">
       <div>
-        <div class="card-title">≡ƒö¼ Diagnosis</div>
+        <div class="card-title"> Diagnosis</div>
         <div style="font-size:12px;color:var(--txt2);margin-bottom:14px">${esc(d.diagnosis||'')}</div>
-        <div class="card-title">≡ƒÜ¿ Issues</div>
-        ${(d.issues||[]).map(i=>`<div class="ii ${i.severity}"><div class="ii-title">${(i.severity||'').toUpperCase()} ΓÇö ${esc(i.problem)}</div><div class="ii-fix">≡ƒÆè ${esc(i.fix)}</div></div>`).join('')}
-        ${(d.recovery_tips||[]).length?`<div style="margin-top:10px">${d.recovery_tips.map(t=>`<div style="font-size:11px;color:var(--txt2);margin-bottom:3px">ΓåÆ ${esc(t)}</div>`).join('')}</div>`:''}
+        <div class="card-title"> Issues</div>
+        ${(d.issues||[]).map(i=>`<div class="ii ${i.severity}"><div class="ii-title">${(i.severity||'').toUpperCase()}  ${esc(i.problem)}</div><div class="ii-fix"> ${esc(i.fix)}</div></div>`).join('')}
+        ${(d.recovery_tips||[]).length?`<div style="margin-top:10px">${d.recovery_tips.map(t=>`<div style="font-size:11px;color:var(--txt2);margin-bottom:3px"> ${esc(t)}</div>`).join('')}</div>`:''}
       </div>
       <div style="text-align:center">
-        <div class="card-title">≡ƒÆè Health Score</div>
+        <div class="card-title"> Health Score</div>
         <div class="hc" style="--p:${pct}"><div class="hc-val">${d.health_score||50}</div></div>
         <div style="font-size:10px;color:var(--txt3);font-family:var(--mono)">out of 100</div>
-        <div class="card-title" style="margin-top:16px">≡ƒÆë Prescription</div>
+        <div class="card-title" style="margin-top:16px"> Prescription</div>
         <div class="output-display" style="text-align:left;min-height:60px;font-size:11px">${esc(d.prescription||'')}</div>
-        <button class="btn btn-g btn-sm" style="margin-top:8px" onclick="copyText(this.previousElementSibling.textContent)">≡ƒôï Use</button>
+        <button class="btn btn-g btn-sm" style="margin-top:8px" onclick="copyText(this.previousElementSibling.textContent)"> Use</button>
       </div>
     </div></div>`;
     toast('Diagnosis complete!','s');
   } catch(e) { document.getElementById('doctorResult').innerHTML=`<div class="card" style="border-color:var(--red);color:var(--red);font-size:12px">${esc(e.message)}</div>`; toast(e.message,'e'); }
 }
 
-// ΓöÇΓöÇ TEST LAB ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  TEST LAB 
 async function testPrompt() {
   const prompt = document.getElementById('testInput').value.trim();
   const iters  = parseInt(document.getElementById('testIter').value);
@@ -1253,7 +1253,7 @@ async function testPrompt() {
     (d.results||[]).forEach((res,i)=>{
       html+=`<div style="margin-bottom:14px">${i>0?'<hr style="border-color:var(--b1);margin-bottom:14px"/>':''}
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-          <span class="tag c">Run #${res.iteration}</span><span class="tag a">ΓÅ▒ ${res.time_seconds}s</span><span class="tag g">${res.word_count} words</span>
+          <span class="tag c">Run #${res.iteration}</span><span class="tag a"> ${res.time_seconds}s</span><span class="tag g">${res.word_count} words</span>
         </div>
         <div class="output-display" style="font-size:11px">${esc(res.output)}</div></div>`;
     });
@@ -1262,7 +1262,7 @@ async function testPrompt() {
   } catch(e) { document.getElementById('testResult').innerHTML=`<div class="card" style="border-color:var(--red);color:var(--red)">${esc(e.message)}</div>`; toast(e.message,'e'); }
 }
 
-// ΓöÇΓöÇ LIBRARY ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  LIBRARY 
 async function loadLib() {
   document.getElementById('libList').innerHTML='<div style="text-align:center;padding:20px"><div class="spin" style="margin:0 auto"></div></div>';
   try {
@@ -1273,8 +1273,8 @@ async function loadLib() {
       <div class="pc-title">${esc(p.title)}</div><div class="pc-text">${esc(p.prompt)}</div>
       <div class="pc-foot"><span class="tag">${p.category}</span>${(p.tags||[]).map(t=>`<span class="tag v">${t}</span>`).join('')}
         <span style="margin-left:auto;display:flex;gap:5px">
-          <button class="btn btn-sm btn-o" onclick="copyText('${esc(p.prompt).replace(/'/g,"\\'")}')">≡ƒôï</button>
-          <button class="btn btn-sm btn-r" onclick="delLib('${p.id}')">≡ƒùæ</button>
+          <button class="btn btn-sm btn-o" onclick="copyText('${esc(p.prompt).replace(/'/g,"\\'")}')"></button>
+          <button class="btn btn-sm btn-r" onclick="delLib('${p.id}')"></button>
         </span>
       </div></div>`).join('');
   } catch(e) { document.getElementById('libList').innerHTML=`<div style="color:var(--red);font-size:11px">${esc(e.message)}</div>`; }
@@ -1297,7 +1297,7 @@ async function delLib(id) {
   catch(e) { toast(e.message,'e'); }
 }
 
-// ΓöÇΓöÇ TEMPLATES ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  TEMPLATES 
 async function loadTemplates() {
   const r=await apiFetch(`/templates`); const d=await r.json();
   const cc={writing:'c',coding:'g',business:'a',education:'v',marketing:'c',research:'v',general:''};
@@ -1344,7 +1344,7 @@ async function createTemplate() {
   } catch(e) { toast(e.message,'e'); }
 }
 
-// ΓöÇΓöÇ VERSIONS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  VERSIONS 
 async function saveVer() {
   const pid=document.getElementById('vid').value.trim();
   const prompt=document.getElementById('vprompt').value.trim();
@@ -1375,7 +1375,7 @@ async function loadVer() {
   } catch(e) { toast(e.message,'e'); }
 }
 
-// ΓöÇΓöÇ WORKFLOW ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  WORKFLOW 
 function addWfStep() {
   wfCount++;
   const n=wfCount;
@@ -1385,7 +1385,7 @@ function addWfStep() {
     <div class="step-badge">${n}</div>
     <select class="inp" style="width:150px;flex-shrink:0" id="wft-${n}"><option value="generate">Generate</option><option value="optimize">Optimize</option><option value="assess">Assess</option></select>
     <input class="inp" id="wfn-${n}" value="Step ${n}" placeholder="Step name..."/>
-    <button class="btn btn-sm btn-r" onclick="this.closest('.wf-step').remove()">Γ£ò</button>
+    <button class="btn btn-sm btn-r" onclick="this.closest('.wf-step').remove()"></button>
   </div>
   <textarea class="ta" id="wfp-${n}" style="min-height:70px" placeholder="Prompt..."></textarea>`;
   document.getElementById('wfSteps').appendChild(d);
@@ -1403,7 +1403,7 @@ async function runWorkflow() {
   try {
     const r=await apiFetch(`/workflow`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({steps})});
     const d=await r.json();
-    let html=`<div class="card"><div class="card-title">≡ƒöº Results</div>`;
+    let html=`<div class="card"><div class="card-title"> Results</div>`;
     (d.workflow_results||[]).forEach((res,i)=>{
       html+=`<div style="margin-bottom:14px">${i>0?'<hr style="border-color:var(--b1);margin-bottom:14px"/>':''}
         <div style="display:flex;gap:7px;align-items:center;margin-bottom:7px">
@@ -1418,24 +1418,24 @@ async function runWorkflow() {
   } catch(e) { document.getElementById('wfResult').innerHTML=`<div class="card" style="border-color:var(--red);color:var(--red)">${esc(e.message)}</div>`; toast(e.message,'e'); }
 }
 
-// ΓöÇΓöÇ GALLERY ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  GALLERY 
 async function loadGallery() {
   const r=await apiFetch(`/gallery`); const d=await r.json();
   const cc={writing:'c',coding:'g',business:'a',education:'v',marketing:'c',research:'v'};
   document.getElementById('galleryGrid').innerHTML=(d.gallery||[]).map(p=>`<div class="pc">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
       <div class="pc-title">${esc(p.title)}</div>
-      <span style="color:var(--amber);font-size:11px;font-family:var(--mono)">Γÿà ${p.rating}</span>
+      <span style="color:var(--amber);font-size:11px;font-family:var(--mono)"> ${p.rating}</span>
     </div>
     <div class="pc-text">${esc(p.prompt)}</div>
     <div class="pc-foot"><span class="tag ${cc[p.category]||''}">${p.category}</span><span style="font-size:10px;color:var(--txt3);font-family:var(--mono);margin-left:auto">${p.uses} uses</span></div>
-    <button class="btn btn-c btn-sm" style="margin-top:9px;width:100%" onclick="useGallery(this.dataset.p)" data-p="${esc(p.prompt)}">ΓÜí Use</button>
+    <button class="btn btn-c btn-sm" style="margin-top:9px;width:100%" onclick="useGallery(this.dataset.p)" data-p="${esc(p.prompt)}"> Use</button>
   </div>`).join('');
 }
 
 function useGallery(p) { nav('pipeline'); document.getElementById('mainPromptInput').value=p; toast('Loaded!','s'); }
 
-// ΓöÇΓöÇ POTD ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  POTD 
 async function loadPotd() {
   const r=await apiFetch(`/prompt-of-day`); const d=await r.json();
   document.getElementById('potdDate').textContent=d.date;
@@ -1454,13 +1454,13 @@ async function loadConfig() {
       <div>Provider: <span style="color:var(--cyan)">${esc(d.provider)}</span></div>
       <div>Model: <span style="color:var(--cyan)">${esc(d.model)}</span></div>
       <div>LangChain: <span style="color:var(--green)">${d.langchain}</span></div>
-      <div>Groq API: <span style="color:${d.groq_configured?'var(--green)':'var(--red)'}">${d.groq_configured?'Γ£ô Configured':'Γ£ù Not set (using Ollama)'}</span></div>
+      <div>Groq API: <span style="color:${d.groq_configured?'var(--green)':'var(--red)'}">${d.groq_configured?' Configured':' Not set (using Ollama)'}</span></div>
       <div>Auth enabled: <span style="color:${d.auth_enabled?'var(--green)':'var(--txt3)'}">${d.auth_enabled}</span></div>`;
     updateAuthStatus();
   } catch {}
 }
 
-// ΓöÇΓöÇ ANALYTICS ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+//  ANALYTICS 
 async function loadAnalytics() {
   document.getElementById('analyticsContent').innerHTML=`<div style="display:flex;align-items:center;gap:10px;color:var(--txt3);font-size:12px"><div class="spin"></div>Loading...</div>`;
   try {
@@ -1475,23 +1475,23 @@ async function loadAnalytics() {
       </div>
       <div class="g2">
         <div class="card">
-          <div class="card-title">≡ƒôé By Category</div>
+          <div class="card-title"> By Category</div>
           ${Object.keys(cats).length?Object.entries(cats).map(([k,v])=>`<div style="margin-bottom:8px">
             <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:3px;font-family:var(--mono)"><span>${k}</span><span>${v}</span></div>
             <div style="height:5px;background:var(--s3);border-radius:3px;overflow:hidden"><div style="height:100%;width:${Math.min(100,v*20)}%;background:linear-gradient(90deg,var(--violet),var(--cyan));border-radius:3px"></div></div>
           </div>`).join(''):'<div style="color:var(--txt3);font-size:11px;font-family:var(--mono)">Save prompts to see stats</div>'}
         </div>
         <div class="card">
-          <div class="card-title">≡ƒñû Platform</div>
+          <div class="card-title"> Platform</div>
           <div style="font-family:var(--mono);font-size:11px;line-height:2.2">
             <div>Model: <span class="tag c">${esc(d.model_used)}</span></div>
             <div>LangChain: <span class="tag v">${esc(d.langchain)}</span></div>
             <div>Backend: <span class="tag g">FastAPI</span></div>
           </div>
           <div style="margin-top:14px">
-            ${['ΓÜí Interactive Chat Pipeline','≡ƒöì Intent Analysis (LangChain)','Γ¥ô AI Clarification Engine','Γ£¿ LangChain Optimization','≡ƒôè Quality Assessment','≡ƒ⌐║ AI Doctor','≡ƒº¬ Test Lab','≡ƒôÜ Library','≡ƒôï Templates','≡ƒöÇ Version Control','≡ƒöº Workflows','≡ƒôè Analytics'].map(f=>`
+            ${[' Interactive Chat Pipeline',' Intent Analysis (LangChain)',' AI Clarification Engine',' LangChain Optimization',' Quality Assessment',' AI Doctor',' Test Lab',' Library',' Templates',' Version Control',' Workflows',' Analytics'].map(f=>`
               <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
-                <span style="color:var(--green);font-size:10px">Γ£ô</span>
+                <span style="color:var(--green);font-size:10px"></span>
                 <span style="font-size:11px">${f}</span>
               </div>`).join('')}
           </div>
@@ -1532,7 +1532,7 @@ async function loginFromGate() {
   const p = (document.getElementById('gatePass')?.value || '').trim();
   if (!p) return setGateMessage('Enter password', true);
   try {
-    setGateMessage('Logging inΓÇª');
+    setGateMessage('Logging in');
     await doLogin(u, p);
     const passEl = document.getElementById('gatePass');
     if (passEl) passEl.value = '';
@@ -1554,7 +1554,7 @@ async function signupFromGate() {
   if (!u) return setGateMessage('Enter username', true);
   if (!p) return setGateMessage('Enter password', true);
   try {
-    setGateMessage('Creating accountΓÇª');
+    setGateMessage('Creating account');
     const r = await fetch(`${API}/auth/register`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
