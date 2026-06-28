@@ -1,5 +1,11 @@
-"""PromptGen AI Service — application entry point."""
+from dotenv import load_dotenv
+load_dotenv()
 
+import os
+
+print("Tracing:", os.getenv("LANGCHAIN_TRACING_V2"))
+print("Project:", os.getenv("LANGCHAIN_PROJECT"))
+print("API Key:", bool(os.getenv("LANGCHAIN_API_KEY")))
 from fastapi import FastAPI
 
 from api.clarification import router as clarification_router
