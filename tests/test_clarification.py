@@ -23,6 +23,7 @@ from core.constants import MAX_QUERY_LENGTH
 from core.exceptions import LLMTimeoutError, ParseError
 from schemas.clarification import ClarificationResponse
 from services.clarification.parser import ClarificationParser
+from services.clarification.prompts import build_user_message
 from services.clarification.service import ClarificationService
 
 
@@ -262,3 +263,17 @@ class TestQueryValidation:
         # After strip() the query becomes empty → min_length=1 fails
         with pytest.raises(ValidationError):
             ClarificationRequest(query="   ")
+
+
+class TestPromptHints:
+    """Prompt-level tests for complexity-based question targeting."""
+
+    def test_short_query_targets_fewer_questions(self) -> None:
+        message = build_user_message("Build a website")
+        assert "Target 1-4 questions." in message
+
+    def test_complex_query_targets_more_questions(self) -> None:
+        message = build_user_message(
+            "Build a comprehensive multi-tenant SaaS platform for agencies, with role-based access, billing, reporting, integrations, localization, migration, and audit logging"
+        )
+        assert "Target 8-10 questions." in message
