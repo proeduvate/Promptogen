@@ -1,12 +1,15 @@
 """Async Groq client wrapper — same interface as openai_client.py."""
 
 import asyncio
+import logging
 from typing import Optional
 
 from groq import AsyncGroq, APITimeoutError, APIError
 
 from core.config import settings
 from core.exceptions import LLMError, LLMTimeoutError
+
+logger = logging.getLogger("promptgen.clients.groq")
 
 
 class GroqClient:
@@ -31,12 +34,7 @@ class GroqClient:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
     ) -> str:
-        """Send a chat-completion request and return the assistant message text.
-
-        Raises:
-            LLMTimeoutError: on request timeout.
-            LLMError: on any other Groq API error.
-        """
+        """Send a chat-completion request and return the assistant message text."""
         try:
             response = await self._client.chat.completions.create(
                 model=self.model,
@@ -47,6 +45,17 @@ class GroqClient:
                 temperature=temperature if temperature is not None else settings.llm_temperature,
                 max_tokens=max_tokens or settings.llm_max_tokens,
             )
+
+            usage = response.usage
+            if usage:
+                logger.info(
+                    "Groq token usage | model=%s prompt=%d completion=%d total=%d",
+                    self.model,
+                    usage.prompt_tokens,
+                    usage.completion_tokens,
+                    usage.total_tokens,
+                )
+
             return response.choices[0].message.content or ""
 
         except APITimeoutError as exc:

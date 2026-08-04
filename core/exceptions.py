@@ -12,3 +12,7 @@ class LLMTimeoutError(LLMError):
 
 class ParseError(PromptGenError):
     """Raised when the LLM response cannot be parsed into the expected schema."""
+
+
+class AssessmentError(PromptGenError):
+    """Raised when the LLM's quality-assessment response can't be parsed or validated."""

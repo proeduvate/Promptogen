@@ -19,16 +19,20 @@ app = FastAPI(
 )
 
 # ── Routers ────────────────────────────────────────────────────────────────────
-# Developer 1
+# Developer 1 — Clarification
 app.include_router(clarification_router)
 
-# Developer 2 — uncomment when ready
-# from api.prompt_generation import router as prompt_generation_router
-# app.include_router(prompt_generation_router)
+# Developer 2 — Prompt Generation
+from api.prompt_generation import router as prompt_generation_router
+app.include_router(prompt_generation_router)
 
-# Developer 3 — uncomment when ready
-# from api.quality_assessment import router as quality_assessment_router
-# app.include_router(quality_assessment_router)
+# Developer 3 — Quality Assessment
+from api.quality_assessment import router as quality_assessment_router
+app.include_router(quality_assessment_router)
+
+# LangGraph Pipeline
+from api.pipeline import router as pipeline_router
+app.include_router(pipeline_router)
 
 
 # ── Health check ───────────────────────────────────────────────────────────────
