@@ -39,14 +39,19 @@ def _make_run(name: str, inputs: dict):
 
 
 async def _post_run(run, outputs=None, error=None):
-    """End and post a RunTree to LangSmith. Silently swallows failures."""
+    """End and post a RunTree to LangSmith. Silently swallows failures.
+
+    RunTree.post() is synchronous - we run it in a thread so it does not
+    block the async event loop. (RunTree has no apost() in langsmith 0.9.x)
+    """
     if run is None:
         return
     try:
         run.end(outputs=outputs, error=error)
-        await run.apost()
+        await asyncio.to_thread(run.post)
+        logger.debug("LangSmith trace posted | name=%s", run.name)
     except Exception as exc:
-        logger.debug("LangSmith trace post failed: %s", exc)
+        logger.warning("LangSmith trace post failed: %s", exc)
 
 
 class GroqClient:
