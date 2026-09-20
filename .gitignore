@@ -2,6 +2,8 @@
 __pycache__/
 *.py[codz]
 *$py.class
+*.pyo
+*.pyd
 
 # C extensions
 *.so
@@ -58,9 +60,12 @@ ENV/
 env.bak/
 venv.bak/
 
-# IDE / Editors
+# IDE / Editors / OS
 .idea/
 .vscode/
 .cursorignore
 .cursorindexingignore
+*.swp
+*.swo
+Thumbs.db
 

@@ -1,0 +1,29 @@
+# PromptGen AI Service - Dependencies
+
+# Web Framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Data Validation
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# LLM Clients
+openai==1.57.0
+groq==0.13.1
+
+# HTTP Client (used by OpenAI SDK)
+httpx==0.28.1
+
+# Environment Variables
+python-dotenv==1.0.1
+
+# LangChain (token tracking + LangSmith tracing)
+langchain==1.3.11
+langchain-groq==1.1.3
+langsmith==0.9.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-mock==3.14.0
