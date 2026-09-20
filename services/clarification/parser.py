@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from core.constants import (
+    MIN_CLARIFICATION_QUESTIONS,
     MAX_CLARIFICATION_QUESTIONS,
     MIN_OPTIONS_PER_QUESTION,
     MAX_OPTIONS_PER_QUESTION,
@@ -49,6 +50,12 @@ class ClarificationParser:
         if not isinstance(raw_questions, list) or len(raw_questions) == 0:
             raise ParseError(
                 'LLM response must contain a non-empty "questions" array.'
+            )
+
+        if len(raw_questions) < MIN_CLARIFICATION_QUESTIONS:
+            raise ParseError(
+                f"LLM response must contain exactly {MIN_CLARIFICATION_QUESTIONS} questions "
+                f"(got {len(raw_questions)})."
             )
 
         if len(raw_questions) > MAX_CLARIFICATION_QUESTIONS:

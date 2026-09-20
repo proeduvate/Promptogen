@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from core.constants import (
     MAX_QUERY_LENGTH,
+    MIN_CLARIFICATION_QUESTIONS,
     MAX_CLARIFICATION_QUESTIONS,
     MIN_OPTIONS_PER_QUESTION,
     MAX_OPTIONS_PER_QUESTION,
@@ -45,7 +46,7 @@ class ClarificationQuestion(BaseModel):
 class ClarificationResponse(BaseModel):
     questions: List[ClarificationQuestion] = Field(
         ...,
-        min_length=1,
+        min_length=MIN_CLARIFICATION_QUESTIONS,
         max_length=MAX_CLARIFICATION_QUESTIONS,
-        description="Up to 10 clarification questions.",
+        description="Exactly 10 clarification questions.",
     )

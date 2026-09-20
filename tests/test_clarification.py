@@ -6,7 +6,7 @@ Test cases covered:
 3. Very long query — service handles it gracefully
 4. LLM returns invalid JSON — ParseError is raised
 5. LLM timeout — LLMTimeoutError propagates to HTTP 504
-6. LLM returns fewer than 10 questions — valid as long as ≥ 1
+6. LLM returns fewer than 10 questions — rejected
 7. Proper response schema — response structure matches ClarificationResponse
 """
 
@@ -77,7 +77,7 @@ class TestClarificationEndpoint:
 
     # 1. Valid query — happy path
     def test_valid_query_returns_questions(self) -> None:
-        llm_response = _make_llm_json(n=3)
+        llm_response = _make_llm_json(n=10)
         mock = _mock_client(llm_response)
         client = _test_client_with_mock(mock)
 
@@ -86,7 +86,7 @@ class TestClarificationEndpoint:
         assert resp.status_code == status.HTTP_200_OK
         body = resp.json()
         assert "questions" in body
-        assert len(body["questions"]) == 3
+        assert len(body["questions"]) == 10
 
     # 2. Empty query — rejected by Pydantic (422)
     def test_empty_query_returns_422(self) -> None:
@@ -97,14 +97,14 @@ class TestClarificationEndpoint:
     # 3. Very long query — accepted and processed
     def test_very_long_query_is_processed(self) -> None:
         long_query = "Design a mobile app " * 100  # ~2000 chars, within limit
-        llm_response = _make_llm_json(n=5)
+        llm_response = _make_llm_json(n=10)
         mock = _mock_client(llm_response)
         client = _test_client_with_mock(mock)
 
         resp = client.post("/api/v1/clarification", json={"query": long_query})
 
         assert resp.status_code == status.HTTP_200_OK
-        assert len(resp.json()["questions"]) == 5
+        assert len(resp.json()["questions"]) == 10
 
     # 4. LLM returns invalid JSON — 422
     def test_invalid_llm_json_returns_422(self) -> None:
@@ -125,20 +125,19 @@ class TestClarificationEndpoint:
 
         assert resp.status_code == status.HTTP_504_GATEWAY_TIMEOUT
 
-    # 6. LLM returns fewer than 10 questions — still valid
-    def test_fewer_than_10_questions_is_valid(self) -> None:
-        llm_response = _make_llm_json(n=2)  # minimum valid count
+    # 6. LLM returns fewer than 10 questions — rejected
+    def test_fewer_than_10_questions_returns_422(self) -> None:
+        llm_response = _make_llm_json(n=2)
         mock = _mock_client(llm_response)
         client = _test_client_with_mock(mock)
 
         resp = client.post("/api/v1/clarification", json={"query": "Write a blog post"})
 
-        assert resp.status_code == status.HTTP_200_OK
-        assert len(resp.json()["questions"]) == 2
+        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
     # 7. Proper response schema
     def test_response_matches_clarification_response_schema(self) -> None:
-        llm_response = _make_llm_json(n=4)
+        llm_response = _make_llm_json(n=10)
         mock = _mock_client(llm_response)
         client = _test_client_with_mock(mock)
 
@@ -146,7 +145,7 @@ class TestClarificationEndpoint:
 
         assert resp.status_code == status.HTTP_200_OK
         parsed = ClarificationResponse.model_validate(resp.json())
-        assert len(parsed.questions) == 4
+        assert len(parsed.questions) == 10
         for i, q in enumerate(parsed.questions, start=1):
             assert q.id == i
             assert isinstance(q.question, str) and q.question
@@ -159,13 +158,13 @@ class TestClarificationService:
 
     @pytest.mark.asyncio
     async def test_service_returns_response_on_valid_llm_output(self) -> None:
-        mock = _mock_client(_make_llm_json(n=3))
+        mock = _mock_client(_make_llm_json(n=10))
         service = ClarificationService(client=mock)
 
         result = await service.generate_questions("Build a fitness app")
 
         assert isinstance(result, ClarificationResponse)
-        assert len(result.questions) == 3
+        assert len(result.questions) == 10
 
     @pytest.mark.asyncio
     async def test_service_raises_parse_error_on_bad_json(self) -> None:
@@ -192,13 +191,13 @@ class TestClarificationParser:
         self.parser = ClarificationParser()
 
     def test_parses_valid_json(self) -> None:
-        result = self.parser.parse(_make_llm_json(n=3))
-        assert len(result.questions) == 3
+        result = self.parser.parse(_make_llm_json(n=10))
+        assert len(result.questions) == 10
 
     def test_parses_json_in_markdown_fence(self) -> None:
-        raw = f"```json\n{_make_llm_json(n=2)}\n```"
+        raw = f"```json\n{_make_llm_json(n=10)}\n```"
         result = self.parser.parse(raw)
-        assert len(result.questions) == 2
+        assert len(result.questions) == 10
 
     def test_raises_parse_error_on_invalid_json(self) -> None:
         with pytest.raises(ParseError):
@@ -222,6 +221,14 @@ class TestClarificationParser:
                 }
             ]
         }
+        data["questions"].extend(
+            {
+                "id": index,
+                "question": f"Q{index}?",
+                "options": ["A", "B"],
+            }
+            for index in range(2, 11)
+        )
         result = self.parser.parse(json.dumps(data))
         assert len(result.questions[0].options) == 5
 
@@ -241,6 +248,14 @@ class TestClarificationParser:
                 {"id": 0, "question": "Q2?", "options": ["X", "Y"]},
             ]
         }
+        data["questions"].extend(
+            {
+                "id": index,
+                "question": f"Q{index}?",
+                "options": ["A", "B"],
+            }
+            for index in range(3, 11)
+        )
         result = self.parser.parse(json.dumps(data))
         assert result.questions[0].id == 1
         assert result.questions[1].id == 2
@@ -266,14 +281,8 @@ class TestQueryValidation:
 
 
 class TestPromptHints:
-    """Prompt-level tests for complexity-based question targeting."""
+    """Prompt-level tests for the fixed question count."""
 
-    def test_short_query_targets_fewer_questions(self) -> None:
+    def test_every_query_targets_ten_questions(self) -> None:
         message = build_user_message("Build a website")
-        assert "Target 1-4 questions." in message
-
-    def test_complex_query_targets_more_questions(self) -> None:
-        message = build_user_message(
-            "Build a comprehensive multi-tenant SaaS platform for agencies, with role-based access, billing, reporting, integrations, localization, migration, and audit logging"
-        )
-        assert "Target 8-10 questions." in message
+        assert "Generate exactly 10 clarification questions" in message

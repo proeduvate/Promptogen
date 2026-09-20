@@ -30,7 +30,7 @@ def get_clarification_service(
     status_code=status.HTTP_200_OK,
     summary="Generate clarification questions",
     description=(
-        "Accepts a vague user query and returns up to 10 clarification questions, "
+        "Accepts a vague user query and returns exactly 10 clarification questions, "
         "each with 2–5 selectable options, to help refine the user's intent."
     ),
 )
