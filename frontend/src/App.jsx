@@ -21,6 +21,8 @@ export default function App() {
   const [idea, setIdea] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [featureOpen, setFeatureOpen] = useState(false);
+  /* Mobile/tablet navigation drawer (the sidebar is always visible on lg+). */
+  const [navOpen, setNavOpen] = useState(false);
   /* Hand-off point: load and mark-read through the notifications API once it exists. */
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
 
@@ -40,6 +42,8 @@ export default function App() {
     notifications,
     onMarkRead: markRead,
     onMarkAllRead: markAllRead,
+    navOpen,
+    onOpenNav: () => setNavOpen(true),
   };
 
   const goHome = () => {
@@ -123,6 +127,8 @@ export default function App() {
         onNavigate={setActiveNav}
         onUpgrade={() => console.log("Upgrade clicked")}
         onProfileAction={handleProfileAction}
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
