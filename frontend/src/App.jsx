@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import GeneratedPromptPage from "./pages/GeneratedPromptPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import MyPromptsPage from "./pages/MyPromptsPage";
+import TemplatesPage from "./pages/TemplatesPage";
 import { NOTIFICATIONS } from "./data/notifications";
 import useTheme from "./hooks/useTheme";
 
@@ -42,11 +43,18 @@ export default function App() {
     setHomeView("landing");
   };
 
-  const startNewPrompt = () => {
-    setIdea("");
+  /* Back to the Home composer with `text` pre-filled and the cursor at its end. */
+  const openComposer = (text) => {
+    setIdea(text);
     goHome();
-    requestAnimationFrame(() => document.getElementById("pg-idea")?.focus());
+    requestAnimationFrame(() => {
+      const composer = document.getElementById("pg-idea");
+      composer?.focus();
+      composer?.setSelectionRange(text.length, text.length);
+    });
   };
+
+  const startNewPrompt = () => openComposer("");
 
   const handleComplete = (answers) => {
     // Hand-off point: this is where the collected answers go to the
@@ -60,6 +68,9 @@ export default function App() {
   const renderPage = () => {
     if (activeNav === "analytics") {
       return <AnalyticsPage chrome={chrome} onViewAllPrompts={() => setActiveNav("my-prompts")} />;
+    }
+    if (activeNav === "templates") {
+      return <TemplatesPage chrome={chrome} onUseTemplate={(template) => openComposer(template.prompt)} />;
     }
     if (activeNav === "my-prompts") {
       return <MyPromptsPage chrome={chrome} onNewPrompt={startNewPrompt} />;
