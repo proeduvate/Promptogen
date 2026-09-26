@@ -1,7 +1,8 @@
-import { Rocket, Crown, ArrowRight, ChevronDown } from "lucide-react";
-import { NAV_ITEMS, USER } from "../data/content";
+import { Rocket, Crown, ArrowRight } from "lucide-react";
+import { NAV_ITEMS } from "../data/content";
+import ProfileMenu from "./ProfileMenu";
 
-export default function Sidebar({ active, onNavigate, onUpgrade }) {
+export default function Sidebar({ active, onNavigate, onUpgrade, onProfileAction }) {
   return (
     <aside className="hidden lg:flex w-[256px] shrink-0 flex-col border-r border-line bg-sidebar">
       {/* Brand */}
@@ -62,20 +63,13 @@ export default function Sidebar({ active, onNavigate, onUpgrade }) {
         </button>
       </div>
 
-      {/* Account switcher */}
-      <button
-        type="button"
-        className="mx-3 mt-4 mb-5 flex items-center gap-3 rounded-xl border border-line bg-surface px-3 py-3 text-left transition-colors hover:bg-surface-2"
-      >
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-good/15 text-[15px] font-semibold text-good">
-          {USER.initial}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[14px] font-medium">{USER.name}</span>
-          <span className="block truncate text-[12px] text-muted">{USER.role}</span>
-        </span>
-        <ChevronDown className="size-4 shrink-0 text-muted" />
-      </button>
+      {/* Account menu: Profile, Settings, Request a feature, Log out */}
+      <div className="mx-3 mt-4 mb-5">
+        <ProfileMenu
+          active={active === "profile" || active === "settings"}
+          onSelect={onProfileAction}
+        />
+      </div>
     </aside>
   );
 }

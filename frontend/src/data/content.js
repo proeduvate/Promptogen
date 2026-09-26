@@ -5,7 +5,6 @@ import {
   BarChart3,
   History,
   Heart,
-  Settings,
   HelpCircle,
   Code2,
   PenLine,
@@ -20,7 +19,8 @@ import {
   LayoutGrid,
 } from "lucide-react";
 
-/* Sidebar navigation. `id` is what App tracks as the active route. */
+/* Sidebar navigation. `id` is what App tracks as the active route.
+   Settings and Profile open from the profile menu instead (ProfileMenu). */
 export const NAV_ITEMS = [
   { id: "home", label: "Home", icon: Home },
   { id: "my-prompts", label: "My Prompts", icon: LineChart },
@@ -28,7 +28,6 @@ export const NAV_ITEMS = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "history", label: "History", icon: History },
   { id: "favorites", label: "Favorites", icon: Heart },
-  { id: "settings", label: "Settings", icon: Settings },
   { id: "guide", label: "Guide & Help", icon: HelpCircle },
 ];
 
