@@ -7,9 +7,10 @@ import GeneratedPromptPage from "./pages/GeneratedPromptPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import MyPromptsPage from "./pages/MyPromptsPage";
 import { NOTIFICATIONS } from "./data/notifications";
+import useTheme from "./hooks/useTheme";
 
 export default function App() {
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useTheme();
   const [activeNav, setActiveNav] = useState("home");
   /* Home has two states: the composer ("landing") and the generated prompt ("result"). */
   const [homeView, setHomeView] = useState("landing");
@@ -17,11 +18,6 @@ export default function App() {
   const [modalOpen, setModalOpen] = useState(false);
   /* Hand-off point: load and mark-read through the notifications API once it exists. */
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
-
-  /* Theme lives on <html> so the CSS variables in index.css swap globally. */
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
 
   /* Switching screens starts at the top, like a page load would. */
   useEffect(() => {
