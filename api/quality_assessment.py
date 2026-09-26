@@ -23,7 +23,7 @@ def get_quality_assessment_service(client=Depends(get_llm_client)) -> QualityAss
     response_model=PromptAssessmentResponse,
     status_code=status.HTTP_200_OK,
     summary="Assess prompt quality",
-    description="Evaluates a prompt on clarity and specificity (1-100 each) and provides improvement suggestions.",
+    description="Evaluates a prompt on clarity, specificity, context, structure, and actionability (1-100 each) and provides improvement suggestions.",
 )
 async def assess_prompt(
     request: PromptAssessmentRequest,

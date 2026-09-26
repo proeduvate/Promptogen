@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     langchain_api_key: str = Field(default="", alias="LANGCHAIN_API_KEY")
     langchain_project: str = Field(default="promptgen-clarification", alias="LANGCHAIN_PROJECT")
 
+    # ── Database (optional — set DATABASE_URL to enable PostgreSQL persistence) ─
+    database_url: str = Field(default="", alias="DATABASE_URL")
+
     # ── App ───────────────────────────────────────────────────────────────────
     app_name: str = "PromptGen AI Service"
     app_version: str = "1.0.0"

@@ -22,4 +22,7 @@ class PromptGenState(TypedDict, total=False):
     overall_score: int
     clarity: int
     specificity: int
+    context: int
+    structure: int
+    actionability: int
     suggestions: List[str]

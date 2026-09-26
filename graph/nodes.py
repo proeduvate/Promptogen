@@ -39,14 +39,18 @@ async def assess_node(state: PromptGenState) -> dict:
     logger.info("[graph] assess_node | prompt_length=%d", len(state["optimized_prompt"]))
     client = GroqClient()
     service = QualityAssessmentService(client=client)
-    response = await service.assess(state["optimized_prompt"])
+    response = await service.assess(state["optimized_prompt"], persist_assessment=False)
     logger.info(
-        "[graph] assess_node done | overall=%d clarity=%d specificity=%d",
+        "[graph] assess_node done | overall=%d clarity=%d specificity=%d context=%d structure=%d actionability=%d",
         response.overall_score, response.clarity, response.specificity,
+        response.context, response.structure, response.actionability,
     )
     return {
         "overall_score": response.overall_score,
         "clarity": response.clarity,
         "specificity": response.specificity,
+        "context": response.context,
+        "structure": response.structure,
+        "actionability": response.actionability,
         "suggestions": response.suggestions,
     }

@@ -9,6 +9,7 @@ from typing import Generator, List, Optional
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
+from core.database import database
 from graph.workflow import clarify_workflow, gen_assess_workflow
 
 logger = logging.getLogger("promptgen.api.pipeline")
@@ -93,6 +94,9 @@ class PipelineContinueResponse(BaseModel):
     overall_score: int
     clarity: int
     specificity: int
+    context: int
+    structure: int
+    actionability: int
     suggestions: List[str]
     status: str = "complete"
 
@@ -118,6 +122,7 @@ async def start_pipeline(request: PipelineStartRequest) -> PipelineStartResponse
         ) from exc
 
     questions = result.get("questions", [])
+    await database.create_prompt_creation(thread_id, request.query, questions)
     _state_store.set(thread_id, {"original_query": request.query, "questions": questions})
     logger.info("Pipeline start OK | thread_id=%s questions=%d", thread_id, len(questions))
     return PipelineStartResponse(thread_id=thread_id, questions=questions, status="awaiting_answers")
@@ -171,6 +176,8 @@ async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinu
             detail=f"Generation/assessment failed: {exc}",
         ) from exc
 
+    await database.complete_prompt_creation(request.thread_id, answers_payload, result)
+
     logger.info(
         "Pipeline complete | thread_id=%s overall_score=%s",
         request.thread_id, result.get("overall_score"),
@@ -182,6 +189,9 @@ async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinu
         overall_score=result.get("overall_score", 0),
         clarity=result.get("clarity", 0),
         specificity=result.get("specificity", 0),
+        context=result.get("context", 0),
+        structure=result.get("structure", 0),
+        actionability=result.get("actionability", 0),
         suggestions=result.get("suggestions", []),
         status="complete",
     )

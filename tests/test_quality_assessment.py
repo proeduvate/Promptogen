@@ -12,7 +12,7 @@ Test cases covered:
 
 import json
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import status
 from fastapi.testclient import TestClient
@@ -24,11 +24,27 @@ from schemas.quality_assessment import PromptAssessmentResponse
 from services.quality_assessment.service import QualityAssessmentService
 
 
-def _make_llm_json(overall: int = 85, clarity: int = 90, specificity: int = 80) -> str:
+@pytest.fixture(autouse=True)
+def _disable_assessment_persistence():
+    with patch("services.quality_assessment.service.database.save_prompt_assessment", new=AsyncMock(return_value=None)):
+        yield
+
+
+def _make_llm_json(
+    overall: int = 85,
+    clarity: int = 90,
+    specificity: int = 80,
+    context: int = 80,
+    structure: int = 85,
+    actionability: int = 90,
+) -> str:
     return json.dumps({
         "overall_score": overall,
         "clarity": clarity,
         "specificity": specificity,
+        "context": context,
+        "structure": structure,
+        "actionability": actionability,
         "suggestions": ["Add more context", "Specify output format"],
     })
 
@@ -64,6 +80,9 @@ class TestQualityAssessmentEndpoint:
         assert "overall_score" in body
         assert "clarity" in body
         assert "specificity" in body
+        assert "context" in body
+        assert "structure" in body
+        assert "actionability" in body
         assert "suggestions" in body
 
     def test_empty_prompt_returns_422(self) -> None:
@@ -97,7 +116,7 @@ class TestQualityAssessmentEndpoint:
         resp = client.post("/api/v1/assess-prompt", json={"prompt": "You are an expert."})
         assert resp.status_code == status.HTTP_200_OK
         body = resp.json()
-        for field in ("overall_score", "clarity", "specificity"):
+        for field in ("overall_score", "clarity", "specificity", "context", "structure", "actionability"):
             assert 1 <= body[field] <= 100
 
     def test_response_matches_schema(self) -> None:
@@ -109,6 +128,9 @@ class TestQualityAssessmentEndpoint:
         assert parsed.overall_score == 85
         assert parsed.clarity == 90
         assert parsed.specificity == 80
+        assert parsed.context == 80
+        assert parsed.structure == 85
+        assert parsed.actionability == 90
         assert len(parsed.suggestions) == 2
 
 
