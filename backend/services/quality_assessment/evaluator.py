@@ -18,12 +18,13 @@ def parse_llm_response(raw_text: str) -> dict:
     if not isinstance(data, dict):
         raise AssessmentError(f"Expected a JSON object, got {type(data).__name__}.")
 
-    required_fields = ["overall_score", "clarity", "specificity", "suggestions"]
+    score_fields = ["overall_score", "clarity", "specificity", "context", "structure", "actionability"]
+    required_fields = [*score_fields, "suggestions"]
     missing = [f for f in required_fields if f not in data]
     if missing:
         raise AssessmentError(f"Model response missing fields: {missing}")
 
-    for field in ["overall_score", "clarity", "specificity"]:
+    for field in score_fields:
         try:
             data[field] = max(1, min(100, int(data[field])))
         except (TypeError, ValueError) as exc:

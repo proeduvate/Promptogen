@@ -30,6 +30,9 @@ MOCK_GEN_ASSESS_RESULT = {
     "overall_score": 88,
     "clarity": 91,
     "specificity": 85,
+    "context": 80,
+    "structure": 85,
+    "actionability": 90,
     "suggestions": ["Add constraints section", "Specify output format"],
 }
 
@@ -42,6 +45,13 @@ VALID_ANSWERS = [
 @pytest.fixture
 def client():
     return TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _disable_pipeline_persistence():
+    with patch("api.pipeline.database.create_prompt_creation", new=AsyncMock(return_value=None)), \
+         patch("api.pipeline.database.complete_prompt_creation", new=AsyncMock(return_value=None)):
+        yield
 
 
 def _start_session(client) -> str:
@@ -90,6 +100,9 @@ class TestPipelineContinue:
         assert body["overall_score"] == 88
         assert body["clarity"] == 91
         assert body["specificity"] == 85
+        assert body["context"] == 80
+        assert body["structure"] == 85
+        assert body["actionability"] == 90
         assert len(body["suggestions"]) == 2
 
     def test_unknown_thread_id_returns_404(self, client):

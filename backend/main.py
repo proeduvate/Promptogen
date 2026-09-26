@@ -10,6 +10,7 @@ from fastapi import FastAPI
 
 from api.clarification import router as clarification_router
 from core.config import settings
+from core.database import database
 from core.logger import logger
 
 app = FastAPI(
@@ -34,6 +35,10 @@ app.include_router(quality_assessment_router)
 from api.pipeline import router as pipeline_router
 app.include_router(pipeline_router)
 
+# Analytics Dashboard
+from api.analytics import router as analytics_router
+app.include_router(analytics_router)
+
 
 # ── Health check ───────────────────────────────────────────────────────────────
 @app.get("/health", tags=["Health"])
@@ -44,5 +49,11 @@ async def health() -> dict:
 # ── Startup log ────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def on_startup() -> None:
+    await database.connect()
     logger.info("%s v%s started", settings.app_name, settings.app_version)
     logger.info("Swagger UI → http://localhost:8000/docs")
+
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    await database.close()
