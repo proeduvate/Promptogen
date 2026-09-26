@@ -1,6 +1,14 @@
-import { Sun, Moon, Bell } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
+import NotificationsPanel from "./NotificationsPanel";
 
-export default function TopBar({ theme, onThemeChange, notifications = 0, children }) {
+export default function TopBar({
+  theme,
+  onThemeChange,
+  notifications = [],
+  onMarkRead,
+  onMarkAllRead,
+  children,
+}) {
   return (
     <header className="flex items-center gap-3 px-6 py-4">
       {/* Page-specific header content (title, toolbar) sits left of the global controls */}
@@ -33,16 +41,11 @@ export default function TopBar({ theme, onThemeChange, notifications = 0, childr
         ))}
       </div>
 
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="relative grid size-10 place-items-center rounded-full text-muted transition-colors hover:bg-surface hover:text-text"
-      >
-        <Bell className="size-[21px]" strokeWidth={1.75} />
-        {notifications > 0 && (
-          <span className="absolute right-2 top-2 size-2 rounded-full bg-brand ring-2 ring-bg" />
-        )}
-      </button>
+      <NotificationsPanel
+        items={notifications}
+        onMarkRead={onMarkRead}
+        onMarkAllRead={onMarkAllRead}
+      />
     </header>
   );
 }

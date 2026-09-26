@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import GeneratedPromptPage from "./pages/GeneratedPromptPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import MyPromptsPage from "./pages/MyPromptsPage";
+import { NOTIFICATIONS } from "./data/notifications";
 
 export default function App() {
   const [theme, setTheme] = useState("dark");
@@ -14,6 +15,8 @@ export default function App() {
   const [homeView, setHomeView] = useState("landing");
   const [idea, setIdea] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  /* Hand-off point: load and mark-read through the notifications API once it exists. */
+  const [notifications, setNotifications] = useState(NOTIFICATIONS);
 
   /* Theme lives on <html> so the CSS variables in index.css swap globally. */
   useEffect(() => {
@@ -25,7 +28,18 @@ export default function App() {
     window.scrollTo({ top: 0 });
   }, [activeNav, homeView]);
 
-  const chrome = { theme, onThemeChange: setTheme, notifications: 1 };
+  const markRead = (id) =>
+    setNotifications((list) => list.map((item) => (item.id === id ? { ...item, unread: false } : item)));
+  const markAllRead = () =>
+    setNotifications((list) => list.map((item) => ({ ...item, unread: false })));
+
+  const chrome = {
+    theme,
+    onThemeChange: setTheme,
+    notifications,
+    onMarkRead: markRead,
+    onMarkAllRead: markAllRead,
+  };
 
   const goHome = () => {
     setActiveNav("home");
