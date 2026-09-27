@@ -1,48 +1,42 @@
-import { Sun, Moon, Bell } from "lucide-react";
+import { Menu as MenuIcon } from "lucide-react";
+import ThemeSwitch from "./ThemeSwitch";
+import NotificationsPanel from "./NotificationsPanel";
 
-export default function TopBar({ theme, onThemeChange, notifications = 0, children }) {
+export default function TopBar({
+  theme,
+  onThemeChange,
+  notifications = [],
+  onMarkRead,
+  onMarkAllRead,
+  navOpen = false,
+  onOpenNav,
+  children,
+}) {
   return (
     <header className="flex items-center gap-3 px-6 py-4">
+      {/* Below lg the sidebar is a drawer; this opens it */}
+      <button
+        id="pg-nav-toggle"
+        type="button"
+        aria-label="Open navigation"
+        aria-controls="pg-sidebar"
+        aria-expanded={navOpen}
+        onClick={onOpenNav}
+        className="-ml-2 grid size-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface hover:text-text lg:hidden"
+      >
+        <MenuIcon className="size-[22px]" strokeWidth={1.75} />
+      </button>
+
       {/* Page-specific header content (title, toolbar) sits left of the global controls */}
       <div className="min-w-0 flex-1">{children}</div>
 
-      {/* Segmented light/dark switch — the whole control is one radio group */}
-      <div
-        role="radiogroup"
-        aria-label="Color theme"
-        className="flex items-center gap-1 rounded-full border border-line bg-surface p-1"
-      >
-        {[
-          { value: "light", Icon: Sun, label: "Light" },
-          { value: "dark", Icon: Moon, label: "Dark" },
-        ].map(({ value, Icon, label }) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={theme === value}
-            aria-label={`${label} theme`}
-            onClick={() => onThemeChange(value)}
-            className={[
-              "grid size-8 place-items-center rounded-full transition-colors",
-              theme === value ? "bg-surface-3 text-text" : "text-muted hover:text-text",
-            ].join(" ")}
-          >
-            <Icon className="size-[17px]" strokeWidth={1.75} />
-          </button>
-        ))}
-      </div>
+      <ThemeSwitch theme={theme} onChange={onThemeChange} />
 
-      <button
-        type="button"
-        aria-label="Notifications"
-        className="relative grid size-10 place-items-center rounded-full text-muted transition-colors hover:bg-surface hover:text-text"
-      >
-        <Bell className="size-[21px]" strokeWidth={1.75} />
-        {notifications > 0 && (
-          <span className="absolute right-2 top-2 size-2 rounded-full bg-brand ring-2 ring-bg" />
-        )}
-      </button>
+      <NotificationsPanel
+        items={notifications}
+        onMarkRead={onMarkRead}
+        onMarkAllRead={onMarkAllRead}
+      />
     </header>
   );
 }

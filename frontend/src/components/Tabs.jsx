@@ -8,7 +8,7 @@ export default function Tabs({ tabs, active, onChange, bordered = true, classNam
         className,
       ].join(" ")}
     >
-      {tabs.map(({ id, label, badge }) => {
+      {tabs.map(({ id, label, badge, icon: Icon }) => {
         const isActive = id === active;
         return (
           <button
@@ -24,6 +24,7 @@ export default function Tabs({ tabs, active, onChange, bordered = true, classNam
                 : "border-transparent text-muted hover:text-text",
             ].join(" ")}
           >
+            {Icon && <Icon className="size-4" strokeWidth={1.75} />}
             {label}
             {badge && (
               <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[11px] font-medium text-brand">
