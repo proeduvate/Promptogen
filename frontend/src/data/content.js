@@ -140,5 +140,8 @@ export const OUTPUT_TYPES = [
 export const USER = {
   name: "Dhanush C",
   role: "COO · ProEduvate",
+  title: "COO",
+  organization: "ProEduvate",
+  email: "dhanush@proeduvate.com",
   initial: "D",
 };

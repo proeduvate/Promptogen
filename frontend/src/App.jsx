@@ -14,7 +14,7 @@ import { NOTIFICATIONS } from "./data/notifications";
 import useTheme from "./hooks/useTheme";
 
 export default function App() {
-  const [theme, setTheme] = useTheme();
+  const { theme, preference: themePreference, setPreference: setThemePreference } = useTheme();
   const [activeNav, setActiveNav] = useState("home");
   /* Home has two states: the composer ("landing") and the generated prompt ("result"). */
   const [homeView, setHomeView] = useState("landing");
@@ -38,7 +38,7 @@ export default function App() {
 
   const chrome = {
     theme,
-    onThemeChange: setTheme,
+    onThemeChange: setThemePreference,
     notifications,
     onMarkRead: markRead,
     onMarkAllRead: markAllRead,
@@ -89,7 +89,13 @@ export default function App() {
       return <TemplatesPage chrome={chrome} onUseTemplate={(template) => openComposer(template.prompt)} />;
     }
     if (activeNav === "settings") {
-      return <SettingsPage chrome={chrome} />;
+      return (
+        <SettingsPage
+          chrome={chrome}
+          themePreference={themePreference}
+          onThemePreferenceChange={setThemePreference}
+        />
+      );
     }
     if (activeNav === "profile") {
       return <ProfilePage chrome={chrome} />;

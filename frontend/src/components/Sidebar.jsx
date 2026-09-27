@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Rocket, Crown, ArrowRight, X } from "lucide-react";
+import { Rocket, Crown, ArrowRight, X, CircleCheck, Sparkles } from "lucide-react";
 import { NAV_ITEMS } from "../data/content";
 import ProfileMenu from "./ProfileMenu";
 
@@ -94,7 +94,7 @@ export default function Sidebar({
         ].join(" ")}
       >
         {/* Brand */}
-        <div className="flex items-center gap-2.5 px-5 pt-6 pb-7">
+        <div className="flex items-center gap-2.5 px-5 pt-6 pb-6">
           <Rocket className="size-8 shrink-0 -rotate-12 text-brand" strokeWidth={1.75} />
           <div className="leading-none">
             <div className="text-[21px] font-bold tracking-tight">
@@ -113,6 +113,18 @@ export default function Sidebar({
           >
             <X className="size-5" />
           </button>
+        </div>
+
+        {/* Current product */}
+        <div className="mx-3 mb-5 flex items-center gap-3 px-3">
+          <CircleCheck className="size-7 shrink-0 text-text" strokeWidth={1.5} />
+          <div className="min-w-0 leading-tight">
+            <div className="flex items-center gap-1.5 text-[16px] font-semibold">
+              Promptogen
+              <Sparkles className="size-4 text-brand" strokeWidth={2} />
+            </div>
+            <div className="mt-0.5 text-[12px] text-muted">AI Prompt Engineering</div>
+          </div>
         </div>
 
         {/* Primary navigation */}

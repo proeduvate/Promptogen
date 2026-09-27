@@ -13,13 +13,14 @@ const readSaved = () => {
   }
 };
 
-/* A saved choice wins; until the user picks one, follow the OS setting live.
+/* `preference` is what the user picked: "light", "dark" or "system" (nothing
+   saved, so follow the OS live). `theme` is the resolved "light" / "dark".
    The inline script in index.html applies the same rule before first paint
    so the page never flashes the wrong theme. */
 export default function useTheme() {
-  const [theme, setThemeState] = useState(
-    () => readSaved() ?? (systemQuery().matches ? "dark" : "light"),
-  );
+  const [preference, setPreferenceState] = useState(() => readSaved() ?? "system");
+  const [systemTheme, setSystemTheme] = useState(() => (systemQuery().matches ? "dark" : "light"));
+  const theme = preference === "system" ? systemTheme : preference;
 
   /* Theme lives on <html> so the CSS variables in index.css swap globally. */
   useEffect(() => {
@@ -28,21 +29,20 @@ export default function useTheme() {
 
   useEffect(() => {
     const query = systemQuery();
-    const onChange = (event) => {
-      if (!readSaved()) setThemeState(event.matches ? "dark" : "light");
-    };
+    const onChange = (event) => setSystemTheme(event.matches ? "dark" : "light");
     query.addEventListener("change", onChange);
     return () => query.removeEventListener("change", onChange);
   }, []);
 
-  const setTheme = (next) => {
+  const setPreference = (next) => {
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      if (next === "system") localStorage.removeItem(STORAGE_KEY);
+      else localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Storage blocked (private mode): the choice still holds for this visit.
     }
-    setThemeState(next);
+    setPreferenceState(next);
   };
 
-  return [theme, setTheme];
+  return { theme, preference, setPreference };
 }
