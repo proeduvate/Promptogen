@@ -37,12 +37,12 @@ export default function ResultToolbar({
           Back to Home
         </button>
         <Divider />
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5 max-sm:hidden">
           <Cpu className="size-4 text-faint" strokeWidth={1.75} />
           Model: <span className="font-medium text-text">{model}</span>
         </span>
         <Divider />
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5 max-sm:hidden">
           <Clock className="size-4 text-faint" strokeWidth={1.75} />
           Generated: <span className="font-medium text-text">{generatedAt}</span>
         </span>
@@ -56,7 +56,7 @@ export default function ResultToolbar({
           className={btn(saved ? "brandSoft" : "secondary")}
         >
           {saved ? <BookmarkCheck className="size-4" /> : <Bookmark className="size-4" />}
-          {saved ? "Saved" : "Save"}
+          <span className="max-sm:sr-only">{saved ? "Saved" : "Save"}</span>
         </button>
 
         <button
@@ -66,7 +66,7 @@ export default function ResultToolbar({
           className={btn(favorite ? "pinkSoft" : "secondary")}
         >
           <Heart className="size-4" fill={favorite ? "currentColor" : "none"} />
-          Favorite
+          <span className="max-sm:sr-only">Favorite</span>
         </button>
 
         <Menu
@@ -80,7 +80,7 @@ export default function ResultToolbar({
               className={btn()}
             >
               <Download className="size-4" />
-              Export
+              <span className="max-sm:sr-only">Export</span>
               <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
           )}
@@ -88,7 +88,7 @@ export default function ResultToolbar({
 
         <button type="button" onClick={onNewPrompt} className={btn("primary")}>
           <Plus className="size-4" />
-          New Prompt
+          <span className="max-sm:sr-only">New Prompt</span>
         </button>
       </div>
     </div>

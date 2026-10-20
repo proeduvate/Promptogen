@@ -159,7 +159,7 @@ export function detectDomain(text) {
 export const domainLabel = (id) => DOMAINS[id]?.label ?? "General";
 
 /* What the request already says, per piece of information a domain needs. */
-const INFO_DETECTORS = {
+export const INFO_DETECTORS = {
   Product: /\b(?:app|product|service|platform|tool|saas|startup|store|brand)\b/i,
   "Target audience": /\b(?:for|targeting|aimed at|audience|customers|users|students|professionals|teams)\b\s+\w+/i,
   Market: /\b(?:india|usa|us|uk|europe|germany|canada|australia|global|local|asia|middle east|singapore)\b/i,

@@ -68,6 +68,14 @@ export default function App() {
   const logActivity = (entry) =>
     setActivity((list) => [{ id: `a${Date.now()}${Math.random()}`, at: Date.now(), ...entry }, ...list]);
 
+  const saveToLibrary = (record) =>
+    setPrompts((list) =>
+      list.some((item) => item.id === record.id)
+        ? list.map((item) => (item.id === record.id ? { ...item, ...record } : item))
+        : [record, ...list],
+    );
+  const removeFromLibrary = (id) => setPrompts((list) => list.filter((item) => item.id !== id));
+
   const toggleFavorite = (id) =>
     setPrompts((list) => list.map((prompt) => (prompt.id === id ? { ...prompt, favorite: !prompt.favorite } : prompt)));
 
@@ -194,8 +202,10 @@ export default function App() {
           prompt={draft ?? undefined}
           onBack={goHome}
           onNewPrompt={startNewPrompt}
-          onViewAnalytics={() => setActiveNav("analytics")}
-          onOpenLibrary={() => setActiveNav("my-prompts")}
+          onOpenLibrary={() => openInLibrary(null)}
+          onSaveToLibrary={saveToLibrary}
+          onRemoveFromLibrary={removeFromLibrary}
+          onLog={logActivity}
         />
       );
     }

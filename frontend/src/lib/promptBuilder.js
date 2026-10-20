@@ -179,7 +179,8 @@ export function extractFromIdea(text = "") {
   found.devTask = DEV_TASKS.find(([, re]) => re.test(text))?.[0] ?? "";
   found.writingType = ["Email", "Blog post", "Article", "Letter"].find((name) => containsWord(text, name)) ?? (/\b(?:post|caption|tweet)\b/i.test(text) ? "Social post" : "");
   found.careerTask = [["Cover letter", /cover letter/i], ["Resume", /\b(?:resume|cv)\b/i], ["Interview prep", /interview/i], ["LinkedIn profile", /linkedin profile/i], ["Salary negotiation", /salary/i]].find(([, re]) => re.test(text))?.[0] ?? "";
-  found.level = ["Beginner", "Intermediate", "Advanced"].find((name) => containsWord(text, name)) ?? "";
+  found.level = ["Beginner", "Intermediate", "Advanced"].find((name) => new RegExp(`\\b${name}s?\\b`, "i").test(text)) ?? "";
+  found.topic = text.match(/\b(?:teach|learn|learning|about|on|regarding)\s+([A-Za-z0-9+#.\- ]{2,40}?)(?=\s+(?:to|for|over|in|with|by|from|that|so)\b|[.,!?]|$)/i)?.[1]?.trim() ?? "";
   found.tone = toneFromText(text);
   return found;
 }
@@ -302,7 +303,7 @@ export const slugify = (text) =>
 
 export function titleFrom(goal) {
   const { intent } = analyzeIntent(goal);
-  const title = (intent || "Untitled prompt").replace(/\s+/g, " ").trim();
+  const title = (intent || "Untitled prompt").replace(/\s+/g, " ").replace(/,?\s+(?:etc\.?|and so on)$/i, "").trim();
   return title.length > 60 ? `${title.slice(0, 57).replace(/\s+\S*$/, "")}…` : title;
 }
 
