@@ -13,10 +13,10 @@ const TONES = {
 
 const FOCUSABLE = "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
-/* Shared modal shell: header (icon, title, description, close), a scrolling
-   body and an optional footer. Escape and the backdrop close it, Tab stays
-   inside, and focus returns to whatever opened it. */
-export default function Dialog({ open, onClose, title, description, icon: Icon, tone = "brand", size = "md", footer, children }) {
+/* Shared modal shell: header (icon, title, description, close), an optional
+   fixed subheader, a scrolling body and an optional footer. Escape and the
+   backdrop close it, Tab stays inside, and focus returns to whatever opened it. */
+export default function Dialog({ open, onClose, title, description, icon: Icon, tone = "brand", size = "md", subheader, footer, children }) {
   const titleId = useId();
   const descriptionId = useId();
   const panelRef = useRef(null);
@@ -101,7 +101,10 @@ export default function Dialog({ open, onClose, title, description, icon: Icon, 
             <X className="size-5" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        {subheader && <div className="border-b border-line px-6 py-4">{subheader}</div>}
+        <div data-dialog-body className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+          {children}
+        </div>
         {footer && <div className="flex flex-wrap items-center justify-end gap-3 border-t border-line px-6 py-4">{footer}</div>}
       </div>
     </div>

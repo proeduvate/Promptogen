@@ -4,6 +4,8 @@ import {
   Layers,
   ListChecks,
   SlidersHorizontal,
+  ShieldAlert,
+  LayoutList,
   Wand2,
   LayoutTemplate,
   GitCompare,
@@ -18,6 +20,9 @@ export const SECTION_STYLE = {
   context: { icon: Layers, tone: "text-cyan" },
   requirements: { icon: ListChecks, tone: "text-amber" },
   preferences: { icon: SlidersHorizontal, tone: "text-good" },
+  objective: { icon: Target, tone: "text-brand" },
+  constraints: { icon: ShieldAlert, tone: "text-pink" },
+  output: { icon: LayoutList, tone: "text-good" },
 };
 
 export const GENERATED_PROMPT = {

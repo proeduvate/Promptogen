@@ -11,13 +11,14 @@ import { copyText, downloadFile, promptToMarkdown, promptToText } from "../lib/p
 
 export default function GeneratedPromptPage({
   chrome,
+  prompt = GENERATED_PROMPT,
   onBack,
   onNewPrompt,
   onViewAnalytics,
   onOpenLibrary,
 }) {
-  const { slug, model, generatedAt, strengthNote, tip } = GENERATED_PROMPT;
-  const [sections, setSections] = useState(GENERATED_PROMPT.sections);
+  const { slug, model, generatedAt, strengthNote, tip } = prompt;
+  const [sections, setSections] = useState(prompt.sections);
   const [saved, setSaved] = useState(false);
   const [favorite, setFavorite] = useState(false);
 

@@ -37,6 +37,8 @@ export default function App() {
   /* Hand-off point: load the library and activity timeline from the API. */
   const [prompts, setPrompts] = useState(PROMPTS);
   const [activity, setActivity] = useState(SEED_ACTIVITY);
+  /* The prompt open in the workspace (built from the wizard's answers). */
+  const [draft, setDraft] = useState(null);
   /* Which library prompt My Prompts should open with (e.g. from Favorites). */
   const [librarySelection, setLibrarySelection] = useState(null);
   /* Which Settings tab to open with (e.g. Help → Context Profiles). */
@@ -112,10 +114,10 @@ export default function App() {
     else navigate(id);
   };
 
-  const handleComplete = (answers) => {
-    // Hand-off point: this is where the collected answers go to the
-    // prompt-generation API. Until then the result screen shows sample output.
-    console.log("Wizard answers", answers);
+  /* The wizard hands back a prompt built from its answers (see lib/promptBuilder). */
+  const handleComplete = (prompt) => {
+    setDraft({ ...prompt, id: `draft-${Date.now()}` });
+    logActivity({ type: "created", title: `Created “${prompt.title}”`, prompt: prompt.title });
     setModalOpen(false);
     setActiveNav("home");
     setHomeView("result");
@@ -187,7 +189,9 @@ export default function App() {
     if (activeNav === "home" && homeView === "result") {
       return (
         <GeneratedPromptPage
+          key={draft?.id ?? "sample"}
           chrome={chrome}
+          prompt={draft ?? undefined}
           onBack={goHome}
           onNewPrompt={startNewPrompt}
           onViewAnalytics={() => setActiveNav("analytics")}
@@ -230,12 +234,15 @@ export default function App() {
         <Footer />
       </div>
 
-      <QuestionsModal
-        open={modalOpen}
-        seed={idea}
-        onClose={() => setModalOpen(false)}
-        onComplete={handleComplete}
-      />
+      {modalOpen && (
+        <QuestionsModal
+          seed={idea}
+          profile={contextProfiles.active}
+          attachments={attachments}
+          onClose={() => setModalOpen(false)}
+          onComplete={handleComplete}
+        />
+      )}
 
       <FeatureRequestModal
         open={featureOpen}
