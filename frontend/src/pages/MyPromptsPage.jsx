@@ -16,7 +16,6 @@ import {
   LIBRARY_TOTAL,
   PAGE_COUNT,
   PAGE_SIZE,
-  PROMPTS,
   TODAY,
 } from "../data/library";
 import { CARD, ICON_TILE, btn } from "../lib/ui";
@@ -30,14 +29,15 @@ const matchesDate = (date, range) => {
   return age < (range === "week" ? 7 : 30);
 };
 
-export default function MyPromptsPage({ chrome, onNewPrompt }) {
+export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsChange, initialSelectedId }) {
   const [tab, setTab] = useState("all");
-  const [prompts, setPrompts] = useState(PROMPTS);
+  /* The library lives in App so Favorites and other screens stay in sync. */
+  const setPrompts = onPromptsChange;
   const [query, setQuery] = useState("");
   const [folder, setFolder] = useState("all");
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [selectedId, setSelectedId] = useState("launch-emails");
+  const [selectedId, setSelectedId] = useState(initialSelectedId ?? "launch-emails");
   const [page, setPage] = useState(1);
   const searchRef = useRef(null);
 

@@ -6,6 +6,7 @@ import {
   History,
   Heart,
   HelpCircle,
+  FlaskConical,
   Code2,
   PenLine,
   Package,
@@ -26,8 +27,9 @@ export const NAV_ITEMS = [
   { id: "my-prompts", label: "My Prompts", icon: LineChart },
   { id: "templates", label: "Templates", icon: FileText },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
-  { id: "history", label: "History", icon: History },
   { id: "favorites", label: "Favorites", icon: Heart },
+  { id: "model-lab", label: "Model Lab", icon: FlaskConical },
+  { id: "history", label: "History", icon: History },
   { id: "guide", label: "Guide & Help", icon: HelpCircle },
 ];
 

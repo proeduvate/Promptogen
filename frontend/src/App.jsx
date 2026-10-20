@@ -10,6 +10,12 @@ import MyPromptsPage from "./pages/MyPromptsPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
+import FavoritesPage from "./pages/FavoritesPage";
+import HistoryPage from "./pages/HistoryPage";
+import ModelLabPage from "./pages/ModelLabPage";
+import HelpPage from "./pages/HelpPage";
+import { PROMPTS } from "./data/library";
+import { SEED_ACTIVITY } from "./data/history";
 import { NOTIFICATIONS } from "./data/notifications";
 import useTheme from "./hooks/useTheme";
 
@@ -25,6 +31,11 @@ export default function App() {
   const [navOpen, setNavOpen] = useState(false);
   /* Hand-off point: load and mark-read through the notifications API once it exists. */
   const [notifications, setNotifications] = useState(NOTIFICATIONS);
+  /* Hand-off point: load the library and activity timeline from the API. */
+  const [prompts, setPrompts] = useState(PROMPTS);
+  const [activity, setActivity] = useState(SEED_ACTIVITY);
+  /* Which library prompt My Prompts should open with (e.g. from Favorites). */
+  const [librarySelection, setLibrarySelection] = useState(null);
 
   /* Switching screens starts at the top, like a page load would. */
   useEffect(() => {
@@ -44,6 +55,17 @@ export default function App() {
     onMarkAllRead: markAllRead,
     navOpen,
     onOpenNav: () => setNavOpen(true),
+  };
+
+  const logActivity = (entry) =>
+    setActivity((list) => [{ id: `a${Date.now()}${Math.random()}`, at: Date.now(), ...entry }, ...list]);
+
+  const toggleFavorite = (id) =>
+    setPrompts((list) => list.map((prompt) => (prompt.id === id ? { ...prompt, favorite: !prompt.favorite } : prompt)));
+
+  const openInLibrary = (id) => {
+    setLibrarySelection(id);
+    setActiveNav("my-prompts");
   };
 
   const goHome = () => {
@@ -101,7 +123,43 @@ export default function App() {
       return <ProfilePage chrome={chrome} />;
     }
     if (activeNav === "my-prompts") {
-      return <MyPromptsPage chrome={chrome} onNewPrompt={startNewPrompt} />;
+      return (
+        <MyPromptsPage
+          key={librarySelection ?? "library"}
+          chrome={chrome}
+          onNewPrompt={startNewPrompt}
+          prompts={prompts}
+          onPromptsChange={setPrompts}
+          initialSelectedId={librarySelection}
+        />
+      );
+    }
+    if (activeNav === "favorites") {
+      return (
+        <FavoritesPage
+          chrome={chrome}
+          prompts={prompts}
+          onToggleFavorite={toggleFavorite}
+          onOpenPrompt={openInLibrary}
+          onBrowseLibrary={() => openInLibrary(null)}
+        />
+      );
+    }
+    if (activeNav === "history") {
+      return <HistoryPage chrome={chrome} activity={activity} />;
+    }
+    if (activeNav === "model-lab") {
+      return <ModelLabPage chrome={chrome} prompts={prompts} onLog={logActivity} />;
+    }
+    if (activeNav === "guide") {
+      return (
+        <HelpPage
+          chrome={chrome}
+          onNavigate={setActiveNav}
+          onRequestFeature={() => setFeatureOpen(true)}
+          onStartPrompt={startNewPrompt}
+        />
+      );
     }
     if (activeNav === "home" && homeView === "result") {
       return (
@@ -114,7 +172,6 @@ export default function App() {
         />
       );
     }
-    // Nav items without a screen yet still fall back to the Home dashboard.
     return (
       <HomePage
         chrome={chrome}
@@ -130,7 +187,10 @@ export default function App() {
     <div className="flex min-h-screen bg-bg text-text">
       <Sidebar
         active={activeNav}
-        onNavigate={setActiveNav}
+        onNavigate={(id) => {
+          if (id === "my-prompts") setLibrarySelection(null);
+          setActiveNav(id);
+        }}
         onUpgrade={() => console.log("Upgrade clicked")}
         onProfileAction={handleProfileAction}
         open={navOpen}

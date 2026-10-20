@@ -22,6 +22,7 @@ export const SECTION_STYLE = {
 
 export const GENERATED_PROMPT = {
   slug: "focusflow-marketing-strategy",
+  title: "FocusFlow marketing strategy",
   model: "GPT-4o",
   generatedAt: "Just now",
   strengthNote: "Great job! Your prompt is well-structured and optimized for high-quality outputs.",

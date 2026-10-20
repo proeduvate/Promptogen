@@ -1,4 +1,5 @@
 import { Settings, Bot, FileText, ShieldCheck, UserRound } from "lucide-react";
+import { MODELS_CATALOG } from "./models";
 
 export const SETTINGS_TABS = [
   { id: "general", label: "General", icon: Settings },
@@ -10,12 +11,10 @@ export const SETTINGS_TABS = [
 
 export const LANGUAGES = [{ value: "en", label: "English" }];
 
-export const MODELS = [
-  { value: "GPT-4o", label: "GPT-4o (Recommended)" },
-  { value: "Claude 3.5", label: "Claude 3.5" },
-  { value: "Gemini", label: "Gemini" },
-  { value: "Llama", label: "Llama" },
-];
+export const MODELS = MODELS_CATALOG.map(({ id, name }) => ({
+  value: id,
+  label: id === "gpt-4o" ? `${name} (Recommended)` : name,
+}));
 
 export const OUTPUT_STYLES = [
   { value: "structured", label: "Structured (Recommended)" },
@@ -42,7 +41,7 @@ export const LENGTHS = [
    Hand-off point: load and save these through the settings API once it exists. */
 export const DEFAULT_SETTINGS = {
   language: "en",
-  model: "GPT-4o",
+  model: "gpt-4o",
   outputStyle: "structured",
   tone: "professional",
   length: "detailed",

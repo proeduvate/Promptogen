@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DEFAULT_SETTINGS } from "../data/settings";
+import { DEFAULT_SETTINGS, MODELS } from "../data/settings";
 
 const STORAGE_KEY = "pg-settings";
 
@@ -14,7 +14,12 @@ const readSaved = () => {
 /* Settings page preferences, kept in localStorage so they survive a reload.
    Unknown or missing keys fall back to DEFAULT_SETTINGS. */
 export default function useSettings() {
-  const [settings, setSettings] = useState(() => ({ ...DEFAULT_SETTINGS, ...readSaved() }));
+  const [settings, setSettings] = useState(() => {
+    const merged = { ...DEFAULT_SETTINGS, ...readSaved() };
+    // Model ids changed from display names to catalog ids; fall back if unknown.
+    if (!MODELS.some(({ value }) => value === merged.model)) merged.model = DEFAULT_SETTINGS.model;
+    return merged;
+  });
 
   const update = (key, value) =>
     setSettings((current) => {
