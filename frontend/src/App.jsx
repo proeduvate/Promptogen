@@ -26,6 +26,8 @@ export default function App() {
   /* Home has two states: the composer ("landing") and the generated prompt ("result"). */
   const [homeView, setHomeView] = useState("landing");
   const [idea, setIdea] = useState("");
+  /* Files and images attached in the composer (names only until upload exists). */
+  const [attachments, setAttachments] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [featureOpen, setFeatureOpen] = useState(false);
   /* Mobile/tablet navigation drawer (the sidebar is always visible on lg+). */
@@ -98,7 +100,10 @@ export default function App() {
     });
   };
 
-  const startNewPrompt = () => openComposer("");
+  const startNewPrompt = () => {
+    setAttachments([]);
+    openComposer("");
+  };
 
   /* Profile menu actions. Profile and Settings are ordinary screens. */
   const handleProfileAction = (id) => {
@@ -197,6 +202,14 @@ export default function App() {
         onIdeaChange={setIdea}
         onSubmitIdea={() => setModalOpen(true)}
         onViewAnalytics={() => setActiveNav("analytics")}
+        attachments={attachments}
+        onAttachmentsChange={setAttachments}
+        contextProfiles={contextProfiles}
+        onManageProfiles={() => navigate("settings", "profiles")}
+        prompts={prompts}
+        onOpenPrompt={openInLibrary}
+        onUseTemplate={(template) => openComposer(template.prompt)}
+        onNavigate={navigate}
       />
     );
   };

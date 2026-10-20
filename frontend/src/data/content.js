@@ -9,7 +9,6 @@ import {
   FlaskConical,
   Code2,
   PenLine,
-  Package,
   GraduationCap,
   Compass,
   TrendingUp,
@@ -18,6 +17,12 @@ import {
   ListOrdered,
   PenTool,
   LayoutGrid,
+  Megaphone,
+  Search,
+  ListChecks,
+  Briefcase,
+  Palette,
+  Sparkles,
 } from "lucide-react";
 
 /* Sidebar navigation. `id` is what App tracks as the active route.
@@ -33,44 +38,19 @@ export const NAV_ITEMS = [
   { id: "guide", label: "Guide & Help", icon: HelpCircle },
 ];
 
-/* Quick-start chips under the hero input. `seed` is dropped straight
-   into the textarea when the chip is clicked. */
-export const EXAMPLE_CHIPS = [
-  {
-    id: "marketing",
-    label: "Marketing Campaign",
-    icon: FileText,
-    tone: "text-brand",
-    seed: "Write a prompt for an AI to create a full marketing campaign for a new product launch.",
-  },
-  {
-    id: "code",
-    label: "Code Generator",
-    icon: Code2,
-    tone: "text-cyan",
-    seed: "Write a prompt for an AI to generate production-ready code from a feature description.",
-  },
-  {
-    id: "blog",
-    label: "Blog Writer",
-    icon: PenLine,
-    tone: "text-purple",
-    seed: "Write a prompt for an AI to draft a long-form blog post with an SEO-friendly structure.",
-  },
-  {
-    id: "product",
-    label: "Product Description",
-    icon: Package,
-    tone: "text-amber",
-    seed: "Write a prompt for an AI to write persuasive e-commerce product descriptions.",
-  },
-  {
-    id: "lesson",
-    label: "Lesson Plan",
-    icon: GraduationCap,
-    tone: "text-good",
-    seed: "Write a prompt for an AI to build a lesson plan with objectives, activities and assessment.",
-  },
+/* Suggested prompt categories under the composer (spec §2). `seed` drops a
+   starting idea into the composer when the chip is clicked. */
+export const SUGGESTED_CATEGORIES = [
+  { id: "writing", label: "Writing", icon: PenLine, tone: "text-purple", seed: "Write an email requesting leave." },
+  { id: "marketing", label: "Marketing", icon: Megaphone, tone: "text-pink", seed: "Create a marketing plan for my business." },
+  { id: "research", label: "Research", icon: Search, tone: "text-cyan", seed: "Summarize recent research on remote work and productivity." },
+  { id: "data", label: "Data Analysis", icon: BarChart3, tone: "text-brand", seed: "Analyze my sales data." },
+  { id: "productivity", label: "Productivity", icon: ListChecks, tone: "text-good", seed: "Plan my week so I can finish a product launch on time." },
+  { id: "coding", label: "Coding", icon: Code2, tone: "text-good", seed: "Help me debug my FastAPI application." },
+  { id: "business", label: "Business", icon: Briefcase, tone: "text-amber", seed: "Write a one-page business proposal for a new client." },
+  { id: "learning", label: "Learning", icon: GraduationCap, tone: "text-amber", seed: "Create a study plan for learning Python." },
+  { id: "creative", label: "Creative Work", icon: Palette, tone: "text-pink", seed: "Create Instagram content for my product." },
+  { id: "general", label: "General", icon: Sparkles, tone: "text-brand", seed: "Explain a complex topic in simple terms." },
 ];
 
 export const FEATURE_CARDS = [
