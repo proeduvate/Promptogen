@@ -148,7 +148,7 @@ export default function OptimizerDialog({ initialMode = null, sections, domain, 
     <Dialog
       open
       onClose={onClose}
-      title={changes ? current.label : "Optimize Prompt"}
+      title={mode && (loading || changes) ? current.label : "Optimize Prompt"}
       description={changes ? "Review each change. Nothing is applied until you accept it." : "Choose what to improve. You'll see every change and why before anything is applied."}
       icon={Wand2}
       tone="purple"

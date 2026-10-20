@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
+  Bot,
   Check,
   Copy,
   CopyPlus,
@@ -62,6 +63,7 @@ export default function PromptEditor({
   moreItems,
   onImprove,
   onTest,
+  onAssistant,
   onSectionAction,
 }) {
   const [drafts, setDrafts] = useState({});
@@ -198,6 +200,10 @@ export default function PromptEditor({
             <button type="button" onClick={onTest} className={btn()}>
               <FlaskConical className="size-4" />
               Test
+            </button>
+            <button type="button" onClick={onAssistant} className={btn("ghost")}>
+              <Bot className="size-4" />
+              Ask Assistant
             </button>
           </>
         )}

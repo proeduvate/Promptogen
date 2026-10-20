@@ -12,13 +12,19 @@ import TokenCostCard from "../components/workspace/TokenCostCard";
 import OptimizerDialog from "../components/workspace/OptimizerDialog";
 import CompareDialog from "../components/workspace/CompareDialog";
 import Toast from "../components/workspace/Toast";
+import TestDialog from "../components/workspace/TestDialog";
+import ShareDialog from "../components/workspace/ShareDialog";
+import TemplateDialog from "../components/workspace/TemplateDialog";
+import AssistantDialog from "../components/workspace/AssistantDialog";
+import FeedbackCard from "../components/workspace/FeedbackCard";
 import { GENERATED_PROMPT } from "../data/generated";
 import { modelById } from "../data/models";
 import useHistory from "../hooks/useHistory";
 import useSettings from "../hooks/useSettings";
 import { complexityOf, detectContradictions, domainLabel, redact, scanSecurity, usesExternalContent } from "../lib/analysis";
 import { SECTION_ACTIONS, transformSection } from "../lib/optimizer";
-import { addConstraint, analyzeQuality, domainOf } from "../lib/quality";
+import { addConstraint, addRequirement, analyzeQuality, domainOf } from "../lib/quality";
+import { recommendVersion } from "../lib/testing";
 import { copyText, downloadFile, printPrompt, promptToMarkdown, promptToText } from "../lib/promptText";
 import { textOf } from "../lib/sections";
 
@@ -39,7 +45,18 @@ const redactSections = (sections, findings) =>
 
 /* The generated prompt workspace (spec §67): the prompt and its editor,
    pinned analysis (quality, suggestions, checks), tools and versions. */
-export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT, onBack, onNewPrompt, onOpenLibrary, onSaveToLibrary, onRemoveFromLibrary, onLog }) {
+export default function GeneratedPromptPage({
+  chrome,
+  prompt = GENERATED_PROMPT,
+  onBack,
+  onNewPrompt,
+  onOpenLibrary,
+  onSaveToLibrary,
+  onRemoveFromLibrary,
+  onSaveTemplate,
+  onFeedback,
+  onLog,
+}) {
   const [settings] = useSettings();
   const domain = useMemo(() => domainOf(prompt), [prompt]);
   const modelId = prompt.modelId ?? settings.model;
@@ -59,6 +76,8 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
   const [lastChange, setLastChange] = useState("");
   const [saved, setSaved] = useState(false);
   const [favorite, setFavorite] = useState(false);
+  const [draftTest, setDraftTest] = useState(null);
+  const [shareLink, setShareLink] = useState(null);
   const libraryId = useRef(prompt.id ?? prompt.slug);
 
   const base = versions.find((version) => version.id === baseId) ?? versions[versions.length - 1];
@@ -76,6 +95,10 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
   const conflicts = detectContradictions(fullText);
   const external = usesExternalContent(fullText) && !/\btreat\b[^.]*\bdata\b/i.test(fullText);
   const suggestions = quality.suggestions.filter((suggestion) => !ignored.includes(suggestion.id));
+  const draftTested = dirty && draftTest?.sections === sections;
+  const currentTest = draftTested ? draftTest : base.test;
+  const tested = currentTest && { ...currentTest, version: draftTested ? "draft" : base.label };
+  const recommendation = recommendVersion(versions, qualityOf);
   const log = (entry) => onLog?.({ prompt: prompt.title, ...entry });
 
   /* Draft autosave. Hand-off point: save drafts through the prompts API. */
@@ -133,7 +156,7 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
   };
 
   const saveVersion = (name) => {
-    const version = makeVersion(name, sections);
+    const version = makeVersion(name, sections, draftTest?.sections === sections ? { test: draftTest } : {});
     setVersions((list) => [...list, version]);
     setBaseId(version.id);
     setToast({ message: `Saved ${version.label}: ${name}` });
@@ -167,6 +190,26 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
   const updateVersion = (id, patch) => setVersions((list) => list.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   const togglePreferred = (id) =>
     setVersions((list) => list.map((item) => ({ ...item, preferred: item.id === id ? !item.preferred : false })));
+
+  /* ---------- Testing, sharing, templates ---------- */
+  const recordTest = (versionId, summary) => {
+    if (versionId === "draft") setDraftTest({ ...summary, sections });
+    else updateVersion(versionId, { test: summary });
+    const label = versionId === "draft" ? "the draft" : versions.find((item) => item.id === versionId).label;
+    log({ type: "tested", title: `Tested ${label} on ${summary.model}`, detail: `${summary.passed} / ${summary.total} criteria passed` });
+  };
+
+  const createShareLink = (link) => {
+    setShareLink(link);
+    log({ type: "shared", title: `Shared a ${link.permission === "view" ? "view-only" : link.permission} link` });
+  };
+
+  const saveTemplate = (template) => {
+    onSaveTemplate?.(template);
+    setDialog(null);
+    setToast({ message: `Saved “${template.title}” to your templates.` });
+    log({ type: "template", title: "Converted to template", detail: `${template.variables.length} variable${template.variables.length === 1 ? "" : "s"} detected` });
+  };
 
   /* ---------- Library ---------- */
   const toRecord = (overrides = {}) => {
@@ -241,14 +284,14 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
     { id: "pdf", label: "Save as PDF", icon: Printer, onSelect: () => (printPrompt(prompt.title, sections), exported("PDF")) },
   ];
 
-  // Hand-off point: testing, sharing and templates get their own dialogs.
   const handleTool = (toolId) => {
-    if (toolId === "improve") setDialog({ type: "optimize" });
+    if (["test", "share", "template", "assistant"].includes(toolId)) setDialog({ type: toolId });
+    else if (toolId === "improve") setDialog({ type: "optimize" });
     else if (toolId === "model") setDialog({ type: "optimize", mode: "model" });
     else if (toolId === "compare") {
       if (versions.length < 2) setToast({ message: "Save a second version to compare. Edits and applied suggestions can be saved from Versions." });
       else setDialog({ type: "compare", a: versions[versions.length - 1].id, b: versions[versions.length - 2].id });
-    } else console.log("Prompt tool", toolId, sections);
+    }
   };
 
   const moreItems = [
@@ -291,6 +334,7 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
             moreItems={moreItems}
             onImprove={() => handleTool("improve")}
             onTest={() => handleTool("test")}
+            onAssistant={() => handleTool("assistant")}
             onSectionAction={sectionAction}
           />
           <AdditionalTools onSelect={handleTool} advanced={advanced} onAdvancedChange={setAdvanced} />
@@ -302,6 +346,7 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
               defaultName={lastChange.replace(/^Applied: /, "") || "Manual edits"}
               qualityOf={qualityOf}
               collapsible={!advanced}
+              recommendation={recommendation}
               onSave={saveVersion}
               onRestore={restore}
               onDuplicate={(id) => duplicate(id)}
@@ -313,11 +358,21 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
             />
             {advanced && <TokenCostCard sections={sections} modelId={modelId} onOptimizeTokens={() => setDialog({ type: "optimize", mode: "tokens" })} />}
           </div>
+          <FeedbackCard
+            key={base.id}
+            versionLabel={base.label}
+            onSubmit={(entry) => onFeedback?.({ ...entry, prompt: prompt.title, sections })}
+            onFix={(mode) => setDialog({ type: "optimize", mode })}
+            onMarkSuccessful={() => {
+              setVersions((list) => list.map((item) => ({ ...item, preferred: item.id === base.id })));
+              setToast({ message: `${base.label} marked as preferred.` });
+            }}
+          />
         </div>
 
         {/* Analysis stays pinned while long prompts scroll (spec §67). */}
         <aside aria-label="Prompt analysis" className="flex min-w-0 flex-col gap-5 xl:sticky xl:top-5 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:pb-1">
-          <QualityCard quality={quality} baseline={dirty ? baseQuality : null} baselineName={base.label} tested={null} onTest={() => handleTool("test")} />
+          <QualityCard quality={quality} baseline={dirty ? baseQuality : null} baselineName={base.label} tested={tested} onTest={() => handleTool("test")} />
           <SuggestionsCard
             suggestions={suggestions}
             ignoredCount={ignored.length}
@@ -364,6 +419,48 @@ export default function GeneratedPromptPage({ chrome, prompt = GENERATED_PROMPT,
           onClose={() => setDialog(null)}
           onUse={restore}
           onCreateFrom={(id) => duplicate(id, `From ${versions.find((item) => item.id === id).label}`)}
+        />
+      )}
+      {dialog?.type === "test" && (
+        <TestDialog
+          versions={versions}
+          draft={{ sections, dirty }}
+          baseId={base.id}
+          modelId={modelId}
+          advanced={advanced}
+          onClose={() => setDialog(null)}
+          onRecord={recordTest}
+          onApplyFix={(text) => commit(addRequirement(sections, text), `Added requirement: ${text}`)}
+        />
+      )}
+      {dialog?.type === "share" && (
+        <ShareDialog
+          title={prompt.title}
+          findings={findings}
+          link={shareLink}
+          onCreate={createShareLink}
+          onRevoke={() => {
+            setShareLink(null);
+            setToast({ message: "Link revoked. It no longer works." });
+          }}
+          onRedact={() => commit(redactSections(sections, findings), "Removed sensitive data", null, true)}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.type === "template" && <TemplateDialog title={prompt.title} domain={domain} sections={sections} onClose={() => setDialog(null)} onSave={saveTemplate} />}
+      {dialog?.type === "assistant" && (
+        <AssistantDialog
+          quality={quality}
+          sections={sections}
+          domain={domain}
+          modelId={modelId}
+          onClose={() => setDialog(null)}
+          onOptimize={(mode) => setDialog({ type: "optimize", mode })}
+          onTest={() => setDialog({ type: "test" })}
+          onFocusSuggestions={() => {
+            setDialog(null);
+            requestAnimationFrame(() => document.getElementById("pg-suggestions-title")?.scrollIntoView({ block: "start", behavior: "smooth" }));
+          }}
         />
       )}
       <Toast toast={toast} onDismiss={() => setToast(null)} />

@@ -39,6 +39,10 @@ export default function App() {
   const [activity, setActivity] = useState(SEED_ACTIVITY);
   /* The prompt open in the workspace (built from the wizard's answers). */
   const [draft, setDraft] = useState(null);
+  /* Templates the user converted from their prompts, and prompt feedback.
+     Hand-off point: persist both through the API. */
+  const [personalTemplates, setPersonalTemplates] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   /* Which library prompt My Prompts should open with (e.g. from Favorites). */
   const [librarySelection, setLibrarySelection] = useState(null);
   /* Which Settings tab to open with (e.g. Help → Context Profiles). */
@@ -205,6 +209,8 @@ export default function App() {
           onOpenLibrary={() => openInLibrary(null)}
           onSaveToLibrary={saveToLibrary}
           onRemoveFromLibrary={removeFromLibrary}
+          onSaveTemplate={(template) => setPersonalTemplates((list) => [template, ...list])}
+          onFeedback={(entry) => setFeedback((list) => [entry, ...list])}
           onLog={logActivity}
         />
       );

@@ -261,7 +261,7 @@ function scoreDimensions(sections, domain) {
     const conflicts = detectContradictions(allText);
     const lines = sections.flatMap((section) => (section.items ?? []).map((item) => item.text.trim().toLowerCase()));
     const duplicates = lines.filter((line, index) => line && lines.indexOf(line) !== index).length;
-    const placeholders = count(allText, /\[[^\]]{2,40}\]/g);
+    const placeholders = count(allText.replace(/\[(?:REDACTED|REMOVED)\]/g, ""), /\[[^\]]{2,40}\]/g);
     const score = 97 - conflicts.length * 18 - duplicates * 6 - placeholders * 4;
     results.consistency = {
       score,
