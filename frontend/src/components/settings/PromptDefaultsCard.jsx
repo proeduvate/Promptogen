@@ -3,7 +3,7 @@ import { FileText } from "lucide-react";
 import SettingsCard, { Field } from "./SettingsCard";
 import SelectInput from "../SelectInput";
 import Toggle from "../Toggle";
-import { OUTPUT_STYLES, TONES, LENGTHS } from "../../data/settings";
+import { OUTPUT_STYLES, TONES, DETAIL_LEVELS } from "../../data/settings";
 
 export default function PromptDefaultsCard({ settings, onChange }) {
   const id = useId();
@@ -31,17 +31,17 @@ export default function PromptDefaultsCard({ settings, onChange }) {
             options={TONES}
           />
         </Field>
-        <Field id={`${id}-length`} label="Default Length" hint="Amount of detail in the generated prompt.">
+        <Field id={`${id}-length`} label="Default Detail Level" hint="Amount of detail in the generated prompt. You can override it per prompt.">
           <SelectInput
             id={`${id}-length`}
             value={settings.length}
             onChange={(value) => onChange("length", value)}
-            options={LENGTHS}
+            options={DETAIL_LEVELS}
           />
         </Field>
         <div>
           <label htmlFor={`${id}-practices`} className="mb-2 block cursor-pointer text-[13px] font-medium">
-            Include Best Practices
+            Automatically Include Best Practices
           </label>
           <div className="flex items-center gap-3 py-2">
             <Toggle

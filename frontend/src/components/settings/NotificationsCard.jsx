@@ -4,11 +4,28 @@ import { ToggleRow } from "../Toggle";
 
 export default function NotificationsCard({ settings, onChange }) {
   return (
-    <SettingsCard icon={Bell} title="Notifications" description="Get notified about important updates." inset>
+    <SettingsCard
+      icon={Bell}
+      title="Notifications"
+      description="Only useful updates. We never send promotional notifications."
+      inset
+    >
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <ToggleRow
+          label="Shared Prompt Activity"
+          description="When someone opens, copies or duplicates a prompt you shared."
+          checked={settings.notifySharing}
+          onChange={(value) => onChange("notifySharing", value)}
+        />
+        <ToggleRow
+          label="Evaluation Completed"
+          description="When a test run or Model Lab comparison finishes."
+          checked={settings.notifyEvaluations}
+          onChange={(value) => onChange("notifyEvaluations", value)}
+        />
+        <ToggleRow
           label="Product Updates"
-          description="New features, improvements and announcements."
+          description="Important new features and improvements."
           checked={settings.productUpdates}
           onChange={(value) => onChange("productUpdates", value)}
         />

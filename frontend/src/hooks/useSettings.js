@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { DEFAULT_SETTINGS, MODELS } from "../data/settings";
+import { DEFAULT_SETTINGS, DETAIL_LEVELS, MODELS } from "../data/settings";
+
+const OLD_LENGTHS = { short: "concise", medium: "balanced" };
 
 const STORAGE_KEY = "pg-settings";
 
@@ -18,6 +20,8 @@ export default function useSettings() {
     const merged = { ...DEFAULT_SETTINGS, ...readSaved() };
     // Model ids changed from display names to catalog ids; fall back if unknown.
     if (!MODELS.some(({ value }) => value === merged.model)) merged.model = DEFAULT_SETTINGS.model;
+    merged.length = OLD_LENGTHS[merged.length] ?? merged.length;
+    if (!DETAIL_LEVELS.some(({ value }) => value === merged.length)) merged.length = DEFAULT_SETTINGS.length;
     return merged;
   });
 

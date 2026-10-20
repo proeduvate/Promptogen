@@ -32,7 +32,7 @@ const FEATURES = [
   { title: "Prompt Quality", body: "Eight dimensions such as clarity, context and constraints, each with an explanation.", icon: Gauge, tone: "text-brand", tint: "bg-brand/10 ring-brand/20" },
   { title: "Testing & Evaluation", body: "Define success criteria, run the prompt and get a separate Tested Performance score.", icon: ClipboardCheck, tone: "text-good", tint: "bg-good/10 ring-good/20" },
   { title: "Model Lab", body: "Run one prompt on several models and get a recommendation based on measured results.", icon: FlaskConical, tone: "text-purple", tint: "bg-purple/10 ring-purple/20", nav: "model-lab" },
-  { title: "Context Profiles", body: "Save details you repeat (company, audience, tone) and reuse them in any prompt.", icon: Contact, tone: "text-cyan", tint: "bg-cyan/10 ring-cyan/20", nav: "settings" },
+  { title: "Context Profiles", body: "Save details you repeat (company, audience, tone) and reuse them in any prompt.", icon: Contact, tone: "text-cyan", tint: "bg-cyan/10 ring-cyan/20", nav: "settings", tab: "profiles" },
   { title: "Smart Templates", body: "Start from a template with variables; Promptogen asks for the values before generating.", icon: LayoutTemplate, tone: "text-amber", tint: "bg-amber/10 ring-amber/20", nav: "templates" },
   { title: "Versions", body: "Every meaningful change can become a version you can compare, restore or mark as preferred.", icon: GitCompare, tone: "text-pink", tint: "bg-pink/10 ring-pink/20", nav: "my-prompts" },
 ];
@@ -122,7 +122,7 @@ export default function HelpPage({ chrome, onNavigate, onRequestFeature, onStart
         <section aria-labelledby="pg-help-features">
           <h2 id="pg-help-features" className="mb-3 text-[19px] font-semibold">What each feature does</h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {FEATURES.map(({ title, body, icon: Icon, tone, tint, nav }) => (
+            {FEATURES.map(({ title, body, icon: Icon, tone, tint, nav, tab }) => (
               <article key={title} className={`${CARD} flex flex-col p-5`}>
                 <span className={`${ICON_TILE} size-11 ${tint}`}>
                   <Icon className={`size-[22px] ${tone}`} strokeWidth={1.75} />
@@ -130,7 +130,7 @@ export default function HelpPage({ chrome, onNavigate, onRequestFeature, onStart
                 <h3 className="mt-4 text-[15px] font-semibold">{title}</h3>
                 <p className="mt-1 flex-1 text-[13px] leading-5 text-muted">{body}</p>
                 {nav && (
-                  <button type="button" onClick={() => onNavigate(nav)} className={`${btn("ghost", "sm")} mt-3 self-start`}>
+                  <button type="button" onClick={() => onNavigate(nav, tab)} className={`${btn("ghost", "sm")} mt-3 self-start`}>
                     Open
                     <ArrowRight className="size-4" />
                   </button>

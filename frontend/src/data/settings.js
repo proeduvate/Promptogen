@@ -1,10 +1,11 @@
-import { Settings, Bot, FileText, ShieldCheck, UserRound } from "lucide-react";
+import { Settings, Bot, FileText, ShieldCheck, UserRound, Contact } from "lucide-react";
 import { MODELS_CATALOG } from "./models";
 
 export const SETTINGS_TABS = [
   { id: "general", label: "General", icon: Settings },
   { id: "models", label: "AI Models", icon: Bot },
   { id: "defaults", label: "Prompt Defaults", icon: FileText },
+  { id: "profiles", label: "Context Profiles", icon: Contact },
   { id: "privacy", label: "Data & Privacy", icon: ShieldCheck },
   { id: "account", label: "Account", icon: UserRound },
 ];
@@ -31,9 +32,10 @@ export const TONES = [
   { value: "technical", label: "Technical" },
 ];
 
-export const LENGTHS = [
-  { value: "short", label: "Short" },
-  { value: "medium", label: "Medium" },
+/* Default Detail Level (spec §39). */
+export const DETAIL_LEVELS = [
+  { value: "concise", label: "Concise" },
+  { value: "balanced", label: "Balanced" },
   { value: "detailed", label: "Detailed" },
 ];
 
@@ -44,10 +46,19 @@ export const DEFAULT_SETTINGS = {
   model: "gpt-4o",
   outputStyle: "structured",
   tone: "professional",
-  length: "detailed",
+  length: "balanced",
   bestPractices: true,
+  experience: "simple",
+  notifySharing: true,
   productUpdates: true,
+  notifyEvaluations: true,
   weeklySummary: true,
+  providers: {},
+  monthlyBudget: 20,
+  maxTokensPerRun: 4096,
+  budgetAlerts: true,
+  twoFactor: false,
+  connectedAccounts: { google: true },
   saveHistory: true,
   usageAnalytics: true,
   modelImprovement: false,

@@ -18,6 +18,7 @@ import { PROMPTS } from "./data/library";
 import { SEED_ACTIVITY } from "./data/history";
 import { NOTIFICATIONS } from "./data/notifications";
 import useTheme from "./hooks/useTheme";
+import useContextProfiles from "./hooks/useContextProfiles";
 
 export default function App() {
   const { theme, preference: themePreference, setPreference: setThemePreference } = useTheme();
@@ -36,6 +37,9 @@ export default function App() {
   const [activity, setActivity] = useState(SEED_ACTIVITY);
   /* Which library prompt My Prompts should open with (e.g. from Favorites). */
   const [librarySelection, setLibrarySelection] = useState(null);
+  /* Which Settings tab to open with (e.g. Help → Context Profiles). */
+  const [settingsTab, setSettingsTab] = useState("general");
+  const contextProfiles = useContextProfiles();
 
   /* Switching screens starts at the top, like a page load would. */
   useEffect(() => {
@@ -63,6 +67,16 @@ export default function App() {
   const toggleFavorite = (id) =>
     setPrompts((list) => list.map((prompt) => (prompt.id === id ? { ...prompt, favorite: !prompt.favorite } : prompt)));
 
+  // Hand-off point: sign the user out / start checkout once auth and billing exist.
+  const logout = () => console.log("Log out clicked");
+  const upgrade = () => console.log("Upgrade clicked");
+
+  const navigate = (id, tab) => {
+    if (id === "my-prompts") setLibrarySelection(null);
+    if (id === "settings") setSettingsTab(tab ?? "general");
+    setActiveNav(id);
+  };
+
   const openInLibrary = (id) => {
     setLibrarySelection(id);
     setActiveNav("my-prompts");
@@ -89,9 +103,8 @@ export default function App() {
   /* Profile menu actions. Profile and Settings are ordinary screens. */
   const handleProfileAction = (id) => {
     if (id === "feature") setFeatureOpen(true);
-    // Hand-off point: sign the user out once authentication exists.
-    else if (id === "logout") console.log("Log out clicked");
-    else setActiveNav(id);
+    else if (id === "logout") logout();
+    else navigate(id);
   };
 
   const handleComplete = (answers) => {
@@ -113,14 +126,19 @@ export default function App() {
     if (activeNav === "settings") {
       return (
         <SettingsPage
+          key={settingsTab}
           chrome={chrome}
           themePreference={themePreference}
           onThemePreferenceChange={setThemePreference}
+          contextProfiles={contextProfiles}
+          initialTab={settingsTab}
+          onLogout={logout}
+          onUpgrade={upgrade}
         />
       );
     }
     if (activeNav === "profile") {
-      return <ProfilePage chrome={chrome} />;
+      return <ProfilePage chrome={chrome} onLogout={logout} onUpgrade={upgrade} />;
     }
     if (activeNav === "my-prompts") {
       return (
@@ -155,7 +173,7 @@ export default function App() {
       return (
         <HelpPage
           chrome={chrome}
-          onNavigate={setActiveNav}
+          onNavigate={navigate}
           onRequestFeature={() => setFeatureOpen(true)}
           onStartPrompt={startNewPrompt}
         />
@@ -187,11 +205,8 @@ export default function App() {
     <div className="flex min-h-screen bg-bg text-text">
       <Sidebar
         active={activeNav}
-        onNavigate={(id) => {
-          if (id === "my-prompts") setLibrarySelection(null);
-          setActiveNav(id);
-        }}
-        onUpgrade={() => console.log("Upgrade clicked")}
+        onNavigate={navigate}
+        onUpgrade={upgrade}
         onProfileAction={handleProfileAction}
         open={navOpen}
         onClose={() => setNavOpen(false)}

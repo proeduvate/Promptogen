@@ -4,7 +4,7 @@ import SelectInput from "../SelectInput";
 import { MODELS } from "../../data/settings";
 import { btn } from "../../lib/ui";
 
-export default function AiModelCard({ model, onModelChange }) {
+export default function AiModelCard({ model, onModelChange, onManageModels }) {
   return (
     <SettingsCard
       icon={Bot}
@@ -20,8 +20,7 @@ export default function AiModelCard({ model, onModelChange }) {
           options={MODELS}
           className="min-w-0 flex-1"
         />
-        {/* Hand-off point: open model management once connected models are available. */}
-        <button type="button" onClick={() => console.log("Manage models")} className={btn("brandSoft")}>
+        <button type="button" onClick={onManageModels} className={btn("brandSoft")}>
           <Settings2 className="size-4" strokeWidth={1.75} />
           Manage Models
         </button>
