@@ -10,7 +10,11 @@ import { TONE_FIELD, profileValue } from "../data/contextProfiles";
 import { modelById } from "../data/models";
 import { analyzeIntent } from "./analysis";
 
-export const questionsFor = (domain) => QUESTION_BANK[domain] ?? QUESTION_BANK.general;
+/* Questions for a domain, adjusted by the user's question settings. */
+export const questionsFor = (domain, settings = {}) =>
+  (QUESTION_BANK[domain] ?? QUESTION_BANK.general)
+    .filter((question) => !question.setting || settings[question.setting])
+    .map((question) => (question.name === "outputFormat" && settings.askOutputFormat ? { ...question, importance: "required" } : question));
 
 export const visibleQuestions = (questions, answers) =>
   questions.filter((question) => !question.showIf || question.showIf(answers));
@@ -187,7 +191,7 @@ export function extractFromIdea(text = "") {
 
 /* Starting answers for a domain plus where each pre-filled value came from. */
 export function prefillAnswers(domain, { idea = "", profile, settings }) {
-  const questions = questionsFor(domain);
+  const questions = questionsFor(domain, settings);
   const answers = Object.fromEntries(questions.map((question) => [question.name, emptyAnswer(question)]));
   const sources = {};
   const set = (name, value, source) => {
@@ -206,7 +210,9 @@ export function prefillAnswers(domain, { idea = "", profile, settings }) {
   );
   const saved = savedToneOf(profile, settings);
   if (saved) set("tone", saved.tone, saved.source);
+  if (settings?.preferSteps) set("outputFormat", "steps", "your learned preferences");
   set("outputFormat", settings?.outputStyle, "your Prompt Defaults");
+  if (settings?.preferExamples) set("examples", "yes", "your learned preferences");
   set("detail", { concise: 1, balanced: 2, detailed: 3 }[settings?.length], "your Prompt Defaults");
   return { answers, sources };
 }
@@ -256,6 +262,7 @@ function requirementsFor(domain, answers) {
       return [
         ...(DEV_REQUIREMENTS[answers.devTask] ?? DEV_REQUIREMENTS["New feature"]),
         ...(answers.tests === "yes" ? ["Include unit tests"] : []),
+        ...(answers.edgeCases === "yes" ? ["Handle edge cases: empty input, very large inputs, timeouts and concurrent requests"] : []),
         ...(answers.qualities?.length ? [`Prioritise ${answers.qualities.join(", ").toLowerCase()}`] : []),
       ];
     case "business":
@@ -289,7 +296,7 @@ const OUTPUT_FORMATS = {
   prose: "Flowing prose in short paragraphs",
 };
 
-const TAIL = new Set(["goal", "outputFormat", "tone", "detail", "examples", "tests", "quizzes"]);
+const TAIL = new Set(["goal", "outputFormat", "tone", "detail", "examples", "tests", "quizzes", "edgeCases"]);
 
 const sentence = (text) => {
   const trimmed = text.trim().replace(/\s+/g, " ");
@@ -310,7 +317,7 @@ export function titleFrom(goal) {
 /* -> { slug, title, model, modelId, domain, sections, … } in the same shape
    as GENERATED_PROMPT, so the workspace renders either. */
 export function buildPrompt({ domain, answers, profile, settings, attachments = [] }) {
-  const questions = visibleQuestions(questionsFor(domain), answers);
+  const questions = visibleQuestions(questionsFor(domain, settings), answers);
   const answered = (name) => {
     const question = questions.find((item) => item.name === name);
     return question ? formatAnswer(question, answers[name]) : "";

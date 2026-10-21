@@ -48,6 +48,11 @@ export const DEFAULT_SETTINGS = {
   tone: "professional",
   length: "balanced",
   bestPractices: true,
+  /* Learned preferences (spec §54) and question options (spec §36). */
+  preferExamples: false,
+  preferSteps: false,
+  askEdgeCases: false,
+  askOutputFormat: false,
   experience: "simple",
   notifySharing: true,
   productUpdates: true,

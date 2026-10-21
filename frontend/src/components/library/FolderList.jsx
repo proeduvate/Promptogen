@@ -1,7 +1,7 @@
 import { FOLDERS } from "../../data/library";
 import { CARD } from "../../lib/ui";
 
-export default function FolderList({ active, onSelect }) {
+export default function FolderList({ active, onSelect, extra = {} }) {
   return (
     <section className={`${CARD} p-3`}>
       <h2 className="px-3 pb-2 pt-2 text-[15px] font-semibold">Folders</h2>
@@ -23,7 +23,7 @@ export default function FolderList({ active, onSelect }) {
               >
                 <Icon className={`size-[17px] ${isActive ? "" : tone}`} strokeWidth={1.75} />
                 <span className="min-w-0 flex-1 truncate text-left">{label}</span>
-                <span className={`text-[12px] ${isActive ? "text-brand" : "text-faint"}`}>{count}</span>
+                <span className={`text-[12px] ${isActive ? "text-brand" : "text-faint"}`}>{count + (extra[id] ?? 0)}</span>
               </button>
             </li>
           );

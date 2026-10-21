@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Search, Trash2, Users } from "lucide-react";
+import { FileInput, FolderInput, PencilLine, Plus, RotateCcw, Search, Trash2, Users } from "lucide-react";
 import PageShell from "../components/PageShell";
 import PageHeader from "../components/PageHeader";
 import Tabs from "../components/Tabs";
@@ -9,6 +9,14 @@ import FiltersCard from "../components/library/FiltersCard";
 import PromptTable from "../components/library/PromptTable";
 import Pagination from "../components/library/Pagination";
 import PromptDetailsPanel from "../components/library/PromptDetailsPanel";
+import ImportDialog from "../components/library/ImportDialog";
+import ShareDialog from "../components/workspace/ShareDialog";
+import Dialog from "../components/Dialog";
+import ConfirmDialog from "../components/ConfirmDialog";
+import SelectInput from "../components/SelectInput";
+import { scanSecurity } from "../lib/analysis";
+import { toLibraryRecord } from "../lib/library";
+import { downloadFile, promptToMarkdown, promptToText } from "../lib/promptText";
 import {
   DEFAULT_FILTERS,
   FOLDERS,
@@ -16,6 +24,7 @@ import {
   LIBRARY_TOTAL,
   PAGE_COUNT,
   PAGE_SIZE,
+  PROMPTS,
   TODAY,
 } from "../data/library";
 import { CARD, ICON_TILE, btn } from "../lib/ui";
@@ -29,7 +38,80 @@ const matchesDate = (date, range) => {
   return age < (range === "week" ? 7 : 30);
 };
 
-export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsChange, initialSelectedId }) {
+const SEED_IDS = new Set(PROMPTS.map(({ id }) => id));
+
+const currentSections = (prompt) => prompt.versions?.find(({ id }) => id === prompt.currentVersion)?.sections ?? prompt.versions?.[0]?.sections ?? [];
+
+/* Text searched by the library search: names, tags, folders and every version's content (spec §27). */
+const searchText = (prompt) =>
+  [prompt.title, ...prompt.tags, FOLDERS.find(({ id }) => id === prompt.folder)?.label ?? "", ...(prompt.versions ?? []).map((version) => promptToText(version.sections))]
+    .join("\n")
+    .toLowerCase();
+
+function RenameDialog({ prompt, onClose, onSave }) {
+  const [value, setValue] = useState(prompt.title);
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title="Rename prompt"
+      icon={PencilLine}
+      footer={
+        <>
+          <button type="button" onClick={onClose} className={`${btn()} mr-auto`}>
+            Cancel
+          </button>
+          <button type="submit" form="pg-rename" disabled={!value.trim()} className={btn("primary")}>
+            Save
+          </button>
+        </>
+      }
+    >
+      <form
+        id="pg-rename"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (value.trim()) onSave(value.trim());
+        }}
+      >
+        <label className="text-[13px] font-medium">
+          Name
+          <input data-autofocus value={value} maxLength={80} onChange={(event) => setValue(event.target.value)} className="mt-1.5 w-full rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-[14px] outline-none focus:border-brand/60" />
+        </label>
+      </form>
+    </Dialog>
+  );
+}
+
+function MoveDialog({ prompt, onClose, onMove }) {
+  const [folder, setFolder] = useState(prompt.folder);
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title="Move to folder"
+      description={prompt.title}
+      icon={FolderInput}
+      footer={
+        <>
+          <button type="button" onClick={onClose} className={`${btn()} mr-auto`}>
+            Cancel
+          </button>
+          <button type="button" onClick={() => onMove(folder)} className={btn("primary")}>
+            Move
+          </button>
+        </>
+      }
+    >
+      <label className="text-[13px] font-medium">
+        Folder
+        <SelectInput value={folder} onChange={setFolder} options={FOLDERS.filter(({ id }) => id !== "all").map(({ id, label }) => ({ value: id, label }))} className="mt-1.5" />
+      </label>
+    </Dialog>
+  );
+}
+
+export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsChange, initialSelectedId, onOpenPrompt, onOpenImported, onLog }) {
   const [tab, setTab] = useState("all");
   /* The library lives in App so Favorites and other screens stay in sync. */
   const setPrompts = onPromptsChange;
@@ -39,6 +121,9 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState(initialSelectedId ?? "launch-emails");
   const [page, setPage] = useState(1);
+  const [detailsTab, setDetailsTab] = useState(null);
+  const [dialog, setDialog] = useState(null);
+  const [shareLinks, setShareLinks] = useState({});
   const searchRef = useRef(null);
 
   /* ⌘K / Ctrl+K jumps to search, as hinted inside the input. */
@@ -57,15 +142,14 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
     const needle = query.trim().toLowerCase();
     return prompts.filter(
       (prompt) =>
+        !prompt.deleted &&
         (tab !== "favorites" || prompt.favorite) &&
-        (folder === "all" || prompt.folder === folder) &&
+        (folder === "all" ? prompt.folder !== "archived" : prompt.folder === folder) &&
         (filters.model === "all" || prompt.model === filters.model) &&
         (filters.tag === "all" || prompt.tags.includes(filters.tag)) &&
         (filters.createdBy === "all" || prompt.createdBy === filters.createdBy) &&
         matchesDate(prompt.date, filters.date) &&
-        (!needle ||
-          prompt.title.toLowerCase().includes(needle) ||
-          prompt.tags.some((tag) => tag.toLowerCase().includes(needle))),
+        (!needle || needle.split(/\s+/).every((word) => searchText(prompt).includes(word))),
     );
   }, [prompts, tab, folder, filters, query]);
 
@@ -82,7 +166,8 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
   const from = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const to = Math.min(currentPage * PAGE_SIZE, total);
 
-  const selected = prompts.find(({ id }) => id === selectedId);
+  const selected = prompts.find((prompt) => prompt.id === selectedId && !prompt.deleted);
+  const addedByFolder = prompts.filter((prompt) => !SEED_IDS.has(prompt.id) && !prompt.deleted).reduce((counts, prompt) => ({ ...counts, [prompt.folder]: (counts[prompt.folder] ?? 0) + 1, all: (counts.all ?? 0) + 1 }), {});
 
   const updatePrompt = (id, change) =>
     setPrompts((prev) => prev.map((prompt) => (prompt.id === id ? { ...prompt, ...change(prompt) } : prompt)));
@@ -94,6 +179,24 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
       currentVersion: versionId,
       score: prompt.versions.find((version) => version.id === versionId).metrics.score,
     }));
+
+  /* Row actions (spec §24). */
+  const handleAction = (action, prompt) => {
+    if (action === "open" || action === "test") onOpenPrompt(prompt, action === "test" ? "test" : null);
+    else if (action === "compare") {
+      setSelectedId(prompt.id);
+      setDetailsTab("compare");
+    } else if (action === "duplicate") {
+      const copy = { ...prompt, id: `${prompt.id}-copy-${Date.now()}`, title: `${prompt.title} (copy)`, favorite: false, modifiedAt: Date.now() };
+      setPrompts((list) => [copy, ...list]);
+      setSelectedId(copy.id);
+    } else if (action === "export") {
+      downloadFile(`${prompt.id}.md`, `# ${prompt.title}\n\n${promptToMarkdown(currentSections(prompt))}`, "text/markdown");
+      onLog?.({ type: "exported", title: "Exported as Markdown", prompt: prompt.title });
+    } else if (action === "archive" || action === "unarchive") {
+      updatePrompt(prompt.id, (current) => (action === "archive" ? { folder: "archived", previousFolder: current.folder } : { folder: current.previousFolder ?? "personal" }));
+    } else setDialog({ type: action, prompt });
+  };
 
   const openFolder = (id) => {
     setFolder(id);
@@ -117,6 +220,10 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
           ⌘K
         </kbd>
       </label>
+      <button type="button" onClick={() => setDialog({ type: "import" })} className={btn()}>
+        <FileInput className="size-4" />
+        Import
+      </button>
       <button type="button" onClick={onNewPrompt} className={btn("primary")}>
         <Plus className="size-4" />
         New Prompt
@@ -134,7 +241,26 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
       />
     );
   } else if (tab === "trash") {
-    body = <EmptyState icon={Trash2} title="Trash is empty" body="Prompts you delete will show up here." />;
+    const trashed = prompts.filter((prompt) => prompt.deleted);
+    body = trashed.length ? (
+      <ul className={`${CARD} divide-y divide-line`}>
+        {trashed.map((prompt) => (
+          <li key={prompt.id} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
+            <span className="min-w-0 flex-1 text-[14px] font-medium">{prompt.title}</span>
+            <button type="button" onClick={() => updatePrompt(prompt.id, () => ({ deleted: false }))} className={btn("secondary", "sm")}>
+              <RotateCcw className="size-4" />
+              Restore
+            </button>
+            <button type="button" onClick={() => setDialog({ type: "purge", prompt })} className={btn("ghost", "sm")}>
+              <Trash2 className="size-4" />
+              Delete forever
+            </button>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <EmptyState icon={Trash2} title="Trash is empty" body="Prompts you delete will show up here." />
+    );
   } else if (tab === "folders") {
     body = (
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -160,7 +286,7 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
     body = (
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[240px_minmax(0,1fr)] min-[1880px]:grid-cols-[240px_minmax(0,1fr)_460px]">
         <div className="flex flex-col gap-5 lg:row-span-2 min-[1880px]:row-span-1">
-          <FolderList active={folder} onSelect={setFolder} />
+          <FolderList active={folder} onSelect={setFolder} extra={addedByFolder} />
           <FiltersCard
             values={draftFilters}
             onChange={(id, value) => setDraftFilters((prev) => ({ ...prev, [id]: value }))}
@@ -177,6 +303,7 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
           selectedId={selectedId}
           onSelect={setSelectedId}
           onToggleFavorite={toggleFavorite}
+          onAction={handleAction}
           footer={
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3.5">
               <span className="text-[13px] text-muted">
@@ -190,11 +317,12 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
         {selected && (
           <div className="min-w-0 lg:col-start-2 min-[1880px]:col-start-3">
             <PromptDetailsPanel
-              key={selected.id}
+              key={`${selected.id}-${detailsTab}`}
               prompt={selected}
+              initialTab={detailsTab}
               onToggleFavorite={toggleFavorite}
               onUseVersion={applyVersion}
-              onNewVersion={(id) => console.log("New version", id)}
+              onNewVersion={() => onOpenPrompt(selected, null)}
             />
           </div>
         )}
@@ -206,6 +334,80 @@ export default function MyPromptsPage({ chrome, onNewPrompt, prompts, onPromptsC
     <PageShell chrome={chrome} header={header}>
       <Tabs tabs={LIBRARY_TABS} active={tab} onChange={setTab} className="mb-5" />
       {body}
+
+      {dialog?.type === "import" && (
+        <ImportDialog
+          onClose={() => setDialog(null)}
+          onOpen={(imported) => {
+            setDialog(null);
+            onOpenImported(imported);
+          }}
+          onSave={(imported) => {
+            const record = toLibraryRecord({
+              id: `imported-${Date.now()}`,
+              title: imported.title,
+              domain: imported.domain,
+              model: "GPT-4o",
+              versions: [{ id: "v1", createdAt: Date.now(), sections: imported.sections }],
+              currentVersion: "v1",
+            });
+            setPrompts((list) => [record, ...list]);
+            setSelectedId(record.id);
+            setDetailsTab("details");
+            setDialog(null);
+            onLog?.({ type: "created", title: `Imported “${record.title}”`, prompt: record.title });
+          }}
+        />
+      )}
+      {dialog?.type === "rename" && (
+        <RenameDialog
+          prompt={dialog.prompt}
+          onClose={() => setDialog(null)}
+          onSave={(title) => {
+            updatePrompt(dialog.prompt.id, () => ({ title, modifiedAt: Date.now() }));
+            setDialog(null);
+          }}
+        />
+      )}
+      {dialog?.type === "move" && (
+        <MoveDialog
+          prompt={dialog.prompt}
+          onClose={() => setDialog(null)}
+          onMove={(target) => {
+            updatePrompt(dialog.prompt.id, () => ({ folder: target, modifiedAt: Date.now() }));
+            setDialog(null);
+          }}
+        />
+      )}
+      {dialog?.type === "share" && (
+        <ShareDialog
+          title={dialog.prompt.title}
+          findings={scanSecurity(promptToText(currentSections(dialog.prompt)))}
+          link={shareLinks[dialog.prompt.id]}
+          onCreate={(link) => {
+            setShareLinks((links) => ({ ...links, [dialog.prompt.id]: link }));
+            onLog?.({ type: "shared", title: `Shared a ${link.permission === "view" ? "view-only" : link.permission} link`, prompt: dialog.prompt.title });
+          }}
+          onRevoke={() => setShareLinks((links) => ({ ...links, [dialog.prompt.id]: null }))}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      <ConfirmDialog
+        open={dialog?.type === "delete" || dialog?.type === "purge"}
+        title={dialog?.type === "purge" ? "Delete forever?" : "Move to Trash?"}
+        body={
+          dialog?.type === "purge"
+            ? `“${dialog?.prompt?.title}” and all its versions will be permanently deleted.`
+            : `“${dialog?.prompt?.title}” moves to Trash. You can restore it from there.`
+        }
+        confirmLabel={dialog?.type === "purge" ? "Delete forever" : "Move to Trash"}
+        onConfirm={() => {
+          if (dialog.type === "purge") setPrompts((list) => list.filter((prompt) => prompt.id !== dialog.prompt.id));
+          else updatePrompt(dialog.prompt.id, () => ({ deleted: true, favorite: false }));
+          setDialog(null);
+        }}
+        onClose={() => setDialog(null)}
+      />
     </PageShell>
   );
 }

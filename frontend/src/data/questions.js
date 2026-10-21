@@ -170,6 +170,8 @@ export const QUESTION_BANK = {
       options: ["PostgreSQL", "MySQL", "MongoDB", "SQLite", "Redis", "None"].map((label) => ({ value: label, label })),
     },
     { name: "tests", type: "yesno", importance: "recommended", title: "Should the answer include tests?", short: "Testing" },
+    // Only asked when "Ask about edge cases" is on (Settings → Prompt Defaults).
+    { name: "edgeCases", type: "yesno", importance: "recommended", title: "Should the answer cover edge cases?", hint: "Empty input, very large inputs, timeouts, concurrency.", short: "Edge cases", setting: "askEdgeCases" },
     {
       name: "qualities",
       type: "multi",

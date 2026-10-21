@@ -15,8 +15,13 @@ import HistoryPage from "./pages/HistoryPage";
 import ModelLabPage from "./pages/ModelLabPage";
 import HelpPage from "./pages/HelpPage";
 import { PROMPTS } from "./data/library";
+import { GENERATED_PROMPT } from "./data/generated";
+import { MODELS_CATALOG } from "./data/models";
+import { fillVariables } from "./data/templates";
+import { detectDomain } from "./lib/analysis";
+import { slugify } from "./lib/promptBuilder";
 import { SEED_ACTIVITY } from "./data/history";
-import { NOTIFICATIONS } from "./data/notifications";
+import { EVALUATION_NOTIFICATION, NOTIFICATIONS } from "./data/notifications";
 import useTheme from "./hooks/useTheme";
 import useContextProfiles from "./hooks/useContextProfiles";
 
@@ -42,6 +47,8 @@ export default function App() {
   /* Templates the user converted from their prompts, and prompt feedback.
      Hand-off point: persist both through the API. */
   const [personalTemplates, setPersonalTemplates] = useState([]);
+  /* A template picked on Home opens its variables form on Templates. */
+  const [templateRequest, setTemplateRequest] = useState(null);
   const [feedback, setFeedback] = useState([]);
   /* Which library prompt My Prompts should open with (e.g. from Favorites). */
   const [librarySelection, setLibrarySelection] = useState(null);
@@ -69,8 +76,22 @@ export default function App() {
     onOpenNav: () => setNavOpen(true),
   };
 
-  const logActivity = (entry) =>
+  const logActivity = (entry) => {
     setActivity((list) => [{ id: `a${Date.now()}${Math.random()}`, at: Date.now(), ...entry }, ...list]);
+    /* "Evaluation completed" notifications (spec §55), unless turned off in Settings. */
+    let notify = true;
+    try {
+      notify = JSON.parse(localStorage.getItem("pg-settings"))?.notifyEvaluations !== false;
+    } catch {
+      // Storage blocked: keep the default.
+    }
+    if (entry.type === "tested" && notify) {
+      setNotifications((list) => [
+        { ...EVALUATION_NOTIFICATION, id: `n${Date.now()}`, body: `${entry.prompt}: ${entry.detail} (${entry.title.replace(/^Tested /, "")}).`, createdAt: new Date().toISOString(), unread: true },
+        ...list,
+      ]);
+    }
+  };
 
   const saveToLibrary = (record) =>
     setPrompts((list) =>
@@ -89,6 +110,7 @@ export default function App() {
 
   const navigate = (id, tab) => {
     if (id === "my-prompts") setLibrarySelection(null);
+    if (id === "templates") setTemplateRequest(null);
     if (id === "settings") setSettingsTab(tab ?? "general");
     setActiveNav(id);
   };
@@ -126,21 +148,83 @@ export default function App() {
     else navigate(id);
   };
 
-  /* The wizard hands back a prompt built from its answers (see lib/promptBuilder). */
-  const handleComplete = (prompt) => {
-    setDraft({ ...prompt, id: `draft-${Date.now()}` });
-    logActivity({ type: "created", title: `Created “${prompt.title}”`, prompt: prompt.title });
-    setModalOpen(false);
+  const openWorkspace = (prompt) => {
+    setDraft({ generatedAt: "Just now", tip: GENERATED_PROMPT.tip, slug: slugify(prompt.title), ...prompt, id: prompt.id ?? `draft-${Date.now()}`, key: Date.now() });
     setActiveNav("home");
     setHomeView("result");
   };
 
+  /* Opens a My Prompts record in the workspace with its versions. */
+  const openPromptRecord = (record, initialDialog) => {
+    const stored = [...(record.versions ?? [])].reverse();
+    const fallback = record.id === "saas-marketing" ? GENERATED_PROMPT.sections : [{ id: "objective", label: "OBJECTIVE", type: "text", content: `${record.title}.` }];
+    const versions = (stored.length ? stored : [{ id: "v1", sections: fallback }]).map((version, index) => {
+      const number = Number.parseInt(version.id.replace(/\D/g, ""), 10) || index + 1;
+      return { id: version.id, number, label: `V${number}`, name: number === 1 ? "Initial version" : `Version ${number}`, note: "", sections: version.sections, createdAt: Date.now(), preferred: false, test: null };
+    });
+    const current = versions.find((version) => version.id === record.currentVersion) ?? versions[versions.length - 1];
+    openWorkspace({
+      id: record.id,
+      title: record.title,
+      domain: record.domain ?? detectDomain(`${record.title} ${record.tags.join(" ")}`),
+      modelId: MODELS_CATALOG.find(({ name }) => name.startsWith(record.model))?.id,
+      sections: current.sections,
+      versions,
+      currentVersion: current.id,
+      generatedAt: record.created,
+      fromLibrary: true,
+      favorite: record.favorite,
+      initialDialog,
+    });
+  };
+
+  const useTemplate = (template, values) => {
+    setIdea(fillVariables(template.prompt, values).slice(0, 500));
+    goHome();
+    setModalOpen(true);
+  };
+
+  const usePersonalTemplate = (template, values) => {
+    const fill = (text) => fillVariables(text, values);
+    const sections = template.sections.map((section) =>
+      section.type === "text" ? { ...section, content: fill(section.content) } : { ...section, items: section.items.map((item) => ({ ...item, text: fill(item.text) })) },
+    );
+    const domain = { productivity: "general", creative: "writing" }[template.category] ?? template.category;
+    openWorkspace({ title: template.title.replace(/ template$/i, ""), domain, sections, generatedAt: "From your template" });
+    logActivity({ type: "created", title: `Created from template “${template.title}”`, prompt: template.title });
+  };
+
+  /* The wizard hands back a prompt built from its answers (see lib/promptBuilder). */
+  const handleComplete = (prompt) => {
+    logActivity({ type: "created", title: `Created “${prompt.title}”`, prompt: prompt.title });
+    setModalOpen(false);
+    openWorkspace(prompt);
+  };
+
   const renderPage = () => {
     if (activeNav === "analytics") {
-      return <AnalyticsPage chrome={chrome} onViewAllPrompts={() => setActiveNav("my-prompts")} />;
+      return (
+        <AnalyticsPage
+          chrome={chrome}
+          prompts={prompts}
+          activity={activity}
+          feedback={feedback}
+          onViewAllPrompts={() => openInLibrary(null)}
+          onNavigate={navigate}
+        />
+      );
     }
     if (activeNav === "templates") {
-      return <TemplatesPage chrome={chrome} onUseTemplate={(template) => openComposer(template.prompt)} />;
+      return (
+        <TemplatesPage
+          key={templateRequest ?? "templates"}
+          chrome={chrome}
+          personalTemplates={personalTemplates}
+          initialTemplateId={templateRequest}
+          onUseTemplate={useTemplate}
+          onUsePersonalTemplate={usePersonalTemplate}
+        />
+      );
     }
     if (activeNav === "settings") {
       return (
@@ -168,6 +252,12 @@ export default function App() {
           prompts={prompts}
           onPromptsChange={setPrompts}
           initialSelectedId={librarySelection}
+          onOpenPrompt={openPromptRecord}
+          onOpenImported={(imported) => {
+            logActivity({ type: "created", title: `Imported “${imported.title}”`, prompt: imported.title });
+            openWorkspace({ ...imported, generatedAt: "Imported" });
+          }}
+          onLog={logActivity}
         />
       );
     }
@@ -201,7 +291,7 @@ export default function App() {
     if (activeNav === "home" && homeView === "result") {
       return (
         <GeneratedPromptPage
-          key={draft?.id ?? "sample"}
+          key={draft?.key ?? "sample"}
           chrome={chrome}
           prompt={draft ?? undefined}
           onBack={goHome}
@@ -228,7 +318,10 @@ export default function App() {
         onManageProfiles={() => navigate("settings", "profiles")}
         prompts={prompts}
         onOpenPrompt={openInLibrary}
-        onUseTemplate={(template) => openComposer(template.prompt)}
+        onUseTemplate={(template) => {
+          setTemplateRequest(template.id);
+          setActiveNav("templates");
+        }}
         onNavigate={navigate}
       />
     );

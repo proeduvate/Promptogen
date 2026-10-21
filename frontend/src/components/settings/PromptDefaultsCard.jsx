@@ -2,7 +2,7 @@ import { useId } from "react";
 import { FileText } from "lucide-react";
 import SettingsCard, { Field } from "./SettingsCard";
 import SelectInput from "../SelectInput";
-import Toggle from "../Toggle";
+import Toggle, { ToggleRow } from "../Toggle";
 import { OUTPUT_STYLES, TONES, DETAIL_LEVELS } from "../../data/settings";
 
 export default function PromptDefaultsCard({ settings, onChange }) {
@@ -54,6 +54,16 @@ export default function PromptDefaultsCard({ settings, onChange }) {
               Add best practices and examples to the prompt.
             </p>
           </div>
+        </div>
+      </div>
+      <div className="mt-6 border-t border-line pt-5">
+        <h3 className="text-[14px] font-semibold">Learned preferences and questions</h3>
+        <p className="mt-0.5 text-[13px] text-muted">Suggested from your feedback and insights in Analytics. Change them any time.</p>
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <ToggleRow label="Include examples by default" description="Pre-answers “Should the AI include examples?” with Yes." checked={settings.preferExamples} onChange={(value) => onChange("preferExamples", value)} />
+          <ToggleRow label="Prefer step-by-step instructions" description="Suggests a step-by-step output format." checked={settings.preferSteps} onChange={(value) => onChange("preferSteps", value)} />
+          <ToggleRow label="Ask about edge cases" description="Adds an edge-case question to Development prompts." checked={settings.askEdgeCases} onChange={(value) => onChange("askEdgeCases", value)} />
+          <ToggleRow label="Always ask about output format" description="Makes the output format question required." checked={settings.askOutputFormat} onChange={(value) => onChange("askOutputFormat", value)} />
         </div>
       </div>
     </SettingsCard>

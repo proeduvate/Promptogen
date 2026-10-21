@@ -27,11 +27,7 @@ import { addConstraint, addRequirement, analyzeQuality, domainOf } from "../lib/
 import { recommendVersion } from "../lib/testing";
 import { copyText, downloadFile, printPrompt, promptToMarkdown, promptToText } from "../lib/promptText";
 import { textOf } from "../lib/sections";
-
-const FOLDERS = { marketing: "marketing", development: "development", writing: "content", research: "research", business: "product" };
-
-const formatDate = (time) =>
-  new Date(time).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+import { toLibraryRecord } from "../lib/library";
 
 const sameSections = (a, b) => a === b || JSON.stringify(a) === JSON.stringify(b);
 
@@ -63,19 +59,19 @@ export default function GeneratedPromptPage({
   const model = modelById(modelId)?.name ?? prompt.model;
   const history = useHistory(prompt.sections);
   const sections = history.value;
-  const [versions, setVersions] = useState(() => [
-    { id: "v1", number: 1, label: "V1", name: "Initial Generation", note: "", sections: prompt.sections, createdAt: Date.now(), preferred: false, test: null },
-  ]);
-  const [baseId, setBaseId] = useState("v1");
+  const [versions, setVersions] = useState(
+    () => prompt.versions ?? [{ id: "v1", number: 1, label: "V1", name: "Initial Generation", note: "", sections: prompt.sections, createdAt: Date.now(), preferred: false, test: null }],
+  );
+  const [baseId, setBaseId] = useState(prompt.currentVersion ?? "v1");
   const [editing, setEditing] = useState(false);
   const [ignored, setIgnored] = useState([]);
-  const [dialog, setDialog] = useState(null);
+  const [dialog, setDialog] = useState(prompt.initialDialog ? { type: prompt.initialDialog } : null);
   const [toast, setToast] = useState(null);
   const [advanced, setAdvanced] = useState(settings.experience === "advanced");
   const [autosave, setAutosave] = useState("saved");
   const [lastChange, setLastChange] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [favorite, setFavorite] = useState(false);
+  const [saved, setSaved] = useState(Boolean(prompt.fromLibrary));
+  const [favorite, setFavorite] = useState(Boolean(prompt.favorite));
   const [draftTest, setDraftTest] = useState(null);
   const [shareLink, setShareLink] = useState(null);
   const libraryId = useRef(prompt.id ?? prompt.slug);
@@ -212,34 +208,30 @@ export default function GeneratedPromptPage({
   };
 
   /* ---------- Library ---------- */
-  const toRecord = (overrides = {}) => {
-    const today = new Date();
-    const words = (list) => promptToText(list).split(/\s+/).filter(Boolean).length;
-    return {
+  const toRecord = (overrides = {}) => ({
+    ...toLibraryRecord({
       id: libraryId.current,
       title: prompt.title,
-      createdBy: "you",
-      date: today.toISOString().slice(0, 10),
-      created: today.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      domain,
       model,
-      folder: FOLDERS[domain] ?? "personal",
-      tags: [domainLabel(domain)],
-      score: quality.overall,
-      favorite,
+      versions,
       currentVersion: base.id,
-      versions: [...versions].reverse().map((version) => {
-        const report = analyzeQuality(version.sections, domain);
-        const dimension = (id) => report.dimensions.find((item) => item.id === id).score;
-        return {
-          id: version.id,
-          date: formatDate(version.createdAt),
-          metrics: { score: report.overall, words: words(version.sections), clarity: dimension("clarity"), specificity: dimension("specificity"), actionability: dimension("actionability") },
-          sections: version.sections,
-        };
-      }),
-      ...overrides,
-    };
-  };
+      favorite,
+      tested: base.test ? { score: base.test.score, passed: base.test.passed, total: base.test.total } : null,
+    }),
+    ...overrides,
+  });
+
+  /* Keep the My Prompts copy in step with versions and test results. */
+  const syncedOnce = useRef(false);
+  useEffect(() => {
+    if (!syncedOnce.current) {
+      syncedOnce.current = true;
+      return;
+    }
+    if (saved) onSaveToLibrary?.(toRecord());
+    // toRecord reads the latest state; these are the changes worth syncing.
+  }, [versions, baseId]);
 
   const toggleSave = () => {
     if (saved) {

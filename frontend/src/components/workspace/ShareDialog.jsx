@@ -55,7 +55,7 @@ export default function ShareDialog({ title, findings, link, onCreate, onRevoke,
           </p>
           <p className="mt-1 text-muted">{findings[0].body} Anyone with the link will see it.</p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            {findings.some((finding) => finding.kind === "secret" || finding.kind === "personal") && (
+            {onRedact && findings.some((finding) => finding.kind === "secret" || finding.kind === "personal") && (
               <button type="button" onClick={onRedact} className={btn("secondary", "sm")}>
                 Remove it first
               </button>

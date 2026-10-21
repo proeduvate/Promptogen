@@ -227,7 +227,7 @@ export default function QuestionsModal({ seed = "", profile = null, attachments 
     headingRef.current?.focus();
   }, [step, focusTarget]);
 
-  const questions = questionsFor(domain);
+  const questions = questionsFor(domain, settings);
   const visible = visibleQuestions(questions, answers);
   const readiness = readinessOf(questions, answers);
   const shown = showOptional ? visible : visible.filter((question) => question.importance !== "optional" || question.showIf);

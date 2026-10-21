@@ -4,6 +4,7 @@ import PageShell from "../components/PageShell";
 import PageHeader from "../components/PageHeader";
 import EmptyState from "../components/EmptyState";
 import TemplateCard from "../components/templates/TemplateCard";
+import VariablesDialog from "../components/templates/VariablesDialog";
 import { TEMPLATES, TEMPLATE_CATEGORIES } from "../data/templates";
 import { fuzzySearch } from "../lib/fuzzy";
 import { btn } from "../lib/ui";
@@ -11,10 +12,11 @@ import { btn } from "../lib/ui";
 const CATEGORY_BY_ID = Object.fromEntries(TEMPLATE_CATEGORIES.map((category) => [category.id, category]));
 
 /* The category label is searchable too, so "educ" finds every Education template. */
-const SEARCHABLE = TEMPLATES.map((template) => ({
-  ...template,
-  categoryLabel: CATEGORY_BY_ID[template.category].label,
-}));
+const searchable = (templates) =>
+  templates.map((template) => ({
+    ...template,
+    categoryLabel: CATEGORY_BY_ID[template.category]?.label ?? "Personal",
+  }));
 
 const SEARCH_FIELDS = [
   { key: "title", weight: 3 },
@@ -31,10 +33,12 @@ const chipClass = (isActive) =>
       : "border-line bg-surface text-muted hover:bg-surface-2 hover:text-text",
   ].join(" ");
 
-export default function TemplatesPage({ chrome, onUseTemplate }) {
+export default function TemplatesPage({ chrome, personalTemplates = [], initialTemplateId = null, onUseTemplate, onUsePersonalTemplate }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
+  const [using, setUsing] = useState(() => TEMPLATES.find(({ id }) => id === initialTemplateId) ?? null);
   const searchRef = useRef(null);
+  const all = useMemo(() => searchable([...personalTemplates, ...TEMPLATES]), [personalTemplates]);
 
   /* ⌘K / Ctrl+K jumps to search, as hinted inside the input. */
   useEffect(() => {
@@ -48,15 +52,17 @@ export default function TemplatesPage({ chrome, onUseTemplate }) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const matches = useMemo(() => fuzzySearch(SEARCHABLE, query, SEARCH_FIELDS), [query]);
-  const visible =
-    category === "all" ? matches : matches.filter(({ item }) => item.category === category);
+  const matches = useMemo(() => fuzzySearch(all, query, SEARCH_FIELDS), [all, query]);
+  const inCategory = (item) => (category === "personal" ? item.personal : item.category === category);
+  const visible = category === "all" ? matches : matches.filter(({ item }) => inCategory(item));
 
   /* Chip counts follow the search so they always say what a click will show. */
   const counts = matches.reduce((acc, { item }) => {
     acc[item.category] = (acc[item.category] ?? 0) + 1;
+    if (item.personal) acc.personal = (acc.personal ?? 0) + 1;
     return acc;
   }, {});
+  const chips = [{ id: "all", label: "All" }, ...(personalTemplates.length ? [{ id: "personal", label: "My Templates" }] : []), ...TEMPLATE_CATEGORIES];
 
   const clearFilters = () => {
     setQuery("");
@@ -65,7 +71,7 @@ export default function TemplatesPage({ chrome, onUseTemplate }) {
   };
 
   const header = (
-    <PageHeader title="Templates" subtitle="Start from a proven prompt and make it your own.">
+    <PageHeader title="Templates" subtitle="Start from a proven prompt: fill in a few details and go.">
       <label className="flex w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2.5 focus-within:border-brand/60 sm:w-[280px]">
         <Search className="size-4 shrink-0 text-faint" />
         <input
@@ -87,7 +93,7 @@ export default function TemplatesPage({ chrome, onUseTemplate }) {
   return (
     <PageShell chrome={chrome} header={header}>
       <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Filter by category">
-        {[{ id: "all", label: "All" }, ...TEMPLATE_CATEGORIES].map(({ id, label }) => {
+        {chips.map(({ id, label }) => {
           const isActive = id === category;
           return (
             <button
@@ -107,7 +113,7 @@ export default function TemplatesPage({ chrome, onUseTemplate }) {
       </div>
 
       <p className="mb-4 text-[13px] text-muted" aria-live="polite">
-        Showing {visible.length} of {TEMPLATES.length} templates
+        Showing {visible.length} of {all.length} templates
       </p>
 
       {visible.length > 0 ? (
@@ -118,7 +124,7 @@ export default function TemplatesPage({ chrome, onUseTemplate }) {
               template={item}
               category={CATEGORY_BY_ID[item.category]}
               hits={hits}
-              onUse={onUseTemplate}
+              onUse={setUsing}
             />
           ))}
         </div>
@@ -128,7 +134,7 @@ export default function TemplatesPage({ chrome, onUseTemplate }) {
           title="No templates found"
           body={
             query.trim()
-              ? `Nothing matches “${query.trim()}”${category === "all" ? "" : ` in ${CATEGORY_BY_ID[category].label}`}. Try a different word or clear the filters.`
+              ? `Nothing matches “${query.trim()}”${category === "all" ? "" : ` in ${CATEGORY_BY_ID[category]?.label ?? "My Templates"}`}. Try a different word or clear the filters.`
               : "There are no templates in this category yet."
           }
         >
@@ -136,6 +142,17 @@ export default function TemplatesPage({ chrome, onUseTemplate }) {
             Clear filters
           </button>
         </EmptyState>
+      )}
+      {using && (
+        <VariablesDialog
+          template={using}
+          onClose={() => setUsing(null)}
+          onSubmit={(values) => {
+            setUsing(null);
+            if (using.personal) onUsePersonalTemplate(using, values);
+            else onUseTemplate(using, values);
+          }}
+        />
       )}
     </PageShell>
   );

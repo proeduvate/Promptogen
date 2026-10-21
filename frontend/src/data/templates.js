@@ -5,6 +5,10 @@ import {
   GraduationCap,
   Briefcase,
   FlaskConical,
+  ListChecks,
+  Palette,
+  BarChart3,
+  UserRound,
 } from "lucide-react";
 
 /* Template categories drive the filter chips and each card's icon tile. */
@@ -15,11 +19,15 @@ export const TEMPLATE_CATEGORIES = [
   { id: "education", label: "Education", icon: GraduationCap, tone: "text-amber", tint: "bg-amber/10 ring-amber/20" },
   { id: "business", label: "Business", icon: Briefcase, tone: "text-brand", tint: "bg-brand/10 ring-brand/20" },
   { id: "research", label: "Research", icon: FlaskConical, tone: "text-cyan", tint: "bg-cyan/10 ring-cyan/20" },
+  { id: "productivity", label: "Productivity", icon: ListChecks, tone: "text-good", tint: "bg-good/10 ring-good/20" },
+  { id: "creative", label: "Creative", icon: Palette, tone: "text-pink", tint: "bg-pink/10 ring-pink/20" },
+  { id: "data", label: "Data Analysis", icon: BarChart3, tone: "text-brand", tint: "bg-brand/10 ring-brand/20" },
+  { id: "career", label: "Career", icon: UserRound, tone: "text-amber", tint: "bg-amber/10 ring-amber/20" },
 ];
 
-/* Prompt presets. "Use template" drops `prompt` into the Home composer
-   (500-character limit), so keep it under that and leave [placeholders]
-   for the user to fill in. To add a template, append an object here. */
+/* Smart templates (spec §28–29). {{variables}} are asked for before the
+   filled prompt goes to the Home composer (500-character limit), so keep
+   prompts short. To add a template, append an object here. */
 export const TEMPLATES = [
   {
     id: "launch-campaign",
@@ -28,7 +36,7 @@ export const TEMPLATES = [
     category: "marketing",
     tags: ["Launch", "Campaign", "Strategy"],
     prompt:
-      "Write a prompt for an AI to plan a multi-channel launch campaign for [product]. Include the target audience, key messaging, channel mix, a week-by-week timeline and the KPIs to track.",
+      "Plan a multi-channel launch campaign for {{product}}. Include the target audience, key messaging, channel mix, a week-by-week timeline and the KPIs to track.",
   },
   {
     id: "social-calendar",
@@ -37,7 +45,7 @@ export const TEMPLATES = [
     category: "marketing",
     tags: ["Social Media", "Content", "Calendar"],
     prompt:
-      "Write a prompt for an AI to create a 4-week social media content calendar for [brand] on [platforms], with post ideas, hooks, captions, hashtags and the best time to publish each post.",
+      "Create a 4-week social media content calendar for {{brand}} on {{platforms}}, with post ideas, hooks, captions, hashtags and the best time to publish each post.",
   },
   {
     id: "email-nurture",
@@ -46,7 +54,7 @@ export const TEMPLATES = [
     category: "marketing",
     tags: ["Email", "Automation", "Conversion"],
     prompt:
-      "Write a prompt for an AI to draft a 5-email nurture sequence for new sign-ups to [product], with a subject line, goal and call to action for each email.",
+      "Draft a 5-email nurture sequence for new sign-ups to {{product}}, with a subject line, goal and call to action for each email.",
   },
   {
     id: "code-review",
@@ -55,7 +63,7 @@ export const TEMPLATES = [
     category: "development",
     tags: ["Code Review", "Quality", "Security"],
     prompt:
-      "Write a prompt for an AI to review a [language] code change for bugs, security issues, performance problems and readability, and return findings ranked by severity with suggested fixes.",
+      "Review a {{language}} code change for bugs, security issues, performance problems and readability, and return findings ranked by severity with suggested fixes.",
   },
   {
     id: "api-docs",
@@ -64,7 +72,7 @@ export const TEMPLATES = [
     category: "development",
     tags: ["Docs", "API", "REST"],
     prompt:
-      "Write a prompt for an AI to write reference documentation for the [API name] endpoints, covering purpose, parameters, request and response examples, error codes and authentication.",
+      "Write reference documentation for the {{api_name}} endpoints, covering purpose, parameters, request and response examples, error codes and authentication.",
   },
   {
     id: "bug-triage",
@@ -73,7 +81,7 @@ export const TEMPLATES = [
     category: "development",
     tags: ["Debugging", "Triage", "QA"],
     prompt:
-      "Write a prompt for an AI to triage a bug report for [app], producing clear reproduction steps, expected vs actual behaviour, likely root causes and a suggested priority.",
+      "Triage a bug report for {{app}}, producing clear reproduction steps, expected vs actual behaviour, likely root causes and a suggested priority.",
   },
   {
     id: "seo-blog",
@@ -82,7 +90,7 @@ export const TEMPLATES = [
     category: "writing",
     tags: ["SEO", "Blog", "Long-form"],
     prompt:
-      "Write a prompt for an AI to write a 1,500-word SEO blog post about [topic] targeting the keyword [keyword], with an outline, H2/H3 headings, meta description and a closing call to action.",
+      "Write a 1,500-word SEO blog post about {{topic}} targeting the keyword {{keyword}}, with an outline, H2/H3 headings, meta description and a closing call to action.",
   },
   {
     id: "product-description",
@@ -91,7 +99,7 @@ export const TEMPLATES = [
     category: "writing",
     tags: ["E-commerce", "Copywriting"],
     prompt:
-      "Write a prompt for an AI to write a persuasive product description for [product] aimed at [audience], leading with benefits, then key features, and ending with a short call to action.",
+      "Write a persuasive product description for {{product}} aimed at {{audience}}, leading with benefits, then key features, and ending with a short call to action.",
   },
   {
     id: "lesson-plan",
@@ -100,7 +108,7 @@ export const TEMPLATES = [
     category: "education",
     tags: ["Lesson Plan", "Teaching", "Assessment"],
     prompt:
-      "Write a prompt for an AI to build a [duration] lesson plan on [topic] for [grade level], with learning objectives, a warm-up, main activities, differentiation ideas and an assessment.",
+      "Build a {{duration}} lesson plan on {{topic}} for {{grade_level}}, with learning objectives, a warm-up, main activities, differentiation ideas and an assessment.",
   },
   {
     id: "quiz-generator",
@@ -109,7 +117,7 @@ export const TEMPLATES = [
     category: "education",
     tags: ["Quiz", "Assessment", "Study"],
     prompt:
-      "Write a prompt for an AI to generate a 10-question quiz on [topic] for [level], mixing multiple choice and short answer, with an answer key and a one-line explanation per answer.",
+      "Generate a 10-question quiz on {{topic}} for {{level}}, mixing multiple choice and short answer, with an answer key and a one-line explanation per answer.",
   },
   {
     id: "meeting-summary",
@@ -118,7 +126,7 @@ export const TEMPLATES = [
     category: "business",
     tags: ["Meetings", "Summary", "Productivity"],
     prompt:
-      "Write a prompt for an AI to summarise a meeting transcript into key decisions, open questions and action items, each with an owner and a deadline.",
+      "Summarise a meeting transcript into key decisions, open questions and action items, each with an owner and a deadline.",
   },
   {
     id: "competitor-analysis",
@@ -127,7 +135,7 @@ export const TEMPLATES = [
     category: "business",
     tags: ["Strategy", "Market", "SWOT"],
     prompt:
-      "Write a prompt for an AI to analyse [competitors] against [our product], comparing positioning, pricing, features, strengths and weaknesses, and ending with a SWOT summary and opportunities.",
+      "Analyse {{competitors}} against {{product}}, comparing positioning, pricing, features, strengths and weaknesses, and ending with a SWOT summary and opportunities.",
   },
   {
     id: "literature-review",
@@ -136,7 +144,7 @@ export const TEMPLATES = [
     category: "research",
     tags: ["Academic", "Citations", "Outline"],
     prompt:
-      "Write a prompt for an AI to outline a literature review on [research question], grouping sources by theme, summarising key findings and debates, and identifying gaps for future work.",
+      "Outline a literature review on {{research_question}}, grouping sources by theme, summarising key findings and debates, and identifying gaps for future work.",
   },
   {
     id: "interview-synthesis",
@@ -145,6 +153,85 @@ export const TEMPLATES = [
     category: "research",
     tags: ["UX", "Interviews", "Insights"],
     prompt:
-      "Write a prompt for an AI to synthesise notes from [number] customer interviews into recurring themes, supporting quotes, pain points and prioritised product opportunities.",
+      "Synthesise notes from {{number}} customer interviews into recurring themes, supporting quotes, pain points and prioritised product opportunities.",
+  },
+  {
+    id: "weekly-plan",
+    title: "Weekly Priorities Plan",
+    description: "Turn a messy to-do list into a focused, time-blocked week.",
+    category: "productivity",
+    tags: ["Planning", "Focus", "Time Blocking"],
+    prompt:
+      "Create a weekly plan from my task list: {{tasks}}. I have {{hours}} hours of focus time. Prioritise by impact, time-block each day and flag what to drop or delegate.",
+  },
+  {
+    id: "meeting-agenda",
+    title: "Meeting Agenda Builder",
+    description: "A timed agenda with goals, owners and decisions to make.",
+    category: "productivity",
+    tags: ["Meetings", "Agenda", "Teams"],
+    prompt:
+      "Create a {{duration}} meeting agenda about {{topic}} for {{attendees}}, with a goal, timed items, an owner per item and the decisions we need to leave with.",
+  },
+  {
+    id: "story-starter",
+    title: "Short Story Starter",
+    description: "An opening scene with a hook, a voice and a clear conflict.",
+    category: "creative",
+    tags: ["Fiction", "Storytelling", "Hook"],
+    prompt:
+      "Write the opening scene of a {{genre}} short story about {{premise}}, told in {{point_of_view}}, ending on a hook that sets up the central conflict.",
+  },
+  {
+    id: "brand-names",
+    title: "Brand Name Ideas",
+    description: "Name options with meaning, tone and domain-friendly variants.",
+    category: "creative",
+    tags: ["Naming", "Branding", "Ideas"],
+    prompt:
+      "Suggest 15 brand names for {{product}} aimed at {{audience}}. Group them by style, explain each name's meaning and avoid names that are hard to spell.",
+  },
+  {
+    id: "sales-analysis",
+    title: "Sales Data Analysis",
+    description: "Trends, outliers and recommendations from a sales export.",
+    category: "data",
+    tags: ["Sales", "Trends", "Insights"],
+    prompt:
+      "Analyse our sales data for {{period}} ({{columns}}). Identify trends, top and bottom performers and outliers, and recommend three actions with the numbers that support them.",
+  },
+  {
+    id: "kpi-definitions",
+    title: "Dashboard KPI Definitions",
+    description: "Clear KPI definitions with formulas, targets and owners.",
+    category: "data",
+    tags: ["KPIs", "Dashboards", "Metrics"],
+    prompt:
+      "Define 8 KPIs for a {{team}} dashboard. For each, give the formula, data source, target, review cadence and an owner.",
+  },
+  {
+    id: "resume-tailoring",
+    title: "Tailor My Resume",
+    description: "Rewrite resume bullets to match a specific job posting.",
+    category: "career",
+    tags: ["Resume", "Job Search", "Keywords"],
+    prompt:
+      "Tailor my resume for the {{role}} role at {{company}}. Rewrite my bullets as measurable achievements and match the keywords in this job description: {{job_description}}.",
+  },
+  {
+    id: "interview-prep",
+    title: "Interview Preparation",
+    description: "Likely questions with strong, structured sample answers.",
+    category: "career",
+    tags: ["Interview", "STAR", "Practice"],
+    prompt:
+      "Prepare me for a {{role}} interview. List the 10 most likely questions, give STAR-format sample answers based on my experience ({{experience}}) and three questions I should ask.",
   },
 ];
+
+/* {{variable}} names used in a template prompt, in order of appearance. */
+export const variablesOf = (text) => [...new Set([...text.matchAll(/\{\{\s*(\w+)\s*\}\}/g)].map((match) => match[1]))];
+
+export const variableLabel = (name) => name.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+
+export const fillVariables = (text, values) => text.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, name) => values[name]?.trim() || match);
