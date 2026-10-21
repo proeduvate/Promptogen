@@ -1,4 +1,4 @@
-import { FileText, Gauge, Award, Clock, Layers, LayoutList, Users } from "lucide-react";
+import { FileText, Gauge, Award, Clock, Layers, LayoutList, Users, FlaskConical, Repeat } from "lucide-react";
 
 export const ANALYTICS_TABS = [
   { id: "overview", label: "Overview" },
@@ -10,43 +10,34 @@ export const ANALYTICS_TABS = [
 export const DATE_RANGE = "May 20 – May 26, 2025";
 export const COMPARE_PERIOD = "vs last 7 days";
 
-export const SUMMARY_CARDS = [
-  {
-    id: "total",
-    label: "Total Prompts",
-    value: "32",
-    change: "18%",
-    icon: FileText,
-    tone: "text-brand",
-    tint: "bg-brand/10 ring-brand/20",
-  },
-  {
-    id: "average",
-    label: "Avg. Strength Score",
-    value: "78",
-    change: "12%",
-    icon: Gauge,
-    tone: "text-purple",
-    tint: "bg-purple/10 ring-purple/20",
-  },
-  {
-    id: "high-quality",
-    label: "High-Quality Prompts",
-    value: "21",
-    change: "25%",
-    icon: Award,
-    tone: "text-good",
-    tint: "bg-good/10 ring-good/20",
-  },
-  {
-    id: "time-saved",
-    label: "Time Saved",
-    value: "12.4 hrs",
-    change: "22%",
-    icon: Clock,
-    tone: "text-amber",
-    tint: "bg-amber/10 ring-amber/20",
-  },
+/* Overview metrics from spec §34. Values are the mock's baseline for the
+   period; App adds activity from the current session on top.
+   Hand-off point: load these from the analytics API. */
+export const SUMMARY_BASE = {
+  total: 128,
+  tested: 41,
+  averageQuality: 78,
+  criteriaPassed: 172,
+  criteriaRun: 200,
+  reuse: 57,
+  hoursSaved: 12.4,
+};
+
+export const SUMMARY_META = [
+  { id: "total", label: "Total Prompts", change: "18%", icon: FileText, tone: "text-brand", tint: "bg-brand/10 ring-brand/20" },
+  { id: "tested", label: "Tested Prompts", change: "9%", icon: FlaskConical, tone: "text-good", tint: "bg-good/10 ring-good/20" },
+  { id: "quality", label: "Avg. Prompt Quality", change: "12%", icon: Gauge, tone: "text-purple", tint: "bg-purple/10 ring-purple/20" },
+  { id: "success", label: "Successful Tests", change: "6%", icon: Award, tone: "text-cyan", tint: "bg-cyan/10 ring-cyan/20" },
+  { id: "reuse", label: "Prompt Reuse", change: "21%", icon: Repeat, tone: "text-pink", tint: "bg-pink/10 ring-pink/20" },
+  { id: "time", label: "Est. Time Saved", change: "22%", icon: Clock, tone: "text-amber", tint: "bg-amber/10 ring-amber/20" },
+];
+
+/* Weekly averages for Quality Trends (spec §35), overall and per dimension. */
+export const QUALITY_WEEKS = [
+  { label: "Week 1", average: 68, dimensions: { clarity: 76, specificity: 62, context: 58, structure: 78, actionability: 70, constraints: 54, output: 64, consistency: 90 } },
+  { label: "Week 2", average: 74, dimensions: { clarity: 80, specificity: 68, context: 66, structure: 84, actionability: 74, constraints: 58, output: 74, consistency: 91 } },
+  { label: "Week 3", average: 79, dimensions: { clarity: 84, specificity: 74, context: 73, structure: 88, actionability: 79, constraints: 61, output: 82, consistency: 92 } },
+  { label: "Week 4", average: 84, dimensions: { clarity: 88, specificity: 80, context: 79, structure: 92, actionability: 84, constraints: 64, output: 88, consistency: 93 } },
 ];
 
 /* Daily series for the line chart. May 24 is the day the mock's tooltip
@@ -67,21 +58,6 @@ export const STRENGTH_SERIES = {
     { label: "May 24", date: "May 24, 2025", avg: 78, top: 92, low: 45 },
     { label: "May 25", date: "May 25, 2025", avg: 80, top: 89, low: 60 },
     { label: "May 26", date: "May 26, 2025", avg: 86, top: 94, low: 62 },
-  ],
-};
-
-export const STRENGTH_TREND = {
-  score: 85,
-  label: "Strong",
-  delta: 10,
-  bars: [
-    { label: "May 20", value: 75 },
-    { label: "May 21", value: 77 },
-    { label: "May 22", value: 76 },
-    { label: "May 23", value: 79 },
-    { label: "May 24", value: 81 },
-    { label: "May 25", value: 83 },
-    { label: "May 26", value: 85 },
   ],
 };
 

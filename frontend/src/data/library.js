@@ -1,7 +1,8 @@
 import {
   LayoutGrid,
   Megaphone,
-  Package,
+  Briefcase,
+  GraduationCap,
   Code2,
   PenLine,
   FlaskConical,
@@ -17,10 +18,13 @@ export const LIBRARY_TABS = [
   { id: "trash", label: "Trash" },
 ];
 
+/* Folders from spec §23. Counts are the mock's totals; prompts added in
+   this session are counted on top. */
 export const FOLDERS = [
   { id: "all", label: "All Prompts", count: 128, icon: LayoutGrid, tone: "text-brand" },
   { id: "marketing", label: "Marketing", count: 24, icon: Megaphone, tone: "text-pink" },
-  { id: "product", label: "Product", count: 18, icon: Package, tone: "text-amber" },
+  { id: "business", label: "Business", count: 14, icon: Briefcase, tone: "text-amber" },
+  { id: "education", label: "Education", count: 10, icon: GraduationCap, tone: "text-cyan" },
   { id: "development", label: "Development", count: 22, icon: Code2, tone: "text-good" },
   { id: "content", label: "Content Writing", count: 16, icon: PenLine, tone: "text-purple" },
   { id: "research", label: "Research", count: 12, icon: FlaskConical, tone: "text-cyan" },
@@ -105,6 +109,7 @@ export const PROMPTS = [
     folder: "marketing",
     tags: ["Marketing", "Email", "Launch"],
     score: 90,
+    tested: { score: 84, passed: 4, total: 5 },
     favorite: false,
     currentVersion: "v3",
     versions: [

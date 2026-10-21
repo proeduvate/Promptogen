@@ -10,8 +10,19 @@ export const DIFF_STYLE = {
 const mark = (status) =>
   status ? `-mx-2 rounded-r-md border-l-2 px-2 py-0.5 ${DIFF_STYLE[status].line}` : "";
 
+/* Light Markdown in section text: **bold**, *italic* and `code`. */
+function Inline({ text }) {
+  const parts = String(text).split(/(\*\*[^*]+\*\*|`[^`]+`|\*[^*\s][^*]*\*)/g);
+  return parts.map((part, index) => {
+    if (/^\*\*[^*]+\*\*$/.test(part)) return <strong key={index}>{part.slice(2, -2)}</strong>;
+    if (/^`[^`]+`$/.test(part)) return <code key={index} className="rounded bg-surface-3 px-1 py-0.5 text-[0.92em]">{part.slice(1, -1)}</code>;
+    if (/^\*[^*\s][^*]*\*$/.test(part)) return <em key={index}>{part.slice(1, -1)}</em>;
+    return part;
+  });
+}
+
 export function SectionLabel({ section, compact = false }) {
-  const { icon: Icon, tone } = SECTION_STYLE[section.id] ?? { tone: "text-muted" };
+  const { icon: Icon, tone } = SECTION_STYLE[section.id] ?? SECTION_STYLE[section.id.split("-")[0]] ?? { tone: "text-muted" };
   return (
     <div
       className={[
@@ -32,7 +43,11 @@ export default function SectionBody({ section, diff = {}, compact = false }) {
   const text = compact ? "text-[12px] leading-5" : "text-[14px] leading-7";
 
   if (section.type === "text") {
-    return <p className={`${text} ${mark(diff.whole ?? diff.content)}`}>{section.content}</p>;
+    return (
+      <p className={`${text} whitespace-pre-line ${mark(diff.whole ?? diff.content)}`}>
+        <Inline text={section.content} />
+      </p>
+    );
   }
 
   const List = section.type === "numbered" ? "ol" : "ul";
@@ -45,7 +60,9 @@ export default function SectionBody({ section, diff = {}, compact = false }) {
           </span>
           <span className="min-w-0">
             {item.key && <span className="font-medium">{item.key}: </span>}
-            <span className={item.key ? "text-muted" : ""}>{item.text}</span>
+            <span className={item.key ? "text-muted" : ""}>
+              <Inline text={item.text} />
+            </span>
           </span>
         </li>
       ))}

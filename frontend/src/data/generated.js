@@ -4,10 +4,16 @@ import {
   Layers,
   ListChecks,
   SlidersHorizontal,
+  ShieldAlert,
+  LayoutList,
+  Lightbulb,
+  StickyNote,
   Wand2,
   LayoutTemplate,
   GitCompare,
   PlayCircle,
+  Cpu,
+  Share2,
 } from "lucide-react";
 
 /* Label colour + icon per prompt section. Shared by the generated
@@ -18,10 +24,16 @@ export const SECTION_STYLE = {
   context: { icon: Layers, tone: "text-cyan" },
   requirements: { icon: ListChecks, tone: "text-amber" },
   preferences: { icon: SlidersHorizontal, tone: "text-good" },
+  objective: { icon: Target, tone: "text-brand" },
+  constraints: { icon: ShieldAlert, tone: "text-pink" },
+  output: { icon: LayoutList, tone: "text-good" },
+  examples: { icon: Lightbulb, tone: "text-amber" },
+  custom: { icon: StickyNote, tone: "text-muted" },
 };
 
 export const GENERATED_PROMPT = {
   slug: "focusflow-marketing-strategy",
+  title: "FocusFlow marketing strategy",
   model: "GPT-4o",
   generatedAt: "Just now",
   strengthNote: "Great job! Your prompt is well-structured and optimized for high-quality outputs.",
@@ -84,46 +96,12 @@ export const GENERATED_PROMPT = {
   ],
 };
 
+/* Workspace tools (spec §67). */
 export const ADDITIONAL_TOOLS = [
-  {
-    id: "improve",
-    title: "Improve with AI",
-    body: "Enhance clarity, detail & impact",
-    icon: Wand2,
-    tone: "text-purple",
-    tint: "bg-purple/10 ring-purple/20",
-  },
-  {
-    id: "template",
-    title: "Convert to Template",
-    body: "Use as a reusable template",
-    icon: LayoutTemplate,
-    tone: "text-brand",
-    tint: "bg-brand/10 ring-brand/20",
-  },
-  {
-    id: "compare",
-    title: "Compare Prompts",
-    body: "Compare with another prompt",
-    icon: GitCompare,
-    tone: "text-amber",
-    tint: "bg-amber/10 ring-amber/20",
-  },
-  {
-    id: "test",
-    title: "Test Prompt",
-    body: "Run & preview with AI model",
-    icon: PlayCircle,
-    tone: "text-good",
-    tint: "bg-good/10 ring-good/20",
-  },
-];
-
-export const RECENT_PROMPTS = [
-  {
-    id: "saas-marketing",
-    title: "Marketing strategy for SaaS product",
-    when: "Generated 2h ago",
-    score: 80,
-  },
+  { id: "improve", title: "Improve with AI", body: "Optimize for a specific goal", icon: Wand2, tone: "text-purple", tint: "bg-purple/10 ring-purple/20" },
+  { id: "test", title: "Test Prompt", body: "Run it against success criteria", icon: PlayCircle, tone: "text-good", tint: "bg-good/10 ring-good/20" },
+  { id: "compare", title: "Compare Versions", body: "See what changed between versions", icon: GitCompare, tone: "text-amber", tint: "bg-amber/10 ring-amber/20" },
+  { id: "model", title: "Optimize for Model", body: "Tune it for the model you use", icon: Cpu, tone: "text-cyan", tint: "bg-cyan/10 ring-cyan/20" },
+  { id: "template", title: "Convert to Template", body: "Reuse it with variables", icon: LayoutTemplate, tone: "text-brand", tint: "bg-brand/10 ring-brand/20" },
+  { id: "share", title: "Share Prompt", body: "Send a link with permissions", icon: Share2, tone: "text-pink", tint: "bg-pink/10 ring-pink/20" },
 ];

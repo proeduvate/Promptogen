@@ -20,6 +20,7 @@ const BUTTON_VARIANTS = {
   brandSoft: "border border-brand/40 bg-brand/10 text-brand hover:bg-brand/15",
   pinkSoft: "border border-pink/40 bg-pink/10 text-pink hover:bg-pink/15",
   purpleSoft: "border border-purple/40 bg-purple/10 text-purple hover:bg-purple/15",
+  danger: "bg-bad text-white hover:bg-bad/85",
 };
 
 export const btn = (variant = "secondary", size = "md") =>

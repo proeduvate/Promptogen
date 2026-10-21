@@ -93,8 +93,8 @@ function PromptDetails({ prompt, onToggleFavorite }) {
   );
 }
 
-export default function PromptDetailsPanel({ prompt, onToggleFavorite, onUseVersion, onNewVersion }) {
-  const [tab, setTab] = useState((prompt.versions?.length ?? 0) > 1 ? "compare" : "details");
+export default function PromptDetailsPanel({ prompt, initialTab, onToggleFavorite, onUseVersion, onNewVersion }) {
+  const [tab, setTab] = useState(initialTab ?? ((prompt.versions?.length ?? 0) > 1 ? "compare" : "details"));
 
   return (
     <section className={`${CARD} min-w-0`}>
