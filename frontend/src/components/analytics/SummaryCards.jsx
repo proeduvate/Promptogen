@@ -1,12 +1,16 @@
 import { ArrowUp } from "lucide-react";
 import { COMPARE_PERIOD, SUMMARY_CARDS } from "../../data/analytics";
 import { CARD, ICON_TILE } from "../../lib/ui";
+import { resolveIcon } from "../../lib/icons";
 
-export default function SummaryCards() {
+export default function SummaryCards({ cards = SUMMARY_CARDS }) {
+  const items = cards && cards.length > 0 ? cards : SUMMARY_CARDS;
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-      {SUMMARY_CARDS.map(({ id, label, value, change, icon: Icon, tone, tint }) => (
-        <article key={id} className={`${CARD} p-5`}>
+      {items.map(({ id, label, value, change, icon, tone, tint }) => {
+        const Icon = resolveIcon(icon);
+        return (
+          <article key={id} className={`${CARD} p-5`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="text-[13px] text-muted">{label}</p>
@@ -24,7 +28,8 @@ export default function SummaryCards() {
             {COMPARE_PERIOD}
           </p>
         </article>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -1,26 +1,26 @@
-import { Rocket, Crown, ArrowRight, ChevronDown } from "lucide-react";
+import { Crown, ArrowRight, ChevronDown } from "lucide-react";
+import logoWithIcon from "../assets/logo_with_icon_transparent.png";
 import { NAV_ITEMS, USER } from "../data/content";
 
 export default function Sidebar({ active, onNavigate, onUpgrade }) {
   return (
     <aside className="hidden lg:flex w-[256px] shrink-0 flex-col border-r border-line bg-sidebar">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 pt-6 pb-7">
-        <Rocket className="size-8 -rotate-12 text-brand" strokeWidth={1.75} />
-        <div className="leading-none">
-          <div className="text-[21px] font-bold tracking-tight">
-            Pro<span className="text-brand">Eduvate</span>
-          </div>
-          <div className="mt-1 text-[10px] tracking-wide text-faint">
-            people, projects and potential
-          </div>
-        </div>
+      <div className="flex items-center px-4 pt-5 pb-5">
+        <img
+          src={logoWithIcon}
+          alt="ProEduvate"
+          className="h-11 w-auto max-w-[200px] object-contain object-left drop-shadow-[0_2px_12px_rgba(59,130,246,0.2)]"
+        />
       </div>
 
       {/* Primary navigation */}
       <nav className="flex flex-col gap-1 px-3">
         {NAV_ITEMS.map(({ id, label, icon: Icon }) => {
-          const isActive = id === active;
+          const isActive =
+            id === active ||
+            ((id === "my-prompts" || id === "library") &&
+              (active === "my-prompts" || active === "library"));
           return (
             <button
               key={id}

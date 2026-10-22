@@ -19,8 +19,9 @@ const curvePath = (points) =>
     return `${path} C${midX},${prevY} ${midX},${y} ${x},${y}`;
   }, "");
 
-export default function StrengthLineChart() {
-  const { days, lines, tooltipOrder, highlight } = STRENGTH_SERIES;
+export default function StrengthLineChart({ series = STRENGTH_SERIES }) {
+  const currentSeries = series && series.days && series.days.length > 0 ? series : STRENGTH_SERIES;
+  const { days, lines, tooltipOrder, highlight } = currentSeries;
   const [containerRef, width] = useElementWidth();
   const [hoverIndex, setHoverIndex] = useState(null);
   const active = hoverIndex ?? highlight;

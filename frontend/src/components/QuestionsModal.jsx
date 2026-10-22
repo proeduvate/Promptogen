@@ -2,12 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { X, ArrowRight, ArrowLeft, Check, HelpCircle, ChevronDown } from "lucide-react";
 import { WIZARD } from "../data/wizard";
 import Stepper from "./Stepper";
+import { resolveIcon } from "../lib/icons";
+import { fetchWizardSchema } from "../lib/api";
 
 /* Empty value per field type, used to seed and reset the answer object. */
 const emptyFor = (field) => (field.type === "cards" && field.multiple ? [] : "");
 
-const buildInitialAnswers = () =>
-  WIZARD.reduce((acc, step) => {
+const buildInitialAnswers = (steps = WIZARD) =>
+  steps.reduce((acc, step) => {
     step.fields.forEach((field) => {
       acc[field.name] = emptyFor(field);
     });
@@ -59,7 +61,8 @@ function CardsField({ field, value, onChange }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      {field.options.map(({ id, label, icon: Icon, tone }) => {
+      {field.options.map(({ id, label, icon, tone }) => {
+        const Icon = resolveIcon(icon);
         const isOn = selected.includes(id);
         return (
           <button
@@ -125,16 +128,34 @@ const FIELDS = {
 };
 
 export default function QuestionsModal({ open, seed = "", onClose, onComplete }) {
+  const [schemaSteps, setSchemaSteps] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState(buildInitialAnswers);
+  const steps = schemaSteps || WIZARD;
+  const [answers, setAnswers] = useState(() => buildInitialAnswers(WIZARD));
   const dialogRef = useRef(null);
+
+  useEffect(() => {
+    let active = true;
+    fetchWizardSchema()
+      .then((res) => {
+        if (active && res?.steps && res.steps.length > 0) {
+          setSchemaSteps(res.steps);
+        }
+      })
+      .catch((err) => {
+        console.info("Using local wizard schema:", err.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   /* Reopening always starts a clean run, pre-filled with the hero input. */
   useEffect(() => {
     if (!open) return;
     setStepIndex(0);
-    setAnswers({ ...buildInitialAnswers(), goal: seed.slice(0, 200) });
-  }, [open, seed]);
+    setAnswers({ ...buildInitialAnswers(steps), goal: seed.slice(0, 200) });
+  }, [open, seed, steps]);
 
   /* Escape to close, and lock background scroll while the dialog is up. */
   useEffect(() => {
@@ -151,8 +172,8 @@ export default function QuestionsModal({ open, seed = "", onClose, onComplete })
     };
   }, [open, onClose]);
 
-  const step = WIZARD[stepIndex];
-  const isLastStep = stepIndex === WIZARD.length - 1;
+  const step = steps[stepIndex] || steps[0];
+  const isLastStep = stepIndex === steps.length - 1;
 
   const canAdvance = useMemo(
     () => step.fields.every((field) => !field.required || isFilled(answers[field.name])),
@@ -213,7 +234,7 @@ export default function QuestionsModal({ open, seed = "", onClose, onComplete })
           </div>
 
           <div className="mt-7">
-            <Stepper steps={WIZARD} current={stepIndex} onStepClick={setStepIndex} />
+            <Stepper steps={steps} current={stepIndex} onStepClick={setStepIndex} />
           </div>
         </div>
 

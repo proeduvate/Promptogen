@@ -97,3 +97,124 @@ body {
 }
 .pg-fade-in { animation: pg-fade-in 0.18s ease-out both; }
 .pg-pop-in { animation: pg-pop-in 0.22s cubic-bezier(0.2, 0.8, 0.3, 1) both; }
+
+/* ---------------------------------------------------------------
+   Directional Page Slide Transitions
+   - Forward (Home -> Library -> Analytics):
+     Outgoing slides left (-100%), Incoming enters from right (+100%)
+   - Backward (Analytics -> Library -> Home):
+     Outgoing slides right (+100%), Incoming enters from left (-100%)
+----------------------------------------------------------------*/
+@keyframes page-enter-from-right {
+  0% {
+    opacity: 0.1;
+    transform: translate3d(100%, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes page-exit-to-left {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 0.1;
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+@keyframes page-enter-from-left {
+  0% {
+    opacity: 0.1;
+    transform: translate3d(-100%, 0, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes page-exit-to-right {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 0.1;
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+.animate-page-enter-from-right {
+  animation: page-enter-from-right 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.animate-page-exit-to-left {
+  animation: page-exit-to-left 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.animate-page-enter-from-left {
+  animation: page-enter-from-left 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+.animate-page-exit-to-right {
+  animation: page-exit-to-right 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, opacity;
+}
+
+/* ---------------------------------------------------------------
+   Analytics Micro-Animations (Bar Grow, Metric Stagger, Donut Reveal)
+----------------------------------------------------------------*/
+@keyframes bar-grow {
+  0% {
+    transform: scaleY(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.animate-bar-grow {
+  transform-origin: bottom;
+  animation: bar-grow 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes donut-spin-in {
+  0% {
+    transform: rotate(-180deg) scale(0.92);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(-90deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-donut-spin {
+  transform-origin: center;
+  animation: donut-spin-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes chart-path-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-chart-reveal {
+  animation: chart-path-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

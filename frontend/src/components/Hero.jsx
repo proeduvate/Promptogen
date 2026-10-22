@@ -1,5 +1,6 @@
 import { CornerDownLeft } from "lucide-react";
 import { EXAMPLE_CHIPS } from "../data/content";
+import { resolveIcon } from "../lib/icons";
 
 const MAX_CHARS = 500;
 
@@ -10,7 +11,7 @@ const STARS = [
   [93, 34], [97, 12], [18, 88], [59, 92], [86, 86],
 ];
 
-export default function Hero({ value, onChange, onSubmit }) {
+export default function Hero({ value, onChange, onSubmit, chips = EXAMPLE_CHIPS }) {
   const handleKeyDown = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -101,17 +102,20 @@ export default function Hero({ value, onChange, onSubmit }) {
         {/* Quick starts */}
         <p className="mt-7 text-[14px] text-muted">Try these examples:</p>
         <div className="mt-3 flex flex-wrap gap-3">
-          {EXAMPLE_CHIPS.map(({ id, label, icon: Icon, tone, seed }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onChange(seed)}
-              className="flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-[14px] text-text transition-colors hover:border-brand/40 hover:bg-surface-3"
-            >
-              <Icon className={`size-[17px] ${tone}`} strokeWidth={1.75} />
-              {label}
-            </button>
-          ))}
+          {(chips || EXAMPLE_CHIPS).map(({ id, label, icon, tone, seed }) => {
+            const Icon = resolveIcon(icon);
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => onChange(seed)}
+                className="flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-4 py-2.5 text-[14px] text-text transition-colors hover:border-brand/40 hover:bg-surface-3"
+              >
+                <Icon className={`size-[17px] ${tone}`} strokeWidth={1.75} />
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>

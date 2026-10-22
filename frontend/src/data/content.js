@@ -23,8 +23,7 @@ import {
 /* Sidebar navigation. `id` is what App tracks as the active route. */
 export const NAV_ITEMS = [
   { id: "home", label: "Home", icon: Home },
-  { id: "my-prompts", label: "My Prompts", icon: LineChart },
-  { id: "templates", label: "Templates", icon: FileText },
+  { id: "my-prompts", label: "Prompt Library", icon: Folder },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "history", label: "History", icon: History },
   { id: "favorites", label: "Favorites", icon: Heart },

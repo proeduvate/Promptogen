@@ -28,10 +28,10 @@ def get_clarification_service(
     "/clarification",
     response_model=ClarificationResponse,
     status_code=status.HTTP_200_OK,
-    summary="Generate clarification questions",
+    summary="Generate adaptive clarification questions",
     description=(
-        "Accepts a vague user query and returns exactly 10 clarification questions, "
-        "each with 2–5 selectable options, to help refine the user's intent."
+        "Analyzes the depth of the user prompt, identifies intent and missing info, "
+        "and dynamically generates adaptive clarification questions with suitable UI types."
     ),
 )
 async def generate_clarification(
@@ -39,8 +39,19 @@ async def generate_clarification(
     service: ClarificationService = Depends(get_clarification_service),
 ) -> ClarificationResponse:
     logger.info(
-        "POST /api/v1/clarification | query_length=%d", len(request.query)
+        "POST /api/v1/clarification | query_length=%d model=%s",
+        len(request.query),
+        request.model,
     )
+
+    # If specific model or api_key provided in request, instantiate specialized service
+    if request.model or request.api_key or request.provider:
+        client = get_llm_client(
+            provider=request.provider,
+            model=request.model,
+            api_key=request.api_key,
+        )
+        service = ClarificationService(client=client)
 
     try:
         return await service.generate_questions(request.query)

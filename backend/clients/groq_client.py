@@ -140,6 +140,14 @@ class GroqClient:
 
             except APIError as exc:
                 last_exc = exc
+                # If the configured model is unavailable (404), fall back to qwen/qwen3.8-27b
+                if getattr(exc, "status_code", None) == 404 and self.model != "qwen/qwen3.8-27b":
+                    logger.warning(
+                        "Groq model %s not available (404). Falling back to 'qwen/qwen3.8-27b'.",
+                        self.model,
+                    )
+                    self.model = "qwen/qwen3.8-27b"
+
                 if attempt < _MAX_RETRIES - 1:
                     delay = _RETRY_DELAYS[attempt]
                     logger.warning(

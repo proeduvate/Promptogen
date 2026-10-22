@@ -17,6 +17,7 @@ from fastapi import status
 from fastapi.testclient import TestClient
 
 from main import app
+from services.prompt_generation.service import PromptGenerationService
 
 
 MOCK_QUESTIONS = [
@@ -67,7 +68,10 @@ class TestPipelineStart:
 
     def test_valid_query_returns_thread_id_and_questions(self, client):
         with patch("api.pipeline.clarify_workflow") as mock_workflow:
-            mock_workflow.ainvoke = AsyncMock(return_value={"questions": MOCK_QUESTIONS})
+            mock_workflow.ainvoke = AsyncMock(return_value={
+                "questions": MOCK_QUESTIONS,
+                "prompt_title": "Fitness Tracker App",
+            })
             resp = client.post("/api/v1/pipeline/start", json={"query": "Build a fitness app"})
         assert resp.status_code == status.HTTP_200_OK
         body = resp.json()
@@ -75,6 +79,7 @@ class TestPipelineStart:
         assert body["thread_id"]
         assert body["status"] == "awaiting_answers"
         assert len(body["questions"]) == 2
+        assert body["prompt_title"] == "Fitness Tracker App"
 
     def test_empty_query_returns_422(self, client):
         resp = client.post("/api/v1/pipeline/start", json={"query": ""})
@@ -134,7 +139,7 @@ class TestPipelineContinue:
         })
         assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
-    def test_thread_id_consumed_after_continue(self, client):
+    def test_thread_id_persists_for_iteration(self, client):
         thread_id = _start_session(client)
         with patch("api.pipeline.gen_assess_workflow") as mock_workflow:
             mock_workflow.ainvoke = AsyncMock(return_value=MOCK_GEN_ASSESS_RESULT)
@@ -145,4 +150,46 @@ class TestPipelineContinue:
                 "thread_id": thread_id, "answers": VALID_ANSWERS,
             })
         assert first.status_code == status.HTTP_200_OK
-        assert second.status_code == status.HTTP_404_NOT_FOUND
+        assert second.status_code == status.HTTP_200_OK
+        assert second.json()["thread_id"] == thread_id
+
+    def test_followup_refines_prompt(self, client):
+        thread_id = _start_session(client)
+        with patch("api.pipeline.gen_assess_workflow") as mock_workflow:
+            mock_workflow.ainvoke = AsyncMock(return_value=MOCK_GEN_ASSESS_RESULT)
+            client.post("/api/v1/pipeline/continue", json={
+                "thread_id": thread_id, "answers": VALID_ANSWERS,
+            })
+
+        mock_followup = {
+            "action": "refine_prompt",
+            "version_label": "v2: Added Push Notifications",
+            "prompt_title": "Fitness Tracker with Push Notifications",
+            "optimized_prompt": "You are a senior mobile engineer. Implement push notifications with APNS.",
+            "sections": [
+                {"id": "role", "label": "ROLE & PERSONA", "type": "text", "content": "You are a senior mobile engineer."}
+            ],
+            "required_attachments": []
+        }
+        with patch.object(
+            PromptGenerationService,
+            "refine_prompt_followup",
+            new=AsyncMock(return_value=mock_followup),
+        ):
+            resp = client.post("/api/v1/pipeline/followup", json={
+                "thread_id": thread_id,
+                "message": "Add push notifications for daily workout reminders",
+            })
+            assert resp.status_code == status.HTTP_200_OK
+            data = resp.json()
+            assert data["action"] == "refine_prompt"
+            assert data["thread_id"] == thread_id
+            assert data["version_label"] == "v2: Added Push Notifications"
+            assert "push notifications" in data["optimized_prompt"].lower()
+
+    def test_followup_unknown_thread_returns_404(self, client):
+        resp = client.post("/api/v1/pipeline/followup", json={
+            "thread_id": "00000000-0000-0000-0000-000000000000",
+            "message": "Add test cases",
+        })
+        assert resp.status_code == status.HTTP_404_NOT_FOUND

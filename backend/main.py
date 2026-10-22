@@ -13,13 +13,37 @@ from core.config import settings
 from core.database import database
 from core.logger import logger
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="AI-powered webhook service that converts vague queries into high-quality prompts.",
 )
 
+# ── CORS Middleware ────────────────────────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origin_list,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]+)?$",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ── Routers ────────────────────────────────────────────────────────────────────
+# Authentication & Rate Limiting
+from api.auth import router as auth_router
+app.include_router(auth_router)
+
+# Static Content & UI Metadata
+from api.content import router as content_router
+app.include_router(content_router)
+
+# Prompt Library & Saved Prompts
+from api.library import router as library_router
+app.include_router(library_router)
+
 # Developer 1 — Clarification
 app.include_router(clarification_router)
 
@@ -38,6 +62,13 @@ app.include_router(pipeline_router)
 # Analytics Dashboard
 from api.analytics import router as analytics_router
 app.include_router(analytics_router)
+
+
+# ── Models route ─────────────────────────────────────────────────────────────
+@app.get("/api/v1/models", tags=["Models"])
+async def get_models():
+    from clients.gemini_client import GEMINI_FREE_TIER_MODELS
+    return {"models": GEMINI_FREE_TIER_MODELS}
 
 
 # ── Health check ───────────────────────────────────────────────────────────────

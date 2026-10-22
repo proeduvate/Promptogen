@@ -15,7 +15,8 @@ const COLUMNS = [
   { label: "Created At" },
 ];
 
-export default function RecentPerformanceTable({ onViewAll }) {
+export default function RecentPerformanceTable({ onViewAll, prompts = RECENT_PERFORMANCE }) {
+  const items = prompts && prompts.length > 0 ? prompts : RECENT_PERFORMANCE;
   return (
     <section className={`${CARD} overflow-hidden`}>
       <div className="flex items-center justify-between gap-3 px-6 pb-4 pt-6">
@@ -42,32 +43,38 @@ export default function RecentPerformanceTable({ onViewAll }) {
             </tr>
           </thead>
           <tbody>
-            {RECENT_PERFORMANCE.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b border-line-soft transition-colors last:border-0 hover:bg-surface-2"
-              >
-                <td className="py-3.5 pl-6 pr-4 font-medium">{row.title}</td>
-                <td className="px-4 py-3.5">
-                  <ModelChip model={row.model} />
-                </td>
-                <td className="px-4 py-3.5">
-                  <div className="flex items-center justify-center gap-2.5">
-                    <ScoreValue score={row.score} />
-                    <span className="h-1 w-12 overflow-hidden rounded-full bg-surface-3">
-                      <span
-                        className={`block h-full rounded-full ${ratingFor(row.score).bar}`}
-                        style={{ width: `${row.score}%` }}
-                      />
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3.5 text-center text-muted">{row.clarity}</td>
-                <td className="px-4 py-3.5 text-center text-muted">{row.specificity}</td>
-                <td className="px-4 py-3.5 text-center text-muted">{row.actionability}</td>
-                <td className="whitespace-nowrap py-3.5 pl-4 pr-6 text-muted">{row.createdAt}</td>
-              </tr>
-            ))}
+            {items.map((row) => {
+              const displayTitle = row.prompt_title || row.title || row.original_query;
+              const displayScore = row.overall_score ?? row.score ?? 80;
+              const displayModel = row.model || "GPT-4o";
+              const displayCreated = row.createdAt || row.completed_at || "Recent";
+              return (
+                <tr
+                  key={row.id}
+                  className="border-b border-line-soft transition-colors last:border-0 hover:bg-surface-2"
+                >
+                  <td className="py-3.5 pl-6 pr-4 font-medium">{displayTitle}</td>
+                  <td className="px-4 py-3.5">
+                    <ModelChip model={displayModel} />
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center justify-center gap-2.5">
+                      <ScoreValue score={displayScore} />
+                      <span className="h-1 w-12 overflow-hidden rounded-full bg-surface-3">
+                        <span
+                          className={`block h-full rounded-full ${ratingFor(displayScore).bar}`}
+                          style={{ width: `${displayScore}%` }}
+                        />
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3.5 text-center text-muted">{row.clarity ?? 80}</td>
+                  <td className="px-4 py-3.5 text-center text-muted">{row.specificity ?? 80}</td>
+                  <td className="px-4 py-3.5 text-center text-muted">{row.actionability ?? 80}</td>
+                  <td className="whitespace-nowrap py-3.5 pl-4 pr-6 text-muted">{displayCreated}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

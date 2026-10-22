@@ -44,9 +44,12 @@ function ScoreRing({ score, label }) {
 export default function StrengthPanel({
   onViewAnalytics,
   title = "Prompt Strength Overview",
-  note = `${STRENGTH.note} 💪`,
+  strength = STRENGTH,
+  note = null,
 }) {
-  const { score, label, metrics } = STRENGTH;
+  const currentStrength = strength || STRENGTH;
+  const { score, label, metrics } = currentStrength;
+  const displayNote = note || `${currentStrength.note || "Your prompt is strong!"} 💪`;
 
   return (
     <section className="rounded-2xl border border-line bg-surface p-6">
@@ -54,7 +57,7 @@ export default function StrengthPanel({
 
       <ScoreRing score={score} label={label} />
 
-      <p className="mt-5 text-center text-[13px] leading-5 text-muted">{note}</p>
+      <p className="mt-5 text-center text-[13px] leading-5 text-muted">{displayNote}</p>
 
       <ul className="mt-5 space-y-4">
         {metrics.map(({ id, label: metricLabel, value }) => (

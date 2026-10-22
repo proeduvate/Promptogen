@@ -1,12 +1,15 @@
 import { FOLDERS } from "../../data/library";
 import { CARD } from "../../lib/ui";
+import { resolveIcon } from "../../lib/icons";
 
-export default function FolderList({ active, onSelect }) {
+export default function FolderList({ active, onSelect, folders = FOLDERS }) {
+  const items = folders && folders.length > 0 ? folders : FOLDERS;
   return (
     <section className={`${CARD} p-3`}>
       <h2 className="px-3 pb-2 pt-2 text-[15px] font-semibold">Folders</h2>
       <ul className="space-y-0.5">
-        {FOLDERS.map(({ id, label, count, icon: Icon, tone }) => {
+        {items.map(({ id, label, count, icon, tone }) => {
+          const Icon = resolveIcon(icon);
           const isActive = id === active;
           return (
             <li key={id}>

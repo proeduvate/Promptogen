@@ -9,12 +9,12 @@ const STROKE = 14;
 const GAP = 3;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export default function BreakdownDonut() {
-  const { score, metrics } = STRENGTH;
+export default function BreakdownDonut({ metrics = STRENGTH.metrics }) {
+  const currentMetrics = metrics && metrics.length > 0 ? metrics : STRENGTH.metrics;
   const [hovered, setHovered] = useState(null);
 
-  const total = metrics.reduce((sum, metric) => sum + metric.value, 0);
-  const segments = metrics.reduce((list, metric) => {
+  const total = currentMetrics.reduce((sum, metric) => sum + metric.value, 0) || 1;
+  const segments = currentMetrics.reduce((list, metric) => {
     const offset = list.length ? list[list.length - 1].end : 0;
     const length = (metric.value / total) * CIRCUMFERENCE;
     return [...list, { ...metric, offset, length: length - GAP, end: offset + length }];

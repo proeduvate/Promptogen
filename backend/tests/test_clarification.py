@@ -125,15 +125,16 @@ class TestClarificationEndpoint:
 
         assert resp.status_code == status.HTTP_504_GATEWAY_TIMEOUT
 
-    # 6. LLM returns fewer than 10 questions — rejected
-    def test_fewer_than_10_questions_returns_422(self) -> None:
+    # 6. LLM returns dynamic questions count (e.g. 2 questions) — accepted
+    def test_dynamic_question_count_accepted(self) -> None:
         llm_response = _make_llm_json(n=2)
         mock = _mock_client(llm_response)
         client = _test_client_with_mock(mock)
 
         resp = client.post("/api/v1/clarification", json={"query": "Write a blog post"})
 
-        assert resp.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert resp.status_code == status.HTTP_200_OK
+        assert len(resp.json()["questions"]) == 2
 
     # 7. Proper response schema
     def test_response_matches_clarification_response_schema(self) -> None:
@@ -207,9 +208,9 @@ class TestClarificationParser:
         with pytest.raises(ParseError):
             self.parser.parse(json.dumps({"wrong_key": []}))
 
-    def test_truncates_questions_beyond_max(self) -> None:
-        result = self.parser.parse(_make_llm_json(n=12))  # 12 > MAX (10)
-        assert len(result.questions) == 10
+    def test_retains_questions_without_arbitrary_truncation(self) -> None:
+        result = self.parser.parse(_make_llm_json(n=12))
+        assert len(result.questions) == 12
 
     def test_truncates_options_beyond_max(self) -> None:
         data = {
@@ -281,8 +282,8 @@ class TestQueryValidation:
 
 
 class TestPromptHints:
-    """Prompt-level tests for the fixed question count."""
+    """Prompt-level tests for dynamic questions."""
 
-    def test_every_query_targets_ten_questions(self) -> None:
+    def test_dynamic_questions_in_prompt_message(self) -> None:
         message = build_user_message("Build a website")
-        assert "Generate exactly 10 clarification questions" in message
+        assert "Decide freely how many clarification questions are needed" in message
