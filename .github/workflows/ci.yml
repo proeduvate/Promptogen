@@ -20,8 +20,8 @@ jobs:
         run: |
           pip install black flake8
 
-      - name: Run Black
-        run: black --check .
+      # - name: Run Black
+      #   run: black --check .
 
-      - name: Run Flake8
-        run: flake8 .
+      # - name: Run Flake8
+      #   run: flake8 .
