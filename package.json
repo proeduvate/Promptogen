@@ -1,0 +1,11 @@
+{
+  "name": "promptogen",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Promptogen - Deterministic AI Prompt Engineering Platform",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "cd backend && uvicorn main:app --reload --port 8000"
+  }
+}
