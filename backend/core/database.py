@@ -95,7 +95,10 @@ class Database:
             raise RuntimeError("asyncpg is required for PostgreSQL persistence. Install requirements.txt.") from exc
 
         dsn = self._get_dsn()
-        self._pool = await asyncpg.create_pool(dsn=dsn, min_size=1, max_size=5)
+        pool_kwargs = {"dsn": dsn, "min_size": 1, "max_size": 5}
+        if ":6543" in dsn or "pooler" in dsn:
+            pool_kwargs["statement_cache_size"] = 0
+        self._pool = await asyncpg.create_pool(**pool_kwargs)
         logger.info("PostgreSQL persistence connected to %s", dsn.split("@")[-1] if "@" in dsn else "local")
 
     async def close(self) -> None:
