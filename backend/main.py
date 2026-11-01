@@ -25,7 +25,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]+)?$",
+    allow_origin_regex=r"^https?://((localhost|127\.0\.0\.1|0\.0\.0\.0)(:[0-9]+)?|.*\.vercel\.app)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -71,8 +71,22 @@ async def get_models():
     return {"models": GEMINI_FREE_TIER_MODELS}
 
 
-# ── Health check ───────────────────────────────────────────────────────────────
+# ── Root & Health endpoints ───────────────────────────────────────────────────
+@app.get("/", tags=["Health"])
+@app.get("/api", tags=["Health"])
+@app.get("/api/v1", tags=["Health"])
+async def root() -> dict:
+    return {
+        "status": "ok",
+        "service": settings.app_name,
+        "version": settings.app_version,
+        "docs": "/docs",
+    }
+
+
 @app.get("/health", tags=["Health"])
+@app.get("/api/health", tags=["Health"])
+@app.get("/api/v1/health", tags=["Health"])
 async def health() -> dict:
     return {"status": "ok", "service": settings.app_name, "version": settings.app_version}
 
@@ -80,11 +94,17 @@ async def health() -> dict:
 # ── Startup log ────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def on_startup() -> None:
-    await database.connect()
+    try:
+        await database.connect()
+    except Exception as exc:
+        logger.warning("Database connection failed on startup: %s. Continuing in in-memory mode.", exc)
     logger.info("%s v%s started", settings.app_name, settings.app_version)
     logger.info("Swagger UI → http://localhost:8000/docs")
 
 
 @app.on_event("shutdown")
 async def on_shutdown() -> None:
-    await database.close()
+    try:
+        await database.close()
+    except Exception as exc:
+        logger.warning("Database disconnection error on shutdown: %s", exc)
