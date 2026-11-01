@@ -4,6 +4,11 @@
   "buildCommand": "npm --prefix frontend install && npm --prefix frontend run build",
   "outputDirectory": "frontend/dist",
   "framework": "vite",
+  "build": {
+    "env": {
+      "PYTHON_VERSION": "3.12"
+    }
+  },
   "functions": {
     "api/index.py": {
       "maxDuration": 60,

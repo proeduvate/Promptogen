@@ -2,7 +2,7 @@
 name = "promptgen-backend"
 version = "1.0.0"
 description = "PromptGen AI Service — FastAPI backend with LangGraph pipeline"
-requires-python = ">=3.11"
+requires-python = ">=3.11, <3.13"
 dependencies = [
     "fastapi>=0.115.5",
     "uvicorn[standard]>=0.32.1",
