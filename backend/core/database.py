@@ -96,9 +96,23 @@ class Database:
 
         dsn = self._get_dsn()
         pool_kwargs = {"dsn": dsn, "min_size": 1, "max_size": 5}
-        if ":6543" in dsn or "pooler" in dsn:
+        if ":6543" in dsn or "pooler" in dsn or "supabase.co" in dsn or "supabase.com" in dsn:
             pool_kwargs["statement_cache_size"] = 0
-        self._pool = await asyncpg.create_pool(**pool_kwargs)
+            if "ssl=" not in dsn and "sslmode=" not in dsn:
+                pool_kwargs["ssl"] = "require"
+
+        try:
+            self._pool = await asyncpg.create_pool(**pool_kwargs)
+        except Exception as exc:
+            if "Cannot assign requested address" in str(exc) or "[Errno 99]" in str(exc):
+                logger.error(
+                    "Database connection failed with [Errno 99] Cannot assign requested address. "
+                    "This occurs on Vercel/serverless environments because the direct Supabase host ('db.<project-ref>.supabase.co') "
+                    "resolves only to IPv6, which Vercel serverless functions do not support. "
+                    "To fix this, update DATABASE_URL in Vercel to Supabase's IPv4 Connection Pooler: "
+                    "postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres"
+                )
+            raise
         logger.info("PostgreSQL persistence connected to %s", dsn.split("@")[-1] if "@" in dsn else "local")
 
     async def close(self) -> None:
