@@ -1,0 +1,329 @@
+===============================================================================
+ PROMPTOGEN UI - BUILD WALKTHROUGH
+ ProEduvate / Promptogen dashboard, rebuilt in React from the design mockups
+===============================================================================
+
+ Project folder : C:\Users\Sai Dixit\OneDrive\Desktop\promptogen-ui
+ Stack          : Vite + React 18 + Tailwind CSS v4 + lucide-react
+ Status         : UI only. No router, no backend, no API calls.
+
+
+-------------------------------------------------------------------------------
+ 1. HOW TO RUN
+-------------------------------------------------------------------------------
+
+ Open a terminal in the project folder and run:
+
+     npm install        (only needed the first time)
+     npm run dev        -> starts dev server at http://localhost:5173
+     npm run build      -> production build into /dist
+     npm run preview    -> serve the production build locally
+
+
+-------------------------------------------------------------------------------
+ 2. WHAT IS BUILT SO FAR
+-------------------------------------------------------------------------------
+
+ SCREEN 1 - Home Dashboard                                          [ BUILT ]
+   The full landing screen from the first mockup:
+     - Left sidebar (logo, 8 nav items, Unlock Pro card, account switcher)
+     - Top bar (light/dark toggle, notification bell)
+     - Hero card (badge, headline, subtitle, paper plane art, starfield,
+       prompt composer with 500-char limit, 5 example chips)
+     - 4 feature cards (Smart Questions, Structured Prompts,
+       Prompt Analytics, Save & Organize)
+     - Right rail: Prompt Strength Overview (85/100 ring + 5 metric bars
+       + View Full Analytics button)
+     - Right rail: Why Promptogen? (4 benefits)
+     - Footer (copyright, Privacy Policy, Terms of Service)
+
+ OVERLAY - "Answer a Few Questions" wizard                          [ BUILT ]
+   The modal from the second mockup. 4 steps, fully working navigation
+   and validation. Step 1 matches the mockup exactly. Steps 2, 3 and 4
+   were filled in with sensible questions because the mockup only shows
+   step 1 - that copy is meant to be edited.
+
+ SCREEN 1b - Home: Your Generated Prompt                            [ BUILT ]
+   Shown after "Generate Prompt" in the wizard (Home stays active):
+     - Top bar: Back to Home, Model, Generated, Save, Favorite,
+       Export menu (copy markdown, .txt / .md / .json download),
+       New Prompt
+     - Prompt card: SYSTEM / ROLE, TASK, CONTEXT, REQUIREMENTS,
+       PREFERENCES; Copy Prompt, Edit Prompt (inline edit + save),
+       "..." menu, Regenerate, Improve Prompt, tip
+     - Right rail: Prompt Strength (reuses StrengthPanel)
+     - Additional Tools (4 tiles) + Recent Prompts
+
+ SCREEN 2 - Analytics Dashboard                                     [ BUILT ]
+     - Tabs (Overview built; the other three show an empty state)
+     - 4 summary cards, date range button
+     - Prompt Strength Over Time line chart (hover tooltip, CSV export)
+     - Prompt Strength Trend bars, Strength Breakdown donut
+     - Recent Prompts Performance table, Top Suggestions
+
+ SCREEN 3 - My Prompts                                              [ BUILT ]
+     - Search (Ctrl/Cmd+K), New Prompt, tabs (All, Folders, Favorites,
+       Shared with me, Trash)
+     - Folders list, Filters card (applies on "Apply Filters")
+     - Prompt table with favorite stars, selection, pagination
+     - Details panel: Prompt Details + Version Compare (metrics table,
+       line diff: added / removed / modified, Use This Version)
+     - 3 columns from 1880px wide; below that the panel sits under
+       the table
+
+ NOT BUILT YET (nav placeholders only)
+   Templates, History, Favorites, Settings, Guide & Help.
+   Clicking them highlights the sidebar item and renders the Home
+   dashboard. There is still no router - App.jsx switches screens on
+   activeNav.
+
+
+-------------------------------------------------------------------------------
+ 3. FILE MAP
+-------------------------------------------------------------------------------
+
+   index.html                     Loads Inter font, sets data-theme="dark"
+   vite.config.js                 React + Tailwind v4 plugins
+
+   src/main.jsx                   React entry point
+   src/App.jsx                    All page state + layout grid
+   src/index.css                  Design tokens, light/dark palettes, animations
+
+   src/components/
+     Sidebar.jsx                  Logo, nav, Unlock Pro card, account row
+     TopBar.jsx                   Theme toggle + notification bell
+     Hero.jsx                     Headline, composer, example chips
+     FeatureCards.jsx             The 4 feature cards
+     StrengthPanel.jsx            Score ring + metric bars (right rail)
+     WhyPanel.jsx                 Benefits list (right rail)
+     Footer.jsx                   Copyright + legal links
+     QuestionsModal.jsx           The 4-step wizard dialog
+     Stepper.jsx                  The 1-2-3-4 progress indicator
+
+     PageShell.jsx                TopBar (+ page header slot) + main area
+     PageHeader.jsx               Page title / subtitle / actions
+     Tabs.jsx, Menu.jsx           Underline tabs, dropdown menu
+     EmptyState.jsx, ModelChip.jsx, ScoreBadge.jsx
+     prompt/                      Generated prompt screen pieces +
+                                  SectionBody (shared section renderer)
+     analytics/                   Summary cards, charts, tables
+     library/                     Folders, filters, prompt table,
+                                  pagination, details + version compare
+
+   src/pages/
+     HomePage.jsx                 The original landing grid
+     GeneratedPromptPage.jsx      Screen 1b
+     AnalyticsPage.jsx            Screen 2
+     MyPromptsPage.jsx            Screen 3
+
+   src/lib/
+     ui.js                        Shared card / button class strings
+     score.js                     Score -> rating label + colours
+     promptText.js                Prompt <-> text/markdown, copy, download
+     diff.js                      Line diff between two prompt versions
+   src/hooks/useElementWidth.js   ResizeObserver width for SVG charts
+
+   src/data/
+     content.js                   Nav items, chips, feature cards, scores,
+                                  benefits, user info
+     wizard.js                    All 4 wizard steps defined as config
+     generated.js                 Generated prompt, tools, recent prompts
+     analytics.js                 Analytics cards, series, tables
+     library.js                   Folders, filters, prompts + versions
+
+
+-------------------------------------------------------------------------------
+ 4. THEMING - HOW LIGHT / DARK WORKS
+-------------------------------------------------------------------------------
+
+ The entire palette lives as CSS custom properties in src/index.css:
+
+     :root[data-theme="dark"]  { --c-bg: #080b13; --c-surface: #0c111d; ... }
+     :root[data-theme="light"] { --c-bg: #f6f8fc; --c-surface: #ffffff; ... }
+
+ Tailwind's @theme block maps utility names onto those variables, so
+ classes like bg-surface, text-muted and border-line resolve at runtime.
+
+ App.jsx writes the attribute:
+
+     document.documentElement.dataset.theme = theme
+
+ Flipping that one attribute re-skins the whole app. There are no
+ duplicated "dark:" variants anywhere in the codebase, and no component
+ has to rerender for the theme to change.
+
+ The sun/moon control in the top bar is a real radio group and it works.
+ Dark is the default, matching the mockup.
+
+
+-------------------------------------------------------------------------------
+ 5. PAGE LAYOUT
+-------------------------------------------------------------------------------
+
+ App.jsx holds four pieces of state:
+
+     theme       "dark" | "light"
+     activeNav   which sidebar item is highlighted
+     idea        the hero textarea contents
+     modalOpen   whether the wizard is showing
+
+ The main area is a CSS grid of [ 1fr , 312px ] with four children in
+ this order:
+
+     Hero            StrengthPanel
+     FeatureCards    WhyPanel
+
+ That ordering is what makes the feature row and the "Why Promptogen?"
+ card sit on the same row, exactly as in the mockup.
+
+ Below the xl breakpoint the grid collapses to a single column and the
+ sidebar is hidden.
+
+ IMPORTANT: content is data, not markup. The nav items, example chips,
+ feature cards, the five score metrics and the benefits list all live in
+ src/data/content.js, each with its own icon and color token. Changing
+ copy never means touching a component file.
+
+
+-------------------------------------------------------------------------------
+ 6. INTERACTION WALKTHROUGH
+-------------------------------------------------------------------------------
+
+ 6.1  HERO COMPOSER
+
+   - Type an idea into the textarea. The counter caps at 500 characters.
+   - Press Enter, or click the blue "Enter" button, to open the wizard.
+   - Shift+Enter inserts a newline instead of submitting.
+   - The Enter button is disabled while the input is empty.
+   - Clicking any of the 5 example chips (Marketing Campaign, Code
+     Generator, Blog Writer, Product Description, Lesson Plan) drops a
+     full seed sentence into the textarea - not just the chip label - so
+     the next step has real text to work with.
+
+ 6.2  OPENING THE WIZARD
+
+   Submitting opens QuestionsModal with seed={idea}. That seed pre-fills
+   the step 1 "main goal" field, truncated to its 200-character limit.
+   Every time the modal opens it resets to step 1 with fresh answers.
+
+ 6.3  HOW THE WIZARD IS BUILT (the important part)
+
+   The modal is entirely data-driven. src/data/wizard.js defines all four
+   steps as configuration, and the renderer only knows three field types:
+
+       textarea   bordered box with an inline character counter
+       cards      icon tiles with a checkbox (multiple: true)
+                  or a radio dot (multiple: false)
+       select     styled native dropdown with a chevron
+
+   Adding, removing or reordering a question is a config edit, not a
+   component edit. You never have to write JSX to change the questions.
+
+   Step 1 (Goal) fields, matching the mockup:
+       goal          textarea, required, 200 char limit
+       outputTypes   cards, multi-select, required
+                     (Analysis/Insight, Step-by-step Guide, Creative
+                      Content, Code/Technical, Other)
+       audience      select, required
+
+   Steps 2-4 use the same three primitives:
+       Context        background, domain, priorAttempts
+       Requirements   mustInclude, length, format
+       Preferences    tone, model, notes
+
+ 6.4  NAVIGATION RULES
+
+   - "Next" stays disabled until every required field on the current
+     step has a value.
+   - On step 1 the left button reads "Cancel". From step 2 onward it
+     becomes "Back" with a left arrow.
+   - Completed step circles turn into blue checkmarks and can be clicked
+     to jump backwards. Future steps are not clickable.
+   - On step 4 the right button reads "Generate Prompt" instead of
+     "Next", and calls onComplete(answers).
+   - Moving to a new step scrolls the modal body back to the top.
+
+ 6.5  DISMISSING THE MODAL
+
+   Any of these close it: the Escape key, the X button, the Cancel
+   button, or clicking the dark backdrop.
+
+   While the modal is open, background page scrolling is locked. The
+   previous scroll setting is restored on close.
+
+
+-------------------------------------------------------------------------------
+ 7. WHERE TO PLUG IN REAL LOGIC
+-------------------------------------------------------------------------------
+
+ handleComplete in src/App.jsx is the single hand-off point. Right now it
+ just console.logs the collected answers:
+
+     const handleComplete = (answers) => {
+       console.log("Wizard answers", answers);
+       setModalOpen(false);
+     };
+
+ The answers object is flat and keyed by field name, so it serializes
+ straight into a request body:
+
+     {
+       goal:          "...",
+       outputTypes:   ["analysis", "guide"],
+       audience:      "Developers",
+       background:    "...",
+       domain:        "...",
+       priorAttempts: "...",
+       mustInclude:   "...",
+       length:        "...",
+       format:        "sections",
+       tone:          "professional",
+       model:         "Claude",
+       notes:         "..."
+     }
+
+ After handleComplete the Home area switches to the Generated Prompt
+ screen, which currently shows the sample prompt from data/generated.js
+ (the answers are not yet used to build it).
+
+ Other stubs waiting for real behaviour (console.log hand-offs):
+     - onUpgrade in Sidebar.jsx (the Upgrade Now button)
+     - The notification bell in TopBar.jsx
+     - Generated prompt: Regenerate, Improve Prompt, Convert to
+       Template, Test Prompt (handleTool in GeneratedPromptPage.jsx).
+       Compare Prompts opens My Prompts.
+     - Analytics: date range button, Top Suggestions "View all", and
+       the Performance / Usage Insights / Comparisons tabs
+     - My Prompts: New Version. Only the first page of sample rows
+       exists locally, so pages 2+ only update the footer range.
+     - All screen data is sample data in src/data/*.js
+     - Sidebar navigation - needs react-router if you want real URLs
+
+
+-------------------------------------------------------------------------------
+ 8. NOTES AND KNOWN GAPS
+-------------------------------------------------------------------------------
+
+ - The score data (85/100, Clarity 90, Specificity 85, Context 80,
+   Structure 85, Actionability 90) is hardcoded in src/data/content.js.
+   Metric bars render green at 85 and above, amber below - that rule is
+   the barTone function in StrengthPanel.jsx.
+
+ - Icons are a best-guess match to the small glyphs in the mockups.
+   "Smart Questions" uses Compass and "My Prompts" uses LineChart. If
+   either looks wrong, each is a one-line import swap in
+   src/data/content.js.
+
+ - The starfield dots in the hero use fixed coordinates so they do not
+   jump around on rerender. The paper plane and its dashed trail are
+   inline SVG, hidden below the xl breakpoint.
+
+ - This build was verified by compiling (npm run build passes clean,
+   1583 modules, no errors) but was NOT visually diffed against the
+   mockups in a browser, because the browser automation extension was
+   not connected during the build session. Please eyeball it at
+   http://localhost:5173 and report anything that looks off.
+
+===============================================================================
+ End of walkthrough
+===============================================================================
