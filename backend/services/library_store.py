@@ -1,4 +1,4 @@
-"""Service layer for Prompt Library with PostgreSQL persistence and in-memory fallback."""
+"""Service layer for Prompt Library with PostgreSQL persistence."""
 
 import copy
 import datetime

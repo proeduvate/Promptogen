@@ -94,11 +94,21 @@ async def health() -> dict:
 # ── Startup log ────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def on_startup() -> None:
+    logger.info("Connecting to database...")
     try:
         await database.connect()
     except Exception as exc:
-        logger.warning("Database connection failed on startup: %s. Continuing in in-memory mode.", exc)
-    logger.info("%s v%s started", settings.app_name, settings.app_version)
+        logger.critical("FATAL: Database connection failed on startup: %s. Aborting startup.", exc)
+        raise RuntimeError(f"Database connection failed on startup: {exc}") from exc
+
+    import os
+    import sys
+    is_test_env = "pytest" in sys.modules or os.getenv("TESTING") == "true"
+    if not is_test_env and not database.is_connected:
+        logger.critical("FATAL: Database is not connected. Aborting startup.")
+        raise RuntimeError("Database is not connected. Service startup aborted.")
+
+    logger.info("%s v%s started with active database connection", settings.app_name, settings.app_version)
     logger.info("Swagger UI → http://localhost:8000/docs")
 
 

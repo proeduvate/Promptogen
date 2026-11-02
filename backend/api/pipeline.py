@@ -245,7 +245,11 @@ async def start_pipeline(
     try:
         await database.create_prompt_creation(thread_id, request.query, questions)
     except Exception as db_err:
-        logger.warning("Database create_prompt_creation warning (proceeding in-memory): %s", db_err)
+        logger.error("Database create_prompt_creation failed: %s", db_err)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database persistence error: {db_err}",
+        )
 
     _state_store.set(
         thread_id,

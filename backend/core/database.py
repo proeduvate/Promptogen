@@ -73,6 +73,10 @@ class Database:
     def enabled(self) -> bool:
         return bool(settings.database_url)
 
+    @property
+    def is_connected(self) -> bool:
+        return self._pool is not None
+
     def _get_dsn(self) -> str:
         url = normalize_database_url(settings.database_url)
         if "+psycopg" in url:
@@ -83,8 +87,15 @@ class Database:
 
     async def connect(self) -> None:
         if not self.enabled:
-            logger.info("DATABASE_URL is not configured; PostgreSQL persistence disabled")
-            return
+            import os
+            import sys
+            is_test_env = "pytest" in sys.modules or os.getenv("TESTING") == "true"
+            if is_test_env:
+                logger.info("DATABASE_URL is not configured; running in test mode without PostgreSQL")
+                return
+            raise RuntimeError(
+                "DATABASE_URL is not configured. Database connection is required; in-memory fallback is disabled."
+            )
 
         if self._pool is not None:
             return
@@ -105,14 +116,18 @@ class Database:
             self._pool = await asyncpg.create_pool(**pool_kwargs)
         except Exception as exc:
             if "Cannot assign requested address" in str(exc) or "[Errno 99]" in str(exc):
-                logger.error(
+                err_msg = (
                     "Database connection failed with [Errno 99] Cannot assign requested address. "
                     "This occurs on Vercel/serverless environments because the direct Supabase host ('db.<project-ref>.supabase.co') "
                     "resolves only to IPv6, which Vercel serverless functions do not support. "
                     "To fix this, update DATABASE_URL in Vercel to Supabase's IPv4 Connection Pooler: "
                     "postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres"
                 )
-            raise
+                logger.critical(err_msg)
+                raise RuntimeError(err_msg) from exc
+            logger.critical("Fatal: Database connection failed: %s", exc)
+            raise RuntimeError(f"Database connection failed: {exc}") from exc
+
         logger.info("PostgreSQL persistence connected to %s", dsn.split("@")[-1] if "@" in dsn else "local")
 
     async def close(self) -> None:
