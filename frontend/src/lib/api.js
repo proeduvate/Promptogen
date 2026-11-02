@@ -57,7 +57,19 @@ async function request(path, options = {}) {
       let errorDetail = `Request failed with status ${res.status}`;
       try {
         const errorJson = await res.json();
-        errorDetail = errorJson.detail || errorDetail;
+        if (Array.isArray(errorJson.detail)) {
+          errorDetail = errorJson.detail
+            .map((item) => {
+              if (typeof item === "string") return item;
+              const field = item.loc ? item.loc.filter((l) => l !== "body").join(".") : "";
+              return field ? `${field}: ${item.msg}` : (item.msg || JSON.stringify(item));
+            })
+            .join("; ");
+        } else if (typeof errorJson.detail === "string") {
+          errorDetail = errorJson.detail;
+        } else if (errorJson.message) {
+          errorDetail = errorJson.message;
+        }
       } catch {
         // Fallback to generic status error if body is not JSON
       }

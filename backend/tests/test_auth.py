@@ -1,5 +1,6 @@
 """Unit tests for Authentication and IP-level rate limiting."""
 
+import uuid
 import pytest
 from unittest.mock import AsyncMock, patch
 from fastapi import status
@@ -19,18 +20,24 @@ def client():
 
 
 @pytest.fixture(autouse=True)
-def _clean_ip_usage():
-    auth_store.reset_ip("203.0.113.42")
-    auth_store.reset_ip("198.51.100.99")
-    auth_store.reset_ip("testclient")
+def _clean_ip_usage(client):
+    for ip in ("203.0.113.42", "198.51.100.99", "testclient"):
+        auth_store.reset_ip(ip)
+        try:
+            client.post("/api/v1/auth/reset-rate-limit", headers={"x-forwarded-for": ip})
+        except Exception:
+            pass
     yield
-    auth_store.reset_ip("203.0.113.42")
-    auth_store.reset_ip("198.51.100.99")
-    auth_store.reset_ip("testclient")
+    for ip in ("203.0.113.42", "198.51.100.99", "testclient"):
+        auth_store.reset_ip(ip)
+        try:
+            client.post("/api/v1/auth/reset-rate-limit", headers={"x-forwarded-for": ip})
+        except Exception:
+            pass
 
 
 def test_register_and_login_flow(client):
-    email = "alice@example.com"
+    email = f"alice_{uuid.uuid4().hex[:8]}@example.com"
     pwd = "SecurePassword123"
 
     # Register
@@ -168,10 +175,11 @@ def test_authenticated_user_bypasses_ip_lock(client):
     auth_store.record_guest_generation(user_ip)
     assert auth_store.get_ip_status(user_ip)["locked"] is True
 
-    # Register/Login an authenticated user
+    # Register/Login an authenticated user with unique email
+    unique_email = f"poweruser_{uuid.uuid4().hex[:8]}@example.com"
     reg = client.post("/api/v1/auth/register", json={
         "name": "Power User",
-        "email": "poweruser@example.com",
+        "email": unique_email,
         "password": "Password123!",
     })
     token = reg.json()["token"]

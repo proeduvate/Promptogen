@@ -2,8 +2,10 @@
 
 import logging
 
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from api.deps import get_optional_current_user
 from clients.factory import get_llm_client
 from core.exceptions import AssessmentError, LLMError, LLMTimeoutError
 from schemas.quality_assessment import PromptAssessmentRequest, PromptAssessmentResponse
@@ -28,9 +30,11 @@ def get_quality_assessment_service(client=Depends(get_llm_client)) -> QualityAss
 async def assess_prompt(
     request: PromptAssessmentRequest,
     service: QualityAssessmentService = Depends(get_quality_assessment_service),
+    current_user: Optional[dict] = Depends(get_optional_current_user),
 ) -> PromptAssessmentResponse:
     try:
-        return await service.assess(request.prompt)
+        user_id = current_user["id"] if current_user else None
+        return await service.assess(request.prompt, user_id=user_id)
     except LLMTimeoutError as exc:
         raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail="The AI service timed out.") from exc
     except LLMError as exc:

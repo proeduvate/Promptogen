@@ -6,7 +6,9 @@ import os
 print("Tracing:", os.getenv("LANGCHAIN_TRACING_V2"))
 print("Project:", os.getenv("LANGCHAIN_PROJECT"))
 print("API Key:", bool(os.getenv("LANGCHAIN_API_KEY")))
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from api.clarification import router as clarification_router
 from core.config import settings
@@ -20,6 +22,21 @@ app = FastAPI(
     version=settings.app_version,
     description="AI-powered webhook service that converts vague queries into high-quality prompts.",
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    errors = []
+    for err in exc.errors():
+        field = ".".join(str(loc) for loc in err.get("loc", []) if loc != "body")
+        msg = err.get("msg", "Invalid value")
+        errors.append(f"{field}: {msg}" if field else msg)
+    error_message = "; ".join(errors)
+    logger.warning("Request validation error on %s %s: %s", request.method, request.url.path, error_message)
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"detail": error_message, "errors": exc.errors()},
+    )
 
 # ── CORS Middleware ────────────────────────────────────────────────────────────
 app.add_middleware(
@@ -94,11 +111,21 @@ async def health() -> dict:
 # ── Startup log ────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def on_startup() -> None:
+    logger.info("Connecting to database...")
     try:
         await database.connect()
     except Exception as exc:
-        logger.warning("Database connection failed on startup: %s. Continuing in in-memory mode.", exc)
-    logger.info("%s v%s started", settings.app_name, settings.app_version)
+        logger.critical("FATAL: Database connection failed on startup: %s. Aborting startup.", exc)
+        raise RuntimeError(f"Database connection failed on startup: {exc}") from exc
+
+    import os
+    import sys
+    is_test_env = "pytest" in sys.modules or os.getenv("TESTING") == "true"
+    if not is_test_env and not database.is_connected:
+        logger.critical("FATAL: Database is not connected. Aborting startup.")
+        raise RuntimeError("Database is not connected. Service startup aborted.")
+
+    logger.info("%s v%s started with active database connection", settings.app_name, settings.app_version)
     logger.info("Swagger UI → http://localhost:8000/docs")
 
 

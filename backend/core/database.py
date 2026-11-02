@@ -73,6 +73,10 @@ class Database:
     def enabled(self) -> bool:
         return bool(settings.database_url)
 
+    @property
+    def is_connected(self) -> bool:
+        return self._pool is not None
+
     def _get_dsn(self) -> str:
         url = normalize_database_url(settings.database_url)
         if "+psycopg" in url:
@@ -83,8 +87,15 @@ class Database:
 
     async def connect(self) -> None:
         if not self.enabled:
-            logger.info("DATABASE_URL is not configured; PostgreSQL persistence disabled")
-            return
+            import os
+            import sys
+            is_test_env = "pytest" in sys.modules or os.getenv("TESTING") == "true"
+            if is_test_env:
+                logger.info("DATABASE_URL is not configured; running in test mode without PostgreSQL")
+                return
+            raise RuntimeError(
+                "DATABASE_URL is not configured. Database connection is required; in-memory fallback is disabled."
+            )
 
         if self._pool is not None:
             return
@@ -96,9 +107,27 @@ class Database:
 
         dsn = self._get_dsn()
         pool_kwargs = {"dsn": dsn, "min_size": 1, "max_size": 5}
-        if ":6543" in dsn or "pooler" in dsn:
+        if ":6543" in dsn or "pooler" in dsn or "supabase.co" in dsn or "supabase.com" in dsn:
             pool_kwargs["statement_cache_size"] = 0
-        self._pool = await asyncpg.create_pool(**pool_kwargs)
+            if "ssl=" not in dsn and "sslmode=" not in dsn:
+                pool_kwargs["ssl"] = "require"
+
+        try:
+            self._pool = await asyncpg.create_pool(**pool_kwargs)
+        except Exception as exc:
+            if "Cannot assign requested address" in str(exc) or "[Errno 99]" in str(exc):
+                err_msg = (
+                    "Database connection failed with [Errno 99] Cannot assign requested address. "
+                    "This occurs on Vercel/serverless environments because the direct Supabase host ('db.<project-ref>.supabase.co') "
+                    "resolves only to IPv6, which Vercel serverless functions do not support. "
+                    "To fix this, update DATABASE_URL in Vercel to Supabase's IPv4 Connection Pooler: "
+                    "postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres"
+                )
+                logger.critical(err_msg)
+                raise RuntimeError(err_msg) from exc
+            logger.critical("Fatal: Database connection failed: %s", exc)
+            raise RuntimeError(f"Database connection failed: {exc}") from exc
+
         logger.info("PostgreSQL persistence connected to %s", dsn.split("@")[-1] if "@" in dsn else "local")
 
     async def close(self) -> None:
@@ -109,6 +138,19 @@ class Database:
         logger.info("PostgreSQL persistence disconnected")
 
     async def _ensure_connected(self) -> None:
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if self._pool is not None and loop is not None and getattr(self._pool, "_loop", None) != loop:
+            try:
+                await self._pool.close()
+            except Exception:
+                pass
+            self._pool = None
+
         if self._pool is None:
             await self.connect()
 
@@ -239,7 +281,7 @@ class Database:
             async with self._pool.acquire() as connection:
                 row = await connection.fetchrow(
                     """
-                    SELECT id, original_query, questions, answers, prompt_title,
+                    SELECT id, user_id, original_query, questions, answers, prompt_title,
                            optimized_prompt, overall_score, clarity, specificity,
                            context, structure, actionability, suggestions, status
                     FROM prompt_creations
@@ -254,6 +296,7 @@ class Database:
                 s_raw = row["suggestions"]
                 return {
                     "id": str(row["id"]),
+                    "user_id": str(row["user_id"]) if row["user_id"] else None,
                     "original_query": row["original_query"],
                     "questions": json.loads(q_raw) if isinstance(q_raw, str) else (q_raw or []),
                     "answers": json.loads(a_raw) if isinstance(a_raw, str) else (a_raw or []),
@@ -274,30 +317,58 @@ class Database:
 
     # ── Folders & Library Management ───────────────────────────────────────────
 
-    async def get_library_folders(self) -> List[Dict[str, Any]]:
+    async def get_library_folders(self, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
         if not self.enabled:
             return []
 
         await self._ensure_connected()
         assert self._pool is not None
+        user_uuid = None
+        if user_id:
+            try:
+                user_uuid = uuid.UUID(str(user_id))
+            except (ValueError, TypeError):
+                pass
+
         async with self._pool.acquire() as connection:
-            rows = await connection.fetch(
-                """
-                SELECT
-                    f.id,
-                    f.label,
-                    f.icon,
-                    f.tone,
-                    COALESCE(COUNT(p.id) FILTER (WHERE p.archived = FALSE), 0)::int AS count
-                FROM library_folders f
-                LEFT JOIN saved_prompts p ON p.folder_id = f.id
-                GROUP BY f.id, f.label, f.icon, f.tone, f.created_at
-                ORDER BY f.created_at ASC
-                """
-            )
-            total_active = await connection.fetchval(
-                "SELECT COUNT(*)::int FROM saved_prompts WHERE archived = FALSE"
-            )
+            if user_uuid:
+                rows = await connection.fetch(
+                    """
+                    SELECT
+                        f.id,
+                        f.label,
+                        f.icon,
+                        f.tone,
+                        COALESCE(COUNT(p.id) FILTER (WHERE p.archived = FALSE AND (p.user_id = $1 OR p.user_id IS NULL)), 0)::int AS count
+                    FROM library_folders f
+                    LEFT JOIN saved_prompts p ON p.folder_id = f.id
+                    GROUP BY f.id, f.label, f.icon, f.tone, f.created_at
+                    ORDER BY f.created_at ASC
+                    """,
+                    user_uuid,
+                )
+                total_active = await connection.fetchval(
+                    "SELECT COUNT(*)::int FROM saved_prompts WHERE archived = FALSE AND (user_id = $1 OR user_id IS NULL)",
+                    user_uuid,
+                )
+            else:
+                rows = await connection.fetch(
+                    """
+                    SELECT
+                        f.id,
+                        f.label,
+                        f.icon,
+                        f.tone,
+                        COALESCE(COUNT(p.id) FILTER (WHERE p.archived = FALSE), 0)::int AS count
+                    FROM library_folders f
+                    LEFT JOIN saved_prompts p ON p.folder_id = f.id
+                    GROUP BY f.id, f.label, f.icon, f.tone, f.created_at
+                    ORDER BY f.created_at ASC
+                    """
+                )
+                total_active = await connection.fetchval(
+                    "SELECT COUNT(*)::int FROM saved_prompts WHERE archived = FALSE"
+                )
 
         folders = [dict(r) for r in rows]
         # Ensure 'all' reflects the total active count
@@ -579,7 +650,7 @@ class Database:
 
     # ── Prompt Analytics ───────────────────────────────────────────────────────
 
-    async def get_prompt_analytics(self, days: int = 7) -> dict:
+    async def get_prompt_analytics(self, days: int = 7, user_id: Optional[str] = None) -> dict:
         if not self.enabled:
             return _empty_analytics(days)
 
@@ -867,16 +938,17 @@ class Database:
         assert self._pool is not None
         u_id = uuid.UUID(user["id"]) if isinstance(user["id"], str) else user["id"]
         async with self._pool.acquire() as connection:
-            await connection.execute(
+            row = await connection.fetchrow(
                 """
                 INSERT INTO users (id, email, name, password_hash, auth_provider, google_id, avatar_url, is_active, updated_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
-                ON CONFLICT (id) DO UPDATE SET
+                ON CONFLICT (email) DO UPDATE SET
                     name = EXCLUDED.name,
                     password_hash = COALESCE(EXCLUDED.password_hash, users.password_hash),
                     avatar_url = COALESCE(EXCLUDED.avatar_url, users.avatar_url),
                     google_id = COALESCE(EXCLUDED.google_id, users.google_id),
                     updated_at = NOW()
+                RETURNING id, email, name, password_hash, auth_provider, google_id, avatar_url, is_active, created_at
                 """,
                 u_id,
                 user["email"].strip().lower(),
@@ -887,6 +959,10 @@ class Database:
                 user.get("avatar_url"),
                 user.get("is_active", True),
             )
+            if row:
+                res = dict(row)
+                res["id"] = str(res["id"])
+                return res
             return await self.get_user_by_id(str(u_id))
 
     # ── Guest Rate Limit Persistence ──────────────────────────────────────────

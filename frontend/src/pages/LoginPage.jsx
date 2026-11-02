@@ -24,9 +24,20 @@ export default function LoginPage({ onLoginSuccess, onBack }) {
       return;
     }
 
-    if (mode === "register" && !name.trim()) {
-      setError("Please provide your full name.");
-      return;
+    if (mode === "register") {
+      if (!name.trim() || name.trim().length < 2) {
+        setError("Please provide your full name (at least 2 characters).");
+        return;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        setError("Please enter a valid email address.");
+        return;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters long.");
+        return;
+      }
     }
 
     setLoading(true);
@@ -260,6 +271,8 @@ export default function LoginPage({ onLoginSuccess, onBack }) {
                   <input
                     type="text"
                     required
+                    minLength={2}
+                    maxLength={100}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Dhanush C"
@@ -295,9 +308,11 @@ export default function LoginPage({ onLoginSuccess, onBack }) {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  minLength={mode === "register" ? 6 : 1}
+                  maxLength={128}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder={mode === "register" ? "Minimum 6 characters" : "••••••••••••"}
                   className="w-full rounded-xl border border-[#1b2740] bg-[#070b14] pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <button
@@ -308,6 +323,11 @@ export default function LoginPage({ onLoginSuccess, onBack }) {
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              {mode === "register" && (
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Must be at least 6 characters
+                </span>
+              )}
             </div>
 
             <div className="flex items-center justify-between text-xs pt-1">

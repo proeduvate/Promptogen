@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 from api.deps import get_client_ip, get_optional_current_user
 from clients.factory import get_llm_client
 from clients.gemini_client import GEMINI_FREE_TIER_MODELS
+from core.config import settings
 from core.database import database
 from graph.workflow import clarify_workflow, gen_assess_workflow
 from schemas.prompt_generation import PipelineFollowUpRequest, PipelineFollowUpResponse
@@ -173,14 +174,25 @@ async def start_pipeline(
     # IP-level rate limiting for unauthenticated guest sessions (limit: 2 prompts/day)
     is_test_client = client_ip == "testclient" and not raw_request.headers.get("x-test-enforce-limit")
     if not current_user and not is_test_client:
-        ip_status = auth_store.get_ip_status(client_ip)
-        if ip_status["locked"]:
-            logger.warning("Blocked guest prompt generation: IP %s locked (%d/%d used)", client_ip, ip_status["used"], ip_status["limit"])
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Guest generation limit reached. You can generate up to 2 prompts per day as a guest. Please log in or sign up to enjoy unlimited prompt generations.",
-            )
-        auth_store.record_guest_generation(client_ip)
+        if database.enabled:
+            used = await database.get_guest_rate_limit(client_ip)
+            limit = settings.guest_daily_limit
+            if used >= limit:
+                logger.warning("Blocked guest prompt generation: IP %s locked (%d/%d used)", client_ip, used, limit)
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Guest generation limit reached. You can generate up to 2 prompts per day as a guest. Please log in or sign up to enjoy unlimited prompt generations.",
+                )
+            await database.increment_guest_rate_limit(client_ip)
+        else:
+            ip_status = auth_store.get_ip_status(client_ip)
+            if ip_status["locked"]:
+                logger.warning("Blocked guest prompt generation: IP %s locked (%d/%d used)", client_ip, ip_status["used"], ip_status["limit"])
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail="Guest generation limit reached. You can generate up to 2 prompts per day as a guest. Please log in or sign up to enjoy unlimited prompt generations.",
+                )
+            auth_store.record_guest_generation(client_ip)
 
     thread_id = str(uuid.uuid4())
     logger.info(
@@ -243,9 +255,18 @@ async def start_pipeline(
     status_str = "sufficient" if is_sufficient and len(questions) == 0 else "awaiting_answers"
 
     try:
-        await database.create_prompt_creation(thread_id, request.query, questions)
+        await database.create_prompt_creation(
+            thread_id=thread_id,
+            original_query=request.query,
+            questions=questions,
+            user_id=current_user["id"] if current_user else None,
+        )
     except Exception as db_err:
-        logger.warning("Database create_prompt_creation warning (proceeding in-memory): %s", db_err)
+        logger.error("Database create_prompt_creation failed: %s", db_err)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Database persistence error: {db_err}",
+        )
 
     _state_store.set(
         thread_id,
@@ -282,14 +303,15 @@ async def start_pipeline(
     description="Submits answers to produce prompt and quality scores.",
 )
 async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinueResponse:
-    stored = _state_store.get(request.thread_id)
-    if stored is None:
+    stored = None
+    if database.enabled:
         try:
             stored = await database.get_prompt_creation(request.thread_id)
-            if stored:
-                _state_store.set(request.thread_id, stored)
         except Exception as db_err:
-            logger.warning("Database fallback lookup warning: %s", db_err)
+            logger.warning("Database lookup warning: %s", db_err)
+
+    if stored is None:
+        stored = _state_store.get(request.thread_id)
 
     if stored is None:
         raise HTTPException(
@@ -435,14 +457,15 @@ async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinu
     description="Takes a user follow-up message, reads conversational context, and either refines the prompt or generates targeted clarification questions.",
 )
 async def pipeline_followup(request: PipelineFollowUpRequest) -> PipelineFollowUpResponse:
-    stored = _state_store.get(request.thread_id)
-    if stored is None:
+    stored = None
+    if database.enabled:
         try:
             stored = await database.get_prompt_creation(request.thread_id)
-            if stored:
-                _state_store.set(request.thread_id, stored)
         except Exception as db_err:
-            logger.warning("Database fallback lookup warning: %s", db_err)
+            logger.warning("Database lookup warning on followup: %s", db_err)
+
+    if stored is None:
+        stored = _state_store.get(request.thread_id)
 
     if stored is None:
         raise HTTPException(
