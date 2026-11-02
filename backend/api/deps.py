@@ -3,6 +3,7 @@
 from typing import Optional
 from fastapi import Header, HTTPException, Request, status
 
+from core.database import database
 from core.security import decode_access_token
 from services.auth_store import auth_store
 
@@ -41,6 +42,16 @@ async def get_optional_current_user(
         return None
 
     user = auth_store.get_user_by_id(user_id)
+    if not user and database.enabled and database.is_connected:
+        try:
+            user = await database.get_user_by_id(user_id)
+            if user:
+                # Sync into memory store for fast repeated lookups
+                auth_store._users_by_id[user["id"]] = user
+                auth_store._users_by_email[user["email"]] = user
+        except Exception:
+            pass
+
     return user
 
 

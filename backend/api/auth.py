@@ -9,7 +9,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 
 from api.deps import get_client_ip, get_current_user, get_optional_current_user
 from core.config import settings
-from core.security import create_access_token
+from core.database import database
+from core.security import create_access_token, verify_password
 from schemas.auth import (
     AuthResponse,
     GoogleAuthRequest,
@@ -44,7 +45,16 @@ def _user_to_response(u: dict) -> UserResponse:
 )
 async def register(request: RegisterRequest) -> AuthResponse:
     """Create a new user account with email and password."""
-    existing = auth_store.get_user_by_email(request.email)
+    existing = None
+    if database.enabled and database.is_connected:
+        try:
+            existing = await database.get_user_by_email(request.email)
+        except Exception as e:
+            logger.warning("Database lookup by email error: %s", e)
+
+    if not existing:
+        existing = auth_store.get_user_by_email(request.email)
+
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -60,6 +70,15 @@ async def register(request: RegisterRequest) -> AuthResponse:
         )
     except ValueError as err:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(err))
+
+    # Persist user to PostgreSQL
+    if database.enabled and database.is_connected:
+        try:
+            db_user = await database.upsert_user(user)
+            if db_user:
+                user = db_user
+        except Exception as e:
+            logger.error("Failed to persist new user to PostgreSQL: %s", e)
 
     token = create_access_token(
         data={"sub": user["id"], "email": user["email"], "name": user["name"]}
@@ -77,6 +96,20 @@ async def register(request: RegisterRequest) -> AuthResponse:
 async def login(request: LoginRequest) -> AuthResponse:
     """Authenticate existing user credentials."""
     user = auth_store.authenticate_local(request.email, request.password)
+
+    # Check database if not in memory
+    if not user and database.enabled and database.is_connected:
+        try:
+            db_user = await database.get_user_by_email(request.email)
+            if db_user and db_user.get("password_hash"):
+                if verify_password(request.password, db_user["password_hash"]):
+                    user = db_user
+                    # Sync to auth_store cache
+                    auth_store._users_by_id[user["id"]] = user
+                    auth_store._users_by_email[user["email"]] = user
+        except Exception as e:
+            logger.warning("Database login lookup error: %s", e)
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -241,6 +274,15 @@ async def google_auth(request: GoogleAuthRequest) -> AuthResponse:
         google_id=google_id,
         avatar_url=picture,
     )
+
+    # Persist Google user to PostgreSQL
+    if database.enabled and database.is_connected:
+        try:
+            db_user = await database.upsert_user(user)
+            if db_user:
+                user = db_user
+        except Exception as e:
+            logger.error("Failed to persist Google user to PostgreSQL: %s", e)
 
     token = create_access_token(
         data={"sub": user["id"], "email": user["email"], "name": user["name"]}

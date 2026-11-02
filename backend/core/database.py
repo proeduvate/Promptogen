@@ -138,6 +138,19 @@ class Database:
         logger.info("PostgreSQL persistence disconnected")
 
     async def _ensure_connected(self) -> None:
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if self._pool is not None and loop is not None and getattr(self._pool, "_loop", None) != loop:
+            try:
+                await self._pool.close()
+            except Exception:
+                pass
+            self._pool = None
+
         if self._pool is None:
             await self.connect()
 

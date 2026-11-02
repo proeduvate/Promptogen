@@ -298,11 +298,12 @@ class LibraryStore:
         return None
 
     async def save_prompt(self, data: Dict[str, Any], user_id: Optional[str] = None) -> Dict[str, Any]:
+        payload = dict(data)
+        if user_id and not payload.get("user_id"):
+            payload["user_id"] = user_id
+
         if database.enabled:
-            try:
-                return await database.save_saved_prompt(data)
-            except Exception:
-                pass
+            return await database.save_saved_prompt(payload)
 
         prompt_id = data.get("id") or str(uuid.uuid4())[:8]
         now = datetime.datetime.now()
