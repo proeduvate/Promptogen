@@ -73,7 +73,7 @@ class TestAnalyticsEndpoint:
         assert body["strength_breakdown"]["structure"] == 85
         assert body["strength_breakdown"]["actionability"] == 90
         assert body["recent_prompts"][0]["original_query"] == "Marketing strategy for SaaS product"
-        mock_query.assert_awaited_once_with(days=7)
+        mock_query.assert_awaited_once_with(days=7, user_id="00000000-0000-0000-0000-000000000001")
 
     def test_analytics_rejects_invalid_days(self) -> None:
         response = TestClient(app).get("/api/v1/analytics?days=0")

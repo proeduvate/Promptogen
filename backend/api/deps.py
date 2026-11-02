@@ -42,7 +42,7 @@ async def get_optional_current_user(
         return None
 
     user = auth_store.get_user_by_id(user_id)
-    if not user and database.enabled and database.is_connected:
+    if not user and database.enabled:
         try:
             user = await database.get_user_by_id(user_id)
             if user:

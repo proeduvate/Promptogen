@@ -16,7 +16,9 @@ class QualityAssessmentService:
     def __init__(self, client: GroqClient) -> None:
         self._client = client
 
-    async def assess(self, prompt_text: str, persist_assessment: bool = True) -> PromptAssessmentResponse:
+    async def assess(
+        self, prompt_text: str, persist_assessment: bool = True, user_id: str | None = None
+    ) -> PromptAssessmentResponse:
         logger.info("Assessing prompt quality | prompt_length=%d", len(prompt_text))
         user_message = build_user_message(prompt_text)
         try:
@@ -30,7 +32,11 @@ class QualityAssessmentService:
             raise LLMError(f"Unexpected error calling LLM: {exc}") from exc
 
         data = parse_llm_response(raw)
-        data["assessment_id"] = await database.save_prompt_assessment(prompt_text, data) if persist_assessment else None
+        data["assessment_id"] = (
+            await database.save_prompt_assessment(prompt_text, data, user_id=user_id)
+            if persist_assessment
+            else None
+        )
         response = PromptAssessmentResponse(**data)
         logger.info(
             "Quality assessment complete | overall=%d clarity=%d specificity=%d context=%d structure=%d actionability=%d",

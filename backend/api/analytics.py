@@ -190,7 +190,7 @@ async def get_analytics(
         return None
 
     try:
-        data = await database.get_prompt_analytics(days=days)
+        data = await database.get_prompt_analytics(days=days, user_id=user_id)
     except Exception as exc:
         logger.warning("Database analytics query failed: %s; serving fallback data", exc)
         data = None

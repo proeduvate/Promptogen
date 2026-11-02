@@ -195,7 +195,12 @@ class LibraryStore:
         if not user_id:
             return []
 
-        # Filter prompts belonging to this user
+        if database.enabled:
+            folders = await database.get_library_folders(user_id=user_id)
+            if folders:
+                return folders
+
+        # Fallback for offline test environments
         user_prompts = [p for p in self._prompts if p.get("user_id") in (user_id, DEMO_USER_ID, DEMO2_USER_ID)]
         counts: Dict[str, int] = {"all": len(user_prompts)}
         for p in user_prompts:
@@ -235,7 +240,20 @@ class LibraryStore:
                 "prompts": [],
             }
 
-        # Filter prompts belonging to user
+        if database.enabled:
+            return await database.list_saved_prompts(
+                tab=tab,
+                folder=folder,
+                model=model,
+                tag=tag,
+                created_by=created_by,
+                search=search,
+                page=page,
+                page_size=page_size,
+                user_id=user_id,
+            )
+
+        # Fallback for offline test environments
         needle = search.strip().lower()
         filtered = []
         for p in self._prompts:
@@ -285,12 +303,7 @@ class LibraryStore:
 
     async def get_prompt(self, prompt_id: str, user_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
         if database.enabled:
-            try:
-                p = await database.get_saved_prompt(prompt_id)
-                if p:
-                    return p
-            except Exception:
-                pass
+            return await database.get_saved_prompt(prompt_id)
 
         for p in self._prompts:
             if p["id"] == prompt_id:
@@ -336,12 +349,7 @@ class LibraryStore:
 
     async def toggle_favorite(self, prompt_id: str) -> Optional[bool]:
         if database.enabled:
-            try:
-                res = await database.toggle_saved_prompt_favorite(prompt_id)
-                if res is not None:
-                    return res
-            except Exception:
-                pass
+            return await database.toggle_saved_prompt_favorite(prompt_id)
 
         for p in self._prompts:
             if p["id"] == prompt_id:
@@ -351,10 +359,7 @@ class LibraryStore:
 
     async def delete_prompt(self, prompt_id: str) -> bool:
         if database.enabled:
-            try:
-                return await database.delete_saved_prompt(prompt_id)
-            except Exception:
-                pass
+            return await database.delete_saved_prompt(prompt_id)
 
         for idx, p in enumerate(self._prompts):
             if p["id"] == prompt_id:
