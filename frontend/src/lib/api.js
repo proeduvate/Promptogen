@@ -101,55 +101,151 @@ export async function fetchWizardSchema() {
 // ── Pipeline & LLM Prompt Generation ──────────────────────────────────────────
 export const GEMINI_FREE_TIER_MODELS = [
   {
-    id: "gemini-3.5-flash-lite",
-    label: "Gemini 3.5 Flash-Lite",
-    provider: "Google Gemini",
-    description: "Ultra lightweight, active free tier, low-latency reasoning",
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    label: "Gemini 2.5 Flash",
+    provider: "gemini",
+    provider_label: "Google Gemini",
+    badge: "Recommended (Free Tier)",
+    description: "Google's flagship multimodal workhorse with high speed and advanced reasoning",
+    free_tier: true,
     recommended: true,
+    limits: "15 RPM / 1M TPM / 1,500 RPD",
   },
   {
-    id: "gemini-3.5-flash",
-    label: "Gemini 3.5 Flash",
-    provider: "Google Gemini",
-    description: "Balanced high performance and reasoning",
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro",
+    label: "Gemini 2.5 Pro",
+    provider: "gemini",
+    provider_label: "Google Gemini",
+    badge: "Deep Reasoning",
+    description: "Complex logic, architectural design, and deep analysis with 2M token context",
+    free_tier: true,
+    recommended: false,
+    limits: "2 RPM / 32K TPM / 50 RPD",
   },
   {
-    id: "gemini-3.8-flash",
-    label: "Gemini 3.8 Flash",
-    provider: "Google Gemini",
-    description: "Latest architecture with advanced analytical capabilities",
+    id: "gemini-2.0-flash",
+    name: "Gemini 2.0 Flash",
+    label: "Gemini 2.0 Flash",
+    provider: "gemini",
+    provider_label: "Google Gemini",
+    badge: "Ultra Low Latency",
+    description: "Low latency multimodal model optimized for real-time prompt generation",
+    free_tier: true,
+    recommended: false,
+    limits: "15 RPM / 1M TPM / 1,500 RPD",
   },
   {
-    id: "gemini-3.1-flash-lite",
-    label: "Gemini 3.1 Flash-Lite",
-    provider: "Google Gemini",
-    description: "High throughput classification model",
+    id: "gemini-2.0-flash-lite",
+    name: "Gemini 2.0 Flash-Lite",
+    label: "Gemini 2.0 Flash-Lite",
+    provider: "gemini",
+    provider_label: "Google Gemini",
+    badge: "High Throughput",
+    description: "Cost-efficient, high-throughput extraction and classification",
+    free_tier: true,
+    recommended: false,
+    limits: "30 RPM / 1M TPM / 1,500 RPD",
   },
   {
-    id: "gemini-3.1-pro-preview",
-    label: "Gemini 3.1 Pro Preview",
-    provider: "Google Gemini",
-    description: "State-of-the-art coding and complex architectural analysis",
+    id: "llama-3.3-70b-versatile",
+    name: "Llama 3.3 70B",
+    label: "Llama 3.3 70B (Groq)",
+    provider: "groq",
+    provider_label: "Groq",
+    badge: "300+ Tokens/Sec",
+    description: "Meta's flagship open model running on Groq LPUs at 300+ tokens/second",
+    free_tier: false,
+    recommended: false,
+  },
+  {
+    id: "llama-3.1-8b-instant",
+    name: "Llama 3.1 8B Instant",
+    label: "Llama 3.1 8B (Groq)",
+    provider: "groq",
+    provider_label: "Groq",
+    badge: "Instant Latency",
+    description: "Sub-second response times for rapid question generation and refinement",
+    free_tier: false,
+    recommended: false,
+  },
+  {
+    id: "gpt-4o-mini",
+    name: "GPT-4o Mini",
+    label: "GPT-4o Mini (OpenAI)",
+    provider: "openai",
+    provider_label: "OpenAI",
+    badge: "Fast & Efficient",
+    description: "Affordable, lightweight model optimized for high-volume structured outputs",
+    free_tier: false,
+    recommended: false,
+  },
+  {
+    id: "claude-3-5-haiku-20241022",
+    name: "Claude 3.5 Haiku",
+    label: "Claude 3.5 Haiku (Anthropic)",
+    provider: "anthropic",
+    provider_label: "Anthropic",
+    badge: "Fast & Nuanced",
+    description: "Next-generation high-speed Claude model with exceptional instruction following",
+    free_tier: false,
+    recommended: false,
+  },
+  {
+    id: "gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash-Lite",
+    label: "Gemini 3.5 Flash-Lite",
+    provider: "gemini",
+    provider_label: "Google Gemini",
+    badge: "Fast Alias",
+    description: "Ultra lightweight, active free tier, low-latency reasoning",
+    free_tier: true,
+    recommended: false,
   },
 ];
 
-export async function fetchGeminiModels() {
+export async function fetchAvailableModels() {
   try {
     const data = await request("/pipeline/models");
     if (data && Array.isArray(data.models) && data.models.length > 0) {
-      return data.models;
+      return data;
     }
   } catch (err) {
-    console.warn("Could not fetch models from backend, using fallback free tier list:", err.message);
+    console.warn("Could not fetch models from backend, using fallback list:", err.message);
   }
-  return GEMINI_FREE_TIER_MODELS;
+  return {
+    models: GEMINI_FREE_TIER_MODELS,
+    providers: {
+      gemini: { enabled: true, has_token: true, label: "Google Gemini" },
+    },
+  };
+}
+
+export async function fetchGeminiModels() {
+  const data = await fetchAvailableModels();
+  return data.models || GEMINI_FREE_TIER_MODELS;
+}
+
+export function resolveProviderForModel(modelId, modelsList = []) {
+  if (!modelId) return "gemini";
+  const found = modelsList.find((m) => m.id === modelId);
+  if (found && found.provider) return found.provider;
+
+  const id = modelId.toLowerCase();
+  if (id.includes("claude")) return "anthropic";
+  if (id.includes("llama") || id.includes("mixtral") || id.includes("gemma") || id.includes("qwen")) return "groq";
+  if (id.includes("gpt") || id.includes("o1") || id.includes("o3")) return "openai";
+  return "gemini";
 }
 
 export async function startPipeline(query, options = {}) {
+  const model = options.model || "gemini-2.5-flash";
+  const provider = options.provider || resolveProviderForModel(model);
   const payload = {
     query,
-    model: options.model || "gemini-3.5-flash-lite",
-    provider: options.provider || "gemini",
+    model,
+    provider,
   };
   if (options.apiKey) {
     payload.api_key = options.apiKey;
@@ -164,11 +260,14 @@ export async function startPipeline(query, options = {}) {
 }
 
 export async function continuePipeline(threadId, answers, options = {}) {
+  const model = options.model || "gemini-2.5-flash";
+  const provider = options.provider || resolveProviderForModel(model);
   const payload = {
     thread_id: threadId,
     answers,
+    model,
+    provider,
   };
-  if (options.model) payload.model = options.model;
   if (options.apiKey) payload.api_key = options.apiKey;
 
   return request("/pipeline/continue", {
@@ -178,11 +277,14 @@ export async function continuePipeline(threadId, answers, options = {}) {
 }
 
 export async function followUpPipeline(threadId, message, options = {}) {
+  const model = options.model || "gemini-2.5-flash";
+  const provider = options.provider || resolveProviderForModel(model);
   const payload = {
     thread_id: threadId,
     message,
+    model,
+    provider,
   };
-  if (options.model) payload.model = options.model;
   if (options.apiKey) payload.api_key = options.apiKey;
   if (options.currentPrompt) payload.current_prompt = options.currentPrompt;
   if (options.currentSections) payload.current_sections = options.currentSections;

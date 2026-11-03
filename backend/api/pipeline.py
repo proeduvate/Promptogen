@@ -149,11 +149,15 @@ def _extract_sections(text: str) -> List[dict]:
 
 @router.get(
     "/models",
-    summary="List available Gemini free-tier models",
-    description="Returns Gemini free tier models eligible for adaptive question generation.",
+    summary="List available LLM models across active providers",
+    description="Returns models eligible for adaptive question generation and prompt synthesis based on active provider tokens.",
 )
 async def list_models():
-    return {"models": GEMINI_FREE_TIER_MODELS}
+    from clients.models_catalog import get_available_models, get_provider_status
+    return {
+        "models": get_available_models(),
+        "providers": get_provider_status(),
+    }
 
 
 @router.post(

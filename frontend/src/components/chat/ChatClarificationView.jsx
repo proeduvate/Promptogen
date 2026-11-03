@@ -23,7 +23,7 @@ export default function ChatClarificationView({
   onUpdateAnswers,
   onCompleteGeneration,
   onSkipQuestions,
-  selectedModel = "gemini-3.5-flash-lite",
+  selectedModel = "gemini-2.5-flash",
   onSelectModel,
   geminiApiKey = "",
   onGeminiApiKeyChange,

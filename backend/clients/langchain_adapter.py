@@ -68,12 +68,17 @@ class PromptogenChatModel(BaseChatModel):
         """Resolves the client preserving the exact model without auto-switching."""
         prov = (self.provider or settings.llm_provider).lower()
         model = self.model_name
+        model_str = (model or "").lower()
 
-        if prov == "gemini" or (model and "gemini" in model.lower()):
+        if "claude" in model_str or prov in ("anthropic", "claude"):
+            from clients.anthropic_client import AnthropicClient
+            return AnthropicClient(api_key=self.api_key, model=model, timeout=self.timeout)
+
+        if prov == "gemini" or (model and "gemini" in model_str):
             from clients.gemini_client import GeminiClient
             return GeminiClient(api_key=self.api_key, model=model, timeout=self.timeout)
 
-        if prov == "groq" or (model and any(k in model.lower() for k in ["qwen", "llama", "mixtral", "gemma"])):
+        if prov == "groq" or (model and any(k in model_str for k in ["qwen", "llama", "mixtral", "gemma"])):
             from clients.groq_client import GroqClient
             return GroqClient(api_key=self.api_key, model=model, timeout=self.timeout)
 
