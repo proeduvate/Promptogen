@@ -84,8 +84,11 @@ app.include_router(analytics_router)
 # ── Models route ─────────────────────────────────────────────────────────────
 @app.get("/api/v1/models", tags=["Models"])
 async def get_models():
-    from clients.gemini_client import GEMINI_FREE_TIER_MODELS
-    return {"models": GEMINI_FREE_TIER_MODELS}
+    from clients.models_catalog import get_available_models, get_provider_status
+    return {
+        "models": get_available_models(),
+        "providers": get_provider_status(),
+    }
 
 
 # ── Root & Health endpoints ───────────────────────────────────────────────────
@@ -111,6 +114,11 @@ async def health() -> dict:
 # ── Startup log ────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def on_startup() -> None:
+    # 1. Initialize LangSmith Observability & Tracing if configured
+    from clients.tracing import setup_langsmith_environment
+    setup_langsmith_environment()
+
+    # 2. Connect to database
     logger.info("Connecting to database...")
     try:
         await database.connect()

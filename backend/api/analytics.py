@@ -192,16 +192,40 @@ async def get_analytics(
     try:
         data = await database.get_prompt_analytics(days=days, user_id=user_id)
     except Exception as exc:
-        logger.warning("Database analytics query failed: %s; serving fallback data", exc)
+        logger.warning("Database analytics query failed: %s; serving empty user analytics", exc)
         data = None
 
-    # Return analytics wired to this user
-    if not data or not data.get("overview", {}).get("total_prompts"):
-        fallback = dict(_DEFAULT_ANALYTICS_FALLBACK)
-        fallback["range_days"] = days
-        return AnalyticsResponse.model_validate(fallback)
-
-    if "suggestions" not in data or not data["suggestions"]:
+    # Return authentic analytics strictly wired to this user
+    if not data:
+        data = {
+            "range_days": days,
+            "overview": {
+                "total_prompts": 0,
+                "avg_strength_score": 0,
+                "high_quality_prompts": 0,
+                "time_saved_hours": 0.0,
+                "total_change": "0",
+                "avg_change": "0",
+                "high_quality_change": "0%",
+                "time_saved_change": "0h",
+            },
+            "prompt_strength": {
+                "score": 0,
+                "trend_points": 0,
+                "label": "No prompts yet",
+                "over_time": [],
+            },
+            "strength_breakdown": {
+                "clarity": 0,
+                "specificity": 0,
+                "context": 0,
+                "structure": 0,
+                "actionability": 0,
+            },
+            "recent_prompts": [],
+            "suggestions": _DEFAULT_ANALYTICS_FALLBACK["suggestions"],
+        }
+    elif "suggestions" not in data or not data["suggestions"]:
         data["suggestions"] = _DEFAULT_ANALYTICS_FALLBACK["suggestions"]
 
     return AnalyticsResponse.model_validate(data)

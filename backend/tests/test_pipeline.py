@@ -193,3 +193,24 @@ class TestPipelineContinue:
             "message": "Add test cases",
         })
         assert resp.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_pipeline_models_endpoint(self, client):
+        resp = client.get("/api/v1/pipeline/models")
+        assert resp.status_code == status.HTTP_200_OK
+        data = resp.json()
+        assert "models" in data
+        assert "providers" in data
+        assert isinstance(data["models"], list)
+        assert len(data["models"]) > 0
+        # Check model structure
+        first = data["models"][0]
+        assert "id" in first
+        assert "provider" in first
+        assert "label" in first
+
+    def test_root_models_endpoint(self, client):
+        resp = client.get("/api/v1/models")
+        assert resp.status_code == status.HTTP_200_OK
+        data = resp.json()
+        assert "models" in data
+        assert "providers" in data

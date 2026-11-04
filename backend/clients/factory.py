@@ -9,20 +9,44 @@ def get_llm_client(
     provider: Optional[str] = None,
     model: Optional[str] = None,
     api_key: Optional[str] = None,
-) -> Union["GeminiClient", "GroqClient", "OpenAIClient"]:  # noqa: F821
+) -> Union["GeminiClient", "GroqClient", "OpenAIClient", "AnthropicClient"]:  # noqa: F821
     """Returns the LLM client instance based on configured provider or overrides."""
-    active_provider = (provider or settings.llm_provider).lower()
+    prov = (provider or settings.llm_provider).lower()
+    model_str = (model or "").lower()
 
-    if active_provider == "gemini" or (model and "gemini" in model.lower()):
+    # Determine provider by model name or explicit provider
+    if "claude" in model_str or prov in ("anthropic", "claude"):
+        from clients.anthropic_client import AnthropicClient
+        return AnthropicClient(api_key=api_key, model=model)
+
+    if "gemini" in model_str or prov == "gemini":
         from clients.gemini_client import GeminiClient
         return GeminiClient(api_key=api_key, model=model)
 
-    if active_provider == "groq" or (model and any(k in model.lower() for k in ["qwen", "llama", "mixtral", "gemma"])):
+    if any(k in model_str for k in ["llama", "mixtral", "gemma", "qwen"]) or prov == "groq":
         from clients.groq_client import GroqClient
         return GroqClient(api_key=api_key, model=model)
 
-    from clients.openai_client import OpenAIClient
-    return OpenAIClient(api_key=api_key, model=model)
+    if any(k in model_str for k in ["gpt", "o1", "o3", "davinci"]) or prov == "openai":
+        from clients.openai_client import OpenAIClient
+        return OpenAIClient(api_key=api_key, model=model)
+
+    # Fallback to configured active provider or Gemini
+    if settings.is_gemini_enabled:
+        from clients.gemini_client import GeminiClient
+        return GeminiClient(api_key=api_key, model=model)
+    elif settings.is_groq_enabled:
+        from clients.groq_client import GroqClient
+        return GroqClient(api_key=api_key, model=model)
+    elif settings.is_openai_enabled:
+        from clients.openai_client import OpenAIClient
+        return OpenAIClient(api_key=api_key, model=model)
+    elif settings.is_anthropic_enabled:
+        from clients.anthropic_client import AnthropicClient
+        return AnthropicClient(api_key=api_key, model=model)
+
+    from clients.gemini_client import GeminiClient
+    return GeminiClient(api_key=api_key, model=model)
 
 
 def get_langchain_model(

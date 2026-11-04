@@ -29,6 +29,7 @@ import {
   fetchCurrentUser,
   fetchRateLimitStatus,
   logoutUser,
+  resolveProviderForModel,
 } from "./lib/api";
 import { downloadFile, promptToMarkdown, promptToText } from "./lib/promptText";
 
@@ -64,25 +65,37 @@ export default function App() {
   const [activeNav, setActiveNav] = useState(() => getRouteFromPath()); // "home" | "my-prompts" | "analytics"
   const [homeView, setHomeView] = useState("landing"); // "landing" | "chat" | "result"
   const [selectedModel, setSelectedModel] = useState("gemini-3.5-flash-lite");
-  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+  const [apiKeys, setApiKeys] = useState(() => {
     try {
-      return localStorage.getItem("promptogen_gemini_api_key") || "";
+      return {
+        gemini: localStorage.getItem("promptogen_gemini_api_key") || "",
+        groq: localStorage.getItem("promptogen_groq_api_key") || "",
+        openai: localStorage.getItem("promptogen_openai_api_key") || "",
+        anthropic: localStorage.getItem("promptogen_anthropic_api_key") || "",
+      };
     } catch {
-      return "";
+      return { gemini: "", groq: "", openai: "", anthropic: "" };
     }
   });
 
-  const handleGeminiApiKeyChange = (key) => {
-    setGeminiApiKey(key);
+  const handleApiKeyChange = (key, provider = "gemini") => {
+    const prov = (provider || "gemini").toLowerCase();
+    setApiKeys((prev) => ({ ...prev, [prov]: key }));
     try {
+      const storageKey = `promptogen_${prov}_api_key`;
       if (key) {
-        localStorage.setItem("promptogen_gemini_api_key", key);
+        localStorage.setItem(storageKey, key);
       } else {
-        localStorage.removeItem("promptogen_gemini_api_key");
+        localStorage.removeItem(storageKey);
       }
     } catch {
       // ignore localStorage quota errors
     }
+  };
+
+  const getKeyForModel = (modelId) => {
+    const prov = resolveProviderForModel(modelId);
+    return apiKeys[prov] || "";
   };
 
   const [currentUser, setCurrentUser] = useState(() => getStoredUser());
@@ -462,8 +475,8 @@ export default function App() {
       const modelToUse = selectedModel;
       const startRes = await startPipeline(query, {
         model: modelToUse,
-        apiKey: geminiApiKey,
-        provider: "gemini",
+        apiKey: getKeyForModel(modelToUse),
+        provider: resolveProviderForModel(modelToUse),
         attachment: attachment,
       });
       if (startRes && startRes.thread_id) {
@@ -553,8 +566,8 @@ export default function App() {
       const modelToUse = activeChat.model || selectedModel;
       const startRes = await startPipeline(query, {
         model: modelToUse,
-        apiKey: geminiApiKey,
-        provider: "gemini",
+        apiKey: getKeyForModel(modelToUse),
+        provider: resolveProviderForModel(modelToUse),
       });
       if (startRes && startRes.thread_id) {
         setChats((prev) =>
@@ -699,9 +712,11 @@ export default function App() {
         });
 
         if (formattedAnswers.length > 0) {
+          const modelToUse = currentChat.model || selectedModel;
           result = await continuePipeline(currentChat.threadId, formattedAnswers, {
-            model: selectedModel,
-            apiKey: geminiApiKey,
+            model: modelToUse,
+            apiKey: getKeyForModel(modelToUse),
+            provider: resolveProviderForModel(modelToUse),
           });
         }
       }
@@ -958,9 +973,11 @@ export default function App() {
     const nextVersion = promptCount + 1;
 
     try {
+      const modelToUse = currentChat.model || selectedModel;
       const response = await followUpPipeline(currentChat.threadId, text, {
-        model: currentChat.model || selectedModel,
-        apiKey: geminiApiKey,
+        model: modelToUse,
+        apiKey: getKeyForModel(modelToUse),
+        provider: resolveProviderForModel(modelToUse),
         currentPrompt: currentChat.generatedPromptData?.optimized_prompt,
         historySummary: userDirectives,
       });
@@ -1142,8 +1159,10 @@ export default function App() {
           onSkipQuestions={() => handleCompleteGeneration(activeChat.answers)}
           selectedModel={activeChat.model || selectedModel}
           onSelectModel={handleSelectModel}
-          geminiApiKey={geminiApiKey}
-          onGeminiApiKeyChange={handleGeminiApiKeyChange}
+          geminiApiKey={getKeyForModel(activeChat.model || selectedModel)}
+          onGeminiApiKeyChange={(k, prov) =>
+            handleApiKeyChange(k, prov || resolveProviderForModel(activeChat.model || selectedModel))
+          }
         />
       );
     }

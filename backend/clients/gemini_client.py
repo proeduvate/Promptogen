@@ -10,6 +10,8 @@ from typing import List, Optional
 
 import httpx
 
+from clients.models_catalog import MODELS_CATALOG
+from clients.tracing import create_llm_run, post_llm_run
 from core.config import settings
 from core.exceptions import LLMError, LLMTimeoutError
 
@@ -18,59 +20,22 @@ logger = logging.getLogger("promptgen.clients.gemini")
 _MAX_RETRIES = 3
 _RETRY_DELAYS = [1.0, 2.0, 4.0]
 
-# Standard free-tier eligible Gemini models (updated to active 3.x generation)
-GEMINI_FREE_TIER_MODELS = [
-    {
-        "id": "gemini-3.5-flash-lite",
-        "name": "Gemini 3.5 Flash-Lite",
-        "label": "Gemini 3.5 Flash-Lite",
-        "badge": "Fastest & Recommended (Free Tier)",
-        "description": "Ultra lightweight, active free tier, low-latency reasoning",
-        "free_tier": True,
-        "recommended": True,
-        "limits": "30 RPM / 1M TPM / 1,500 RPD",
-    },
-    {
-        "id": "gemini-3.5-flash",
-        "name": "Gemini 3.5 Flash",
-        "label": "Gemini 3.5 Flash",
-        "badge": "High Speed Multimodal",
-        "description": "Balanced high performance and reasoning",
-        "free_tier": True,
-        "recommended": False,
-        "limits": "15 RPM / 1M TPM / 1,500 RPD",
-    },
-    {
-        "id": "gemini-3.8-flash",
-        "name": "Gemini 3.8 Flash",
-        "label": "Gemini 3.8 Flash",
-        "badge": "Latest Architecture",
-        "description": "Latest Gemini model with advanced analytical capabilities",
-        "free_tier": True,
-        "recommended": False,
-        "limits": "15 RPM / 1M TPM / 1,500 RPD",
-    },
-    {
-        "id": "gemini-3.1-flash-lite",
-        "name": "Gemini 3.1 Flash-Lite",
-        "label": "Gemini 3.1 Flash-Lite",
-        "badge": "High Throughput",
-        "description": "Lightweight model optimized for rapid classification",
-        "free_tier": True,
-        "recommended": False,
-        "limits": "30 RPM / 1M TPM / 1,500 RPD",
-    },
-    {
-        "id": "gemini-3.1-pro-preview",
-        "name": "Gemini 3.1 Pro Preview",
-        "label": "Gemini 3.1 Pro Preview",
-        "badge": "Advanced Reasoning",
-        "description": "State-of-the-art coding and complex architectural analysis",
-        "free_tier": True,
-        "recommended": False,
-        "limits": "2 RPM / 32K TPM / 50 RPD",
-    },
-]
+# Standard free-tier eligible Gemini models from catalog
+GEMINI_FREE_TIER_MODELS = [m for m in MODELS_CATALOG if m["provider"] == "gemini"]
+
+# Aliases mapping legacy/deprecated names to active Google Generative AI endpoints
+_MODEL_ALIASES = {
+    "gemini-2.5-flash": "gemini-3.5-flash-lite",
+    "gemini-2.5-pro": "gemini-3-flash-preview",
+    "gemini-2.0-flash": "gemini-3.5-flash-lite",
+    "gemini-2.0-flash-lite": "gemini-3.5-flash-lite",
+    "gemini-1.5-flash": "gemini-3.5-flash-lite",
+    "gemini-1.5-pro": "gemini-3-flash-preview",
+    "gemini-3.5-flash": "gemini-3.5-flash-lite",
+    "gemini-3.8-flash": "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite": "gemini-3.5-flash-lite",
+    "gemini-3.1-pro-preview": "gemini-3-flash-preview",
+}
 
 
 class GeminiClient:
@@ -113,15 +78,24 @@ class GeminiClient:
                 "or enter it in the Gemini Model settings panel."
             )
 
+        run = create_llm_run(
+            name=f"Gemini Completion [{self.model}]",
+            inputs={"system_prompt": system_prompt, "user_message": user_message},
+            provider="gemini",
+            model=self.model,
+        )
+
         last_error = None
         for attempt, delay in enumerate(_RETRY_DELAYS, start=1):
             try:
-                return await self._call_gemini_rest(
+                res = await self._call_gemini_rest(
                     system_prompt=system_prompt,
                     user_message=user_message,
                     temperature=temp,
                     max_tokens=tokens,
                 )
+                await post_llm_run(run, outputs={"response": res})
+                return res
             except (LLMTimeoutError, httpx.TimeoutException) as exc:
                 last_error = exc
                 logger.warning(
@@ -134,6 +108,7 @@ class GeminiClient:
             except LLMError as exc:
                 err_str = str(exc)
                 if any(k in err_str for k in ["400", "401", "403", "404", "API key", "API_KEY_INVALID", "no longer available"]):
+                    await post_llm_run(run, error=str(exc))
                     raise
                 last_error = exc
                 logger.warning(
@@ -155,7 +130,9 @@ class GeminiClient:
             if attempt < _MAX_RETRIES:
                 await asyncio.sleep(delay)
 
-        raise LLMError(f"Gemini API error after {_MAX_RETRIES} attempts: {last_error}")
+        final_err = LLMError(f"Gemini API error after {_MAX_RETRIES} attempts: {last_error}")
+        await post_llm_run(run, error=str(final_err))
+        raise final_err
 
     async def _call_gemini_rest(
         self,
@@ -163,9 +140,14 @@ class GeminiClient:
         user_message: str,
         temperature: float,
         max_tokens: int,
+        model_override: Optional[str] = None,
     ) -> str:
         """Call Google Generative Language v1beta generateContent endpoint."""
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
+        target_model = model_override or _MODEL_ALIASES.get(self.model, self.model)
+        if target_model in ("gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"):
+            target_model = "gemini-3.5-flash-lite"
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={self.api_key}"
 
         payload = {
             "systemInstruction": {
@@ -199,6 +181,25 @@ class GeminiClient:
                         err_detail = err_json["error"].get("message", err_detail)
                 except Exception:
                     pass
+
+                # If primary model is unavailable or under high demand, automatically fallback to guaranteed active model
+                if resp.status_code in (404, 503) and target_model != "gemini-flash-lite-latest":
+                    fallback_model = "gemini-flash-lite-latest" if target_model == "gemini-3.5-flash-lite" else "gemini-3.5-flash-lite"
+                    logger.warning(
+                        "Gemini model '%s' returned %d (%s), falling back to '%s'",
+                        target_model,
+                        resp.status_code,
+                        err_detail[:120],
+                        fallback_model,
+                    )
+                    return await self._call_gemini_rest(
+                        system_prompt=system_prompt,
+                        user_message=user_message,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        model_override=fallback_model,
+                    )
+
                 raise LLMError(f"Gemini API Error ({resp.status_code}): {err_detail}")
 
             data = resp.json()

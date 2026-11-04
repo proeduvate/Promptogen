@@ -6,7 +6,7 @@ import uuid
 from contextlib import contextmanager
 from typing import Any, Generator, List, Optional, Union
 
-from fastapi import APIRouter, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, Field
 
 from api.deps import get_client_ip, get_optional_current_user
@@ -149,11 +149,15 @@ def _extract_sections(text: str) -> List[dict]:
 
 @router.get(
     "/models",
-    summary="List available Gemini free-tier models",
-    description="Returns Gemini free tier models eligible for adaptive question generation.",
+    summary="List available LLM models across active providers",
+    description="Returns models eligible for adaptive question generation and prompt synthesis based on active provider tokens.",
 )
 async def list_models():
-    return {"models": GEMINI_FREE_TIER_MODELS}
+    from clients.models_catalog import get_available_models, get_provider_status
+    return {
+        "models": get_available_models(),
+        "providers": get_provider_status(),
+    }
 
 
 @router.post(
@@ -302,7 +306,10 @@ async def start_pipeline(
     summary="Continue with user answers",
     description="Submits answers to produce prompt and quality scores.",
 )
-async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinueResponse:
+async def continue_pipeline(
+    request: PipelineContinueRequest,
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+) -> PipelineContinueResponse:
     stored = None
     if database.enabled:
         try:
@@ -389,6 +396,8 @@ async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinu
     improved = bool(result.get("improved", False))
     iteration_count = int(result.get("iteration_count", 0))
 
+    user_id = (current_user["id"] if current_user else None) or (stored.get("user_id") if stored else None)
+
     try:
         await database.complete_prompt_creation(
             request.thread_id,
@@ -404,6 +413,7 @@ async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinu
                 "actionability": actionability,
                 "suggestions": suggestions,
             },
+            user_id=user_id,
         )
     except Exception as db_err:
         logger.warning("Database complete_prompt_creation warning: %s", db_err)
@@ -456,7 +466,10 @@ async def continue_pipeline(request: PipelineContinueRequest) -> PipelineContinu
     summary="Conversational follow-up and prompt refinement",
     description="Takes a user follow-up message, reads conversational context, and either refines the prompt or generates targeted clarification questions.",
 )
-async def pipeline_followup(request: PipelineFollowUpRequest) -> PipelineFollowUpResponse:
+async def pipeline_followup(
+    request: PipelineFollowUpRequest,
+    current_user: Optional[dict] = Depends(get_optional_current_user),
+) -> PipelineFollowUpResponse:
     stored = None
     if database.enabled:
         try:
@@ -556,6 +569,8 @@ async def pipeline_followup(request: PipelineFollowUpRequest) -> PipelineFollowU
         },
     )
 
+    user_id = (current_user["id"] if current_user else None) or (stored.get("user_id") if stored else None)
+
     try:
         await database.complete_prompt_creation(
             request.thread_id,
@@ -571,6 +586,7 @@ async def pipeline_followup(request: PipelineFollowUpRequest) -> PipelineFollowU
                 "actionability": actionability,
                 "suggestions": suggestions,
             },
+            user_id=user_id,
         )
     except Exception as db_err:
         logger.warning("Database complete_prompt_creation warning on followup: %s", db_err)
