@@ -23,13 +23,18 @@ _RETRY_DELAYS = [1.0, 2.0, 4.0]
 # Standard free-tier eligible Gemini models from catalog
 GEMINI_FREE_TIER_MODELS = [m for m in MODELS_CATALOG if m["provider"] == "gemini"]
 
-# Aliases mapping UI / legacy names to real Google Generative AI endpoints
+# Aliases mapping legacy/deprecated names to active Google Generative AI endpoints
 _MODEL_ALIASES = {
-    "gemini-3.5-flash-lite": "gemini-2.5-flash",
-    "gemini-3.5-flash": "gemini-2.5-flash",
-    "gemini-3.8-flash": "gemini-2.5-flash",
-    "gemini-3.1-flash-lite": "gemini-2.0-flash-lite",
-    "gemini-3.1-pro-preview": "gemini-2.5-pro",
+    "gemini-2.5-flash": "gemini-3.5-flash-lite",
+    "gemini-2.5-pro": "gemini-3-flash-preview",
+    "gemini-2.0-flash": "gemini-3.5-flash-lite",
+    "gemini-2.0-flash-lite": "gemini-3.5-flash-lite",
+    "gemini-1.5-flash": "gemini-3.5-flash-lite",
+    "gemini-1.5-pro": "gemini-3-flash-preview",
+    "gemini-3.5-flash": "gemini-3.5-flash-lite",
+    "gemini-3.8-flash": "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite": "gemini-3.5-flash-lite",
+    "gemini-3.1-pro-preview": "gemini-3-flash-preview",
 }
 
 
@@ -135,9 +140,13 @@ class GeminiClient:
         user_message: str,
         temperature: float,
         max_tokens: int,
+        model_override: Optional[str] = None,
     ) -> str:
         """Call Google Generative Language v1beta generateContent endpoint."""
-        target_model = _MODEL_ALIASES.get(self.model, self.model)
+        target_model = model_override or _MODEL_ALIASES.get(self.model, self.model)
+        if target_model in ("gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"):
+            target_model = "gemini-3.5-flash-lite"
+
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{target_model}:generateContent?key={self.api_key}"
 
         payload = {
@@ -172,6 +181,25 @@ class GeminiClient:
                         err_detail = err_json["error"].get("message", err_detail)
                 except Exception:
                     pass
+
+                # If primary model is unavailable or under high demand, automatically fallback to guaranteed active model
+                if resp.status_code in (404, 503) and target_model != "gemini-flash-lite-latest":
+                    fallback_model = "gemini-flash-lite-latest" if target_model == "gemini-3.5-flash-lite" else "gemini-3.5-flash-lite"
+                    logger.warning(
+                        "Gemini model '%s' returned %d (%s), falling back to '%s'",
+                        target_model,
+                        resp.status_code,
+                        err_detail[:120],
+                        fallback_model,
+                    )
+                    return await self._call_gemini_rest(
+                        system_prompt=system_prompt,
+                        user_message=user_message,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        model_override=fallback_model,
+                    )
+
                 raise LLMError(f"Gemini API Error ({resp.status_code}): {err_detail}")
 
             data = resp.json()

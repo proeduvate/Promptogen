@@ -64,7 +64,7 @@ export default function App() {
   const [theme, setTheme] = useState("dark");
   const [activeNav, setActiveNav] = useState(() => getRouteFromPath()); // "home" | "my-prompts" | "analytics"
   const [homeView, setHomeView] = useState("landing"); // "landing" | "chat" | "result"
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-3.5-flash-lite");
   const [apiKeys, setApiKeys] = useState(() => {
     try {
       return {

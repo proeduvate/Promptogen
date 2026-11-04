@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     # ── Google Gemini ────────────────────────────────────────────────────────
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
-    gemini_model: str = Field(default="gemini-2.5-flash", alias="GEMINI_MODEL")
+    gemini_model: str = Field(default="gemini-3.5-flash-lite", alias="GEMINI_MODEL")
 
     # ── Groq ─────────────────────────────────────────────────────────────────
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")

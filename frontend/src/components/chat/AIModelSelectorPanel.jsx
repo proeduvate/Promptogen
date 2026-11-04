@@ -38,7 +38,7 @@ const PROVIDER_METADATA = {
 };
 
 export default function AIModelSelectorPanel({
-  selectedModel = "gemini-2.5-flash",
+  selectedModel = "gemini-3.5-flash-lite",
   onSelectModel,
   apiKey = "",
   onApiKeyChange,
@@ -73,8 +73,8 @@ export default function AIModelSelectorPanel({
   const current =
     models.find((m) => m.id === selectedModel) ||
     models[0] || {
-      id: "gemini-2.5-flash",
-      label: "Gemini 2.5 Flash",
+      id: "gemini-3.5-flash-lite",
+      label: "Gemini 3.5 Flash-Lite",
       provider: "gemini",
       provider_label: "Google Gemini",
       description: "Fast multimodal reasoning and prompt generation",

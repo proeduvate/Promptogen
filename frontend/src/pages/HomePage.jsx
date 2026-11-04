@@ -12,7 +12,7 @@ export default function HomePage({
   strengthData,
   onViewAnalytics,
   onViewAllExamples,
-  selectedModel = "gemini-2.5-flash",
+  selectedModel = "gemini-3.5-flash-lite",
   onSelectModel,
   chats = [],
   user = null,

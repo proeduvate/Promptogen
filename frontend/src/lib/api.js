@@ -101,52 +101,52 @@ export async function fetchWizardSchema() {
 // ── Pipeline & LLM Prompt Generation ──────────────────────────────────────────
 export const GEMINI_FREE_TIER_MODELS = [
   {
-    id: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    label: "Gemini 2.5 Flash",
+    id: "gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash-Lite",
+    label: "Gemini 3.5 Flash-Lite",
     provider: "gemini",
     provider_label: "Google Gemini",
     badge: "Recommended (Free Tier)",
-    description: "Google's flagship multimodal workhorse with high speed and advanced reasoning",
+    description: "Ultra low-latency multimodal reasoning with high active throughput on Google free tier",
     free_tier: true,
     recommended: true,
     limits: "15 RPM / 1M TPM / 1,500 RPD",
   },
   {
-    id: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
-    label: "Gemini 2.5 Pro",
+    id: "gemini-flash-lite-latest",
+    name: "Gemini Flash-Lite Latest",
+    label: "Gemini Flash-Lite Latest",
     provider: "gemini",
     provider_label: "Google Gemini",
-    badge: "Deep Reasoning",
-    description: "Complex logic, architectural design, and deep analysis with 2M token context",
+    badge: "High Throughput",
+    description: "Cost-efficient, high-throughput extraction and classification on Google infrastructure",
     free_tier: true,
     recommended: false,
-    limits: "2 RPM / 32K TPM / 50 RPD",
+    limits: "30 RPM / 1M TPM / 1,500 RPD",
   },
   {
-    id: "gemini-2.0-flash",
-    name: "Gemini 2.0 Flash",
-    label: "Gemini 2.0 Flash",
+    id: "gemini-3-flash-preview",
+    name: "Gemini 3 Flash Preview",
+    label: "Gemini 3 Flash Preview",
     provider: "gemini",
     provider_label: "Google Gemini",
-    badge: "Ultra Low Latency",
-    description: "Low latency multimodal model optimized for real-time prompt generation",
+    badge: "Next-Gen Reasoning",
+    description: "Next-generation multimodal reasoning and complex structured prompt synthesis",
     free_tier: true,
     recommended: false,
     limits: "15 RPM / 1M TPM / 1,500 RPD",
   },
   {
-    id: "gemini-2.0-flash-lite",
-    name: "Gemini 2.0 Flash-Lite",
-    label: "Gemini 2.0 Flash-Lite",
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    label: "Gemini 3.8 Flash",
     provider: "gemini",
     provider_label: "Google Gemini",
-    badge: "High Throughput",
-    description: "Cost-efficient, high-throughput extraction and classification",
+    badge: "Flagship Multimodal",
+    description: "Google's latest flagship high-speed architecture with advanced analytical depth",
     free_tier: true,
     recommended: false,
-    limits: "30 RPM / 1M TPM / 1,500 RPD",
+    limits: "15 RPM / 1M TPM / 1,500 RPD",
   },
   {
     id: "llama-3.3-70b-versatile",
@@ -193,13 +193,13 @@ export const GEMINI_FREE_TIER_MODELS = [
     recommended: false,
   },
   {
-    id: "gemini-3.5-flash-lite",
-    name: "Gemini 3.5 Flash-Lite",
-    label: "Gemini 3.5 Flash-Lite",
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash",
+    label: "Gemini 2.5 Flash (Compatibility)",
     provider: "gemini",
     provider_label: "Google Gemini",
-    badge: "Fast Alias",
-    description: "Ultra lightweight, active free tier, low-latency reasoning",
+    badge: "Routed to 3.5 Flash-Lite",
+    description: "Legacy alias routed automatically to active Gemini 3.5 Flash-Lite",
     free_tier: true,
     recommended: false,
   },
@@ -240,7 +240,7 @@ export function resolveProviderForModel(modelId, modelsList = []) {
 }
 
 export async function startPipeline(query, options = {}) {
-  const model = options.model || "gemini-2.5-flash";
+  const model = options.model || "gemini-3.5-flash-lite";
   const provider = options.provider || resolveProviderForModel(model);
   const payload = {
     query,
@@ -260,7 +260,7 @@ export async function startPipeline(query, options = {}) {
 }
 
 export async function continuePipeline(threadId, answers, options = {}) {
-  const model = options.model || "gemini-2.5-flash";
+  const model = options.model || "gemini-3.5-flash-lite";
   const provider = options.provider || resolveProviderForModel(model);
   const payload = {
     thread_id: threadId,
@@ -277,7 +277,7 @@ export async function continuePipeline(threadId, answers, options = {}) {
 }
 
 export async function followUpPipeline(threadId, message, options = {}) {
-  const model = options.model || "gemini-2.5-flash";
+  const model = options.model || "gemini-3.5-flash-lite";
   const provider = options.provider || resolveProviderForModel(model);
   const payload = {
     thread_id: threadId,

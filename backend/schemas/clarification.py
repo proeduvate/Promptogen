@@ -30,7 +30,7 @@ QuestionLevel = Literal["required", "recommended", "optional"]
 
 class ClarificationRequest(BaseModel):
     query: str = Field(..., min_length=1, description="The user prompt to analyze.")
-    model: Optional[str] = Field(default=None, description="Gemini model to use (e.g. gemini-2.5-flash).")
+    model: Optional[str] = Field(default=None, description="Gemini model to use (e.g. gemini-3.5-flash-lite).")
     api_key: Optional[str] = Field(default=None, description="Optional user Gemini API key.")
     provider: Optional[str] = Field(default=None, description="Provider override (gemini, groq, openai).")
 
