@@ -1,0 +1,4 @@
+
+# Vite cache
+.vite/
+frontend/.vite/
