@@ -230,17 +230,21 @@ class Database:
             )
         return thread_id
 
-    async def complete_prompt_creation(self, thread_id: str, answers: list[dict], result: dict) -> Optional[str]:
+    async def complete_prompt_creation(
+        self, thread_id: str, answers: list[dict], result: dict, user_id: Optional[str] = None
+    ) -> Optional[str]:
         if not self.enabled:
             return None
 
         await self._ensure_connected()
         creation_id = uuid.UUID(thread_id)
+        user_uuid = uuid.UUID(str(user_id)) if user_id else None
         assert self._pool is not None
         async with self._pool.acquire() as connection:
             await connection.execute(
                 """
                 UPDATE prompt_creations SET
+                    user_id = COALESCE(prompt_creations.user_id, $12::uuid),
                     answers = $2::jsonb,
                     prompt_title = $3,
                     optimized_prompt = $4,
@@ -267,6 +271,7 @@ class Database:
                 result.get("structure"),
                 result.get("actionability"),
                 json.dumps(result.get("suggestions", [])),
+                user_uuid,
             )
         return thread_id
 
@@ -651,11 +656,15 @@ class Database:
     # ── Prompt Analytics ───────────────────────────────────────────────────────
 
     async def get_prompt_analytics(self, days: int = 7, user_id: Optional[str] = None) -> dict:
-        if not self.enabled:
+        if not self.enabled or not user_id:
             return _empty_analytics(days)
 
         await self._ensure_connected()
         assert self._pool is not None
+        user_uuid = uuid.UUID(str(user_id)) if user_id else None
+        if user_uuid is None:
+            return _empty_analytics(days)
+
         async with self._pool.acquire() as connection:
             overview = await connection.fetchrow(
                 """
@@ -674,6 +683,7 @@ class Database:
                     FROM prompt_creations
                     WHERE status = 'complete'
                         AND completed_at IS NOT NULL
+                        AND user_id = $2::uuid
                     UNION ALL
                     SELECT
                         prompt_text AS original_query,
@@ -687,6 +697,7 @@ class Database:
                         actionability,
                         created_at
                     FROM prompt_assessments
+                    WHERE user_id = $2::uuid
                     UNION ALL
                     SELECT
                         title AS original_query,
@@ -701,6 +712,7 @@ class Database:
                         created_at
                     FROM saved_prompts
                     WHERE archived = FALSE
+                        AND user_id = $2::uuid
                 )
                 SELECT
                     COUNT(*)::int AS total_prompts,
@@ -711,17 +723,18 @@ class Database:
                 WHERE created_at >= NOW() - ($1::int * INTERVAL '1 day')
                 """,
                 days,
+                user_uuid,
             )
             previous = await connection.fetchrow(
                 """
                 WITH analytics_prompts AS (
                     SELECT overall_score, completed_at AS created_at
                     FROM prompt_creations
-                    WHERE status = 'complete' AND completed_at IS NOT NULL
+                    WHERE status = 'complete' AND completed_at IS NOT NULL AND user_id = $2::uuid
                     UNION ALL
-                    SELECT overall_score, created_at FROM prompt_assessments
+                    SELECT overall_score, created_at FROM prompt_assessments WHERE user_id = $2::uuid
                     UNION ALL
-                    SELECT score AS overall_score, created_at FROM saved_prompts WHERE archived = FALSE
+                    SELECT score AS overall_score, created_at FROM saved_prompts WHERE archived = FALSE AND user_id = $2::uuid
                 )
                 SELECT COALESCE(ROUND(AVG(overall_score))::int, 0) AS avg_strength_score
                 FROM analytics_prompts
@@ -729,19 +742,23 @@ class Database:
                     AND created_at < NOW() - ($1::int * INTERVAL '1 day')
                 """,
                 days,
+                user_uuid,
             )
             breakdown = await connection.fetchrow(
                 """
                 WITH analytics_prompts AS (
                     SELECT clarity, specificity, context, structure, actionability, completed_at AS created_at
                     FROM prompt_creations
-                    WHERE status = 'complete' AND completed_at IS NOT NULL
+                    WHERE status = 'complete' AND completed_at IS NOT NULL AND user_id = $2::uuid
                     UNION ALL
                     SELECT clarity, specificity, context, structure, actionability, created_at
                     FROM prompt_assessments
+                    WHERE user_id = $2::uuid
                     UNION ALL
                     SELECT 90 AS clarity, 85 AS specificity, 80 AS context, 85 AS structure, 90 AS actionability, created_at
-                    FROM saved_prompts WHERE archived = FALSE
+                    FROM saved_prompts
+                    WHERE archived = FALSE
+                        AND user_id = $2::uuid
                 )
                 SELECT
                     COALESCE(ROUND(AVG(clarity))::int, 0) AS clarity,
@@ -753,17 +770,18 @@ class Database:
                 WHERE created_at >= NOW() - ($1::int * INTERVAL '1 day')
                 """,
                 days,
+                user_uuid,
             )
             over_time = await connection.fetch(
                 """
                 WITH analytics_prompts AS (
                     SELECT overall_score, completed_at AS created_at
                     FROM prompt_creations
-                    WHERE status = 'complete' AND completed_at IS NOT NULL
+                    WHERE status = 'complete' AND completed_at IS NOT NULL AND user_id = $2::uuid
                     UNION ALL
-                    SELECT overall_score, created_at FROM prompt_assessments
+                    SELECT overall_score, created_at FROM prompt_assessments WHERE user_id = $2::uuid
                     UNION ALL
-                    SELECT score AS overall_score, created_at FROM saved_prompts WHERE archived = FALSE
+                    SELECT score AS overall_score, created_at FROM saved_prompts WHERE archived = FALSE AND user_id = $2::uuid
                 )
                 SELECT
                     created_at::date AS date,
@@ -777,6 +795,7 @@ class Database:
                 ORDER BY created_at::date
                 """,
                 days,
+                user_uuid,
             )
             recent_prompts = await connection.fetch(
                 """
@@ -793,7 +812,7 @@ class Database:
                         actionability,
                         completed_at AS created_at
                     FROM prompt_creations
-                    WHERE status = 'complete' AND completed_at IS NOT NULL
+                    WHERE status = 'complete' AND completed_at IS NOT NULL AND user_id = $2::uuid
                     UNION ALL
                     SELECT
                         id::text,
@@ -807,6 +826,7 @@ class Database:
                         actionability,
                         created_at
                     FROM prompt_assessments
+                    WHERE user_id = $2::uuid
                     UNION ALL
                     SELECT
                         id::text,
@@ -821,6 +841,7 @@ class Database:
                         created_at
                     FROM saved_prompts
                     WHERE archived = FALSE
+                        AND user_id = $2::uuid
                 )
                 SELECT
                     id,
@@ -834,9 +855,12 @@ class Database:
                     actionability,
                     created_at
                 FROM analytics_prompts
+                WHERE created_at >= NOW() - ($1::int * INTERVAL '1 day')
                 ORDER BY created_at DESC
-                LIMIT 10
-                """
+                LIMIT 50
+                """,
+                days,
+                user_uuid,
             )
 
         overview_data = dict(overview or {})

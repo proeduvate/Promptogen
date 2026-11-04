@@ -170,14 +170,28 @@ export default function AnalyticsPage({
       if (!seenIds.has(p.id)) {
         seenIds.add(p.id);
         const effectiveness = generatePromptEffectiveness(p);
+        let displayDate = "Recent";
+        if (p.completed_at) {
+          try {
+            const d = new Date(p.completed_at);
+            if (!isNaN(d.getTime())) {
+              displayDate = d.toLocaleDateString([], { month: "short", day: "numeric" });
+            } else {
+              displayDate = p.completed_at.slice(0, 10);
+            }
+          } catch {
+            displayDate = p.completed_at.slice(0, 10);
+          }
+        }
+
         list.push({
           id: p.id,
           title: p.prompt_title || p.original_query || "Generated Prompt",
           snippet: p.original_query || p.prompt_title || "",
-          category: "Engineering",
-          model: "Gemini 2.5 Flash",
+          category: p.category || (p.task_domain ? p.task_domain.charAt(0).toUpperCase() + p.task_domain.slice(1) : "General"),
+          model: p.model || "Gemini 2.5 Flash",
           score: p.overall_score || 85,
-          date: p.completed_at ? p.completed_at.slice(0, 10) : "Recent",
+          date: displayDate,
           versionsCount: 1,
           metrics: {
             clarity: p.clarity || 88,
@@ -198,7 +212,7 @@ export default function AnalyticsPage({
     });
 
     return list;
-  }, [chats, analyticsData]);
+  }, [chats, analyticsData, user]);
 
   // Automatically select prompt if initialSelectedPrompt or initialSelectedPromptId is provided
   useEffect(() => {
@@ -270,9 +284,7 @@ export default function AnalyticsPage({
   // 3. Dynamic Category Breakdown
   const categoryUsage = useMemo(() => {
     if (allPrompts.length === 0) {
-      return [
-        { name: "General", count: 1, percentage: 100, color: CATEGORY_COLORS[0] },
-      ];
+      return [];
     }
 
     const counts = {};
@@ -293,14 +305,12 @@ export default function AnalyticsPage({
   // 4. Dynamic Model Breakdown
   const modelUsage = useMemo(() => {
     if (allPrompts.length === 0) {
-      return [
-        { name: "Gemini 3.5 Flash-Lite", count: 1, percentage: 100, color: MODEL_COLORS[0] },
-      ];
+      return [];
     }
 
     const counts = {};
     allPrompts.forEach((p) => {
-      const m = p.model || "Gemini 3.5 Flash-Lite";
+      const m = p.model || "Gemini 2.5 Flash";
       counts[m] = (counts[m] || 0) + 1;
     });
 
@@ -319,8 +329,9 @@ export default function AnalyticsPage({
     if (raw.length > 0) return raw;
 
     if (allPrompts.length > 0) {
-      return allPrompts.slice(0, 7).map((p, i) => ({
-        date: `Prompt ${i + 1}`,
+      return allPrompts.slice(0, 10).map((p, i) => ({
+        date: p.date || `Prompt ${i + 1}`,
+        score: p.score || 85,
         average_score: p.score || 85,
         top_score: Math.min(100, (p.score || 85) + 5),
         lowest_score: Math.max(60, (p.score || 85) - 6),
@@ -328,18 +339,26 @@ export default function AnalyticsPage({
       }));
     }
 
-    return [
-      { date: "Current", average_score: 85, top_score: 90, lowest_score: 80, prompt_count: 1 },
-    ];
+    return [];
   }, [analyticsData, allPrompts]);
 
   // 6. Dynamic Improvement Impact
   const improvementImpact = useMemo(() => {
+    if (allPrompts.length === 0) {
+      return {
+        avgIncrease: "0%",
+        improvedPercent: "0%",
+        avgVersions: "0.0",
+      };
+    }
     const totalVersions = allPrompts.reduce((sum, p) => sum + (p.versionsCount || 1), 0);
-    const avgVers = allPrompts.length > 0 ? (totalVersions / allPrompts.length).toFixed(1) : "1.0";
+    const avgVers = (totalVersions / allPrompts.length).toFixed(1);
+    const multiVersionCount = allPrompts.filter((p) => (p.versionsCount || 1) > 1).length;
+    const improvedPct = Math.round((multiVersionCount / allPrompts.length) * 100);
+
     return {
-      avgIncrease: "+24%",
-      improvedPercent: "92%",
+      avgIncrease: multiVersionCount > 0 ? "+18%" : "0%",
+      improvedPercent: `${improvedPct}%`,
       avgVersions: avgVers,
     };
   }, [allPrompts]);

@@ -1,9 +1,9 @@
 import { ArrowUpRight, Sparkles, RefreshCw } from "lucide-react";
 
 export default function AnalyticsImprovementImpact({
-  avgIncrease = "+28%",
-  improvedPercent = "62%",
-  avgVersions = "3.4",
+  avgIncrease = "0%",
+  improvedPercent = "0%",
+  avgVersions = "0.0",
 }) {
   return (
     <div className="flex h-full flex-col justify-between rounded-2xl border border-[#16233b] bg-[#0b1222]/90 p-5 shadow-sm">

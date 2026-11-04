@@ -75,6 +75,18 @@ class TestAnalyticsEndpoint:
         assert body["recent_prompts"][0]["original_query"] == "Marketing strategy for SaaS product"
         mock_query.assert_awaited_once_with(days=7, user_id="00000000-0000-0000-0000-000000000001")
 
+    def test_analytics_returns_authentic_empty_for_user_with_no_prompts(self) -> None:
+        with patch("api.analytics.database.get_prompt_analytics", new=AsyncMock(return_value=None)):
+            response = TestClient(app).get("/api/v1/analytics?days=14")
+
+        assert response.status_code == status.HTTP_200_OK
+        body = response.json()
+        assert body["overview"]["total_prompts"] == 0
+        assert body["overview"]["avg_strength_score"] == 0
+        assert body["overview"]["high_quality_prompts"] == 0
+        assert body["recent_prompts"] == []
+        assert body["prompt_strength"]["over_time"] == []
+
     def test_analytics_rejects_invalid_days(self) -> None:
         response = TestClient(app).get("/api/v1/analytics?days=0")
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
