@@ -13,6 +13,11 @@ import {
   Sparkles,
 } from "lucide-react";
 
+/** DOM id for a question container (used by readiness "Add Details" to focus a linked question). */
+export function getQuestionDomId(questionKey) {
+  return `pg-question-${String(questionKey).replace(/[^A-Za-z0-9_-]/g, "_")}`;
+}
+
 export default function DynamicQuestionCard({
   currentStep = 1,
   totalSteps = 1,
@@ -99,7 +104,9 @@ export default function DynamicQuestionCard({
           return (
             <div
               key={qKey}
-              className="rounded-xl border border-[#17233a] bg-[#090e1a]/70 p-4 transition-all hover:border-[#1e2f4f]"
+              id={getQuestionDomId(qKey)}
+              tabIndex={-1}
+              className="rounded-xl border border-[#17233a] bg-[#090e1a]/70 p-4 transition-all outline-none hover:border-[#1e2f4f] focus-within:border-[#1e2f4f]"
             >
               {/* Question Header: Title & Badges */}
               <div className="mb-2.5 flex flex-wrap items-start justify-between gap-2">

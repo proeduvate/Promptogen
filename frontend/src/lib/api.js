@@ -269,6 +269,14 @@ export async function continuePipeline(threadId, answers, options = {}) {
     provider,
   };
   if (options.apiKey) payload.api_key = options.apiKey;
+  // Extra context for generation. Sent only when present; the current backend ignores
+  // unknown fields, so this is forward-compatible with the readiness contract.
+  if (Array.isArray(options.contextAdditions) && options.contextAdditions.length > 0) {
+    payload.context_additions = options.contextAdditions;
+  }
+  if (typeof options.additionalContext === "string" && options.additionalContext.trim()) {
+    payload.additional_context = options.additionalContext.trim();
+  }
 
   return request("/pipeline/continue", {
     method: "POST",
@@ -293,6 +301,22 @@ export async function followUpPipeline(threadId, message, options = {}) {
   return request("/pipeline/followup", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Readiness-only analysis for an existing pipeline thread (no prompt generation).
+ * PROPOSED endpoint: path and payload must be confirmed with the backend before
+ * production use. Callers should go through `lib/promptReadinessApi.js`.
+ *
+ * @param {import("./promptReadinessContract").ReadinessRequest} payload
+ * @param {{signal?: AbortSignal}} [options]
+ */
+export async function analyzeReadinessViaApi(payload, { signal } = {}) {
+  return request("/pipeline/readiness", {
+    method: "POST",
+    body: JSON.stringify(payload),
+    ...(signal ? { signal } : {}),
   });
 }
 
