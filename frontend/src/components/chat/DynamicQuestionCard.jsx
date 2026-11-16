@@ -21,6 +21,9 @@ export function getQuestionDomId(questionKey) {
 export default function DynamicQuestionCard({
   currentStep = 1,
   totalSteps = 1,
+  totalQuestions = 0,
+  answeredQuestions = 0,
+  questionsBeforeCurrentStep = 0,
   stepTitle = "Adaptive Clarification Questions",
   stepDescription = "Answer the targeted questions below to help the AI craft an optimized, domain-specific prompt:",
   questions = [],
@@ -67,17 +70,33 @@ export default function DynamicQuestionCard({
             Step {currentStep} of {totalSteps}
           </span>
           <span className="text-slate-500">•</span>
-          <span className="text-[14px] font-semibold text-slate-100">{stepTitle}</span>
+          <span className="text-[14px] font-semibold text-slate-100">
+            {stepTitle}
+          </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {isSufficient && (
             <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-300">
               Sufficient Details Found
             </span>
           )}
-          <span className="text-[12px] font-medium text-slate-400">
-            {currentStep}/{totalSteps}
-          </span>
+
+          {totalQuestions > 0 && (
+            <span className="text-[12px] font-medium text-blue-400">
+              Questions {questions.filter((q, index) => {
+    const key = q.id || `q_${index}`;
+    const value = answers[key];
+
+    if (value === undefined || value === null) return false;
+    if (typeof value === "string") return value.trim().length > 0;
+    if (Array.isArray(value)) return value.length > 0;
+
+    return true;
+  }).length}/{questions.length}
+</span>
+          )}
+
+        
         </div>
       </div>
 
@@ -85,7 +104,13 @@ export default function DynamicQuestionCard({
       <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-[#162138]">
         <div
           className="h-full rounded-full bg-gradient-to-r from-blue-600 to-sky-400 transition-all duration-300"
-          style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+          style={{
+            width: `${
+              totalQuestions > 0
+                ? (answeredQuestions / totalQuestions) * 100
+                : 0
+            }%`,
+          }}
         />
       </div>
 
@@ -99,7 +124,26 @@ export default function DynamicQuestionCard({
         {questions.map((q, qIndex) => {
           const qKey = q.id || `q_${qIndex}`;
           const currentVal = answers[qKey] ?? "";
-          const qType = (q.type || "text").toLowerCase();
+          const rawType = (q.type || "text").toLowerCase();
+          /**  console.log("QUESTION TYPE:", {
+  question: q.question,
+  type: q.type,
+  multiple: q.multiple,
+  options: q.options,
+});  */
+
+          const typeMap = {
+            free_text: "text",
+            short_text: "text",
+            long_text: "textarea",
+            single_choice: "single_select",
+            single_select: "single_select",
+            multiple_choice: "multi_select",
+            multi_choice: "multi_select",
+            multi_select: "multi_select",
+          };
+
+          const qType = typeMap[rawType] || rawType;
 
           return (
             <div
@@ -151,7 +195,10 @@ export default function DynamicQuestionCard({
                     maxLength={1000}
                     value={currentVal}
                     onChange={(e) => onAnswerChange(qKey, e.target.value)}
-                    placeholder={q.placeholder || "Provide specific details or implementation context..."}
+                    placeholder={
+                      q.placeholder ||
+                      "Provide specific details or implementation context..."
+                    }
                     className="w-full resize-none bg-transparent px-4 pb-7 pt-3 text-[13px] leading-relaxed text-slate-100 placeholder:text-slate-500 outline-none"
                   />
                   <span className="pointer-events-none absolute bottom-2 right-3 text-[11px] font-medium text-slate-500">
@@ -161,109 +208,128 @@ export default function DynamicQuestionCard({
               )}
 
               {/* ────────────────── Type: Single Select (Pills) ────────────────── */}
-              {(qType === "single_select" || (qType === "options" && q.multiple === false)) && (() => {
-                const isCustomActive = Boolean(
-                  otherOpen[qKey] ||
-                  answers[`${qKey}_other`] ||
-                  (currentVal && !(q.options || []).includes(currentVal))
-                );
+              {(qType === "single_select" ||
+                (qType === "options" && q.multiple === false)) &&
+                (() => {
+                  const isCustomActive = Boolean(
+                    otherOpen[qKey] ||
+                    answers[`${qKey}_other`] ||
+                    (currentVal && !(q.options || []).includes(currentVal)),
+                  );
 
-                return (
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      {(q.options || []).map((opt) => {
-                        const isSelected = currentVal === opt;
-                        return (
-                          <button
-                            key={opt}
-                            type="button"
-                            onClick={() => {
-                              const nextVal = isSelected ? "" : opt;
-                              onAnswerChange({
-                                [qKey]: nextVal,
-                                [`${qKey}_other`]: "",
-                              });
-                              setOtherOpen((prev) => ({ ...prev, [qKey]: false }));
-                            }}
-                            className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-[12.5px] font-medium transition-all ${
-                              isSelected
-                                ? "border border-blue-500 bg-blue-500/20 text-white shadow-[0_0_12px_-2px_rgba(59,130,246,0.3)]"
-                                : "border border-[#1a253c] bg-[#0c1426] text-slate-300 hover:border-slate-600 hover:text-white"
-                            }`}
-                          >
-                            <span
-                              className={`grid size-4 place-items-center rounded-full border ${
+                  return (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2">
+                        {(q.options || []).map((opt) => {
+                          const isSelected = currentVal === opt;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                const nextVal = isSelected ? "" : opt;
+                                onAnswerChange({
+                                  [qKey]: nextVal,
+                                  [`${qKey}_other`]: "",
+                                });
+                                setOtherOpen((prev) => ({
+                                  ...prev,
+                                  [qKey]: false,
+                                }));
+                              }}
+                              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-[12.5px] font-medium transition-all ${
                                 isSelected
-                                  ? "border-blue-400 bg-blue-500 text-white"
-                                  : "border-slate-600 bg-transparent"
+                                  ? "border border-blue-500 bg-blue-500/20 text-white shadow-[0_0_12px_-2px_rgba(59,130,246,0.3)]"
+                                  : "border border-[#1a253c] bg-[#0c1426] text-slate-300 hover:border-slate-600 hover:text-white"
                               }`}
                             >
-                              {isSelected && <span className="size-1.5 rounded-full bg-white" />}
-                            </span>
-                            <span>{opt}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
+                              <span
+                                className={`grid size-4 place-items-center rounded-full border ${
+                                  isSelected
+                                    ? "border-blue-400 bg-blue-500 text-white"
+                                    : "border-slate-600 bg-transparent"
+                                }`}
+                              >
+                                {isSelected && (
+                                  <span className="size-1.5 rounded-full bg-white" />
+                                )}
+                              </span>
+                              <span>{opt}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
 
-                    {/* "Other" Option Write-in */}
-                    <div className="pt-1">
-                      {isCustomActive ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            placeholder="Specify custom response..."
-                            value={
-                              answers[`${qKey}_other`] ??
-                              (currentVal && !(q.options || []).includes(currentVal) ? currentVal : "")
-                            }
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              onAnswerChange({
-                                [qKey]: val,
-                                [`${qKey}_other`]: val,
-                              });
-                            }}
-                            className="rounded-xl border border-blue-500 bg-[#0c1426] px-3.5 py-1.5 text-[12.5px] text-white outline-none flex-1 max-w-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-500/40"
-                          />
+                      {/* "Other" Option Write-in */}
+                      <div className="pt-1">
+                        {isCustomActive ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              placeholder="Specify custom response..."
+                              value={
+                                answers[`${qKey}_other`] ??
+                                (currentVal &&
+                                !(q.options || []).includes(currentVal)
+                                  ? currentVal
+                                  : "")
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                onAnswerChange({
+                                  [qKey]: val,
+                                  [`${qKey}_other`]: val,
+                                });
+                              }}
+                              className="rounded-xl border border-blue-500 bg-[#0c1426] px-3.5 py-1.5 text-[12.5px] text-white outline-none flex-1 max-w-sm focus:border-blue-400 focus:ring-1 focus:ring-blue-500/40"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setOtherOpen((prev) => ({
+                                  ...prev,
+                                  [qKey]: false,
+                                }));
+                                onAnswerChange({
+                                  [qKey]: "",
+                                  [`${qKey}_other`]: "",
+                                });
+                              }}
+                              className="text-[12px] text-slate-400 hover:text-white"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        ) : (
                           <button
                             type="button"
-                            onClick={() => {
-                              setOtherOpen((prev) => ({ ...prev, [qKey]: false }));
-                              onAnswerChange({
-                                [qKey]: "",
-                                [`${qKey}_other`]: "",
-                              });
-                            }}
-                            className="text-[12px] text-slate-400 hover:text-white"
+                            onClick={() =>
+                              setOtherOpen((prev) => ({
+                                ...prev,
+                                [qKey]: true,
+                              }))
+                            }
+                            className="rounded-xl border border-[#1a253c] bg-[#0c1426] px-3 py-1 text-[11.5px] text-slate-400 hover:border-slate-500 hover:text-slate-200"
                           >
-                            Clear
+                            + Other / Custom
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setOtherOpen((prev) => ({ ...prev, [qKey]: true }))}
-                          className="rounded-xl border border-[#1a253c] bg-[#0c1426] px-3 py-1 text-[11.5px] text-slate-400 hover:border-slate-500 hover:text-slate-200"
-                        >
-                          + Other / Custom
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
 
               {/* ────────────────── Type: Multi Select (Pills) ────────────────── */}
-              {(qType === "multi_select" || (qType === "options" && q.multiple !== false)) && (
+              {(qType === "multi_select" ||
+                (qType === "options" && q.multiple !== false)) && (
                 <div className="space-y-2">
                   <div className="flex flex-wrap gap-2">
                     {(q.options || []).map((opt) => {
                       const arr = Array.isArray(currentVal)
                         ? currentVal
                         : currentVal
-                        ? [currentVal]
-                        : [];
+                          ? [currentVal]
+                          : [];
                       const isSelected = arr.includes(opt);
 
                       return (
@@ -274,7 +340,7 @@ export default function DynamicQuestionCard({
                             if (isSelected) {
                               onAnswerChange(
                                 qKey,
-                                arr.filter((x) => x !== opt)
+                                arr.filter((x) => x !== opt),
                               );
                             } else {
                               onAnswerChange(qKey, [...arr, opt]);
@@ -317,10 +383,16 @@ export default function DynamicQuestionCard({
                             onAnswerChange(`${qKey}_other`, e.target.value);
                           }}
                           onKeyDown={(e) => {
-                            if (e.key === "Enter" && answers[`${qKey}_other`]?.trim()) {
+                            if (
+                              e.key === "Enter" &&
+                              answers[`${qKey}_other`]?.trim()
+                            ) {
                               e.preventDefault();
-                              const cur = Array.isArray(currentVal) ? currentVal : [];
-                              const customText = answers[`${qKey}_other`].trim();
+                              const cur = Array.isArray(currentVal)
+                                ? currentVal
+                                : [];
+                              const customText =
+                                answers[`${qKey}_other`].trim();
                               if (!cur.includes(customText)) {
                                 onAnswerChange({
                                   [qKey]: [...cur, customText],
@@ -335,8 +407,11 @@ export default function DynamicQuestionCard({
                           type="button"
                           onClick={() => {
                             if (answers[`${qKey}_other`]?.trim()) {
-                              const cur = Array.isArray(currentVal) ? currentVal : [];
-                              const customText = answers[`${qKey}_other`].trim();
+                              const cur = Array.isArray(currentVal)
+                                ? currentVal
+                                : [];
+                              const customText =
+                                answers[`${qKey}_other`].trim();
                               if (!cur.includes(customText)) {
                                 onAnswerChange({
                                   [qKey]: [...cur, customText],
@@ -344,7 +419,10 @@ export default function DynamicQuestionCard({
                                 });
                               }
                             }
-                            setOtherOpen((prev) => ({ ...prev, [qKey]: false }));
+                            setOtherOpen((prev) => ({
+                              ...prev,
+                              [qKey]: false,
+                            }));
                           }}
                           className="rounded-lg bg-blue-600 px-2.5 py-1 text-[11.5px] text-white hover:bg-blue-500"
                         >
@@ -354,7 +432,9 @@ export default function DynamicQuestionCard({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => setOtherOpen((prev) => ({ ...prev, [qKey]: true }))}
+                        onClick={() =>
+                          setOtherOpen((prev) => ({ ...prev, [qKey]: true }))
+                        }
                         className="rounded-xl border border-[#1a253c] bg-[#0c1426] px-3 py-1 text-[11.5px] text-slate-400 hover:border-slate-500 hover:text-slate-200"
                       >
                         + Add Custom Option
@@ -372,11 +452,19 @@ export default function DynamicQuestionCard({
                     onChange={(e) => onAnswerChange(qKey, e.target.value)}
                     className="w-full appearance-none rounded-xl border border-[#1a253c] bg-[#0c1426] px-4 py-2.5 pr-10 text-[13px] text-slate-100 outline-none transition-colors focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/30"
                   >
-                    <option value="" disabled className="bg-[#0c1322] text-slate-500">
+                    <option
+                      value=""
+                      disabled
+                      className="bg-[#0c1322] text-slate-500"
+                    >
                       Select an option...
                     </option>
                     {(q.options || []).map((opt) => (
-                      <option key={opt} value={opt} className="bg-[#0c1322] text-slate-200">
+                      <option
+                        key={opt}
+                        value={opt}
+                        className="bg-[#0c1322] text-slate-200"
+                      >
                         {opt}
                       </option>
                     ))}
@@ -438,9 +526,14 @@ export default function DynamicQuestionCard({
                     </span>
                     <input
                       type="date"
-                      value={typeof currentVal === "object" ? currentVal?.start || "" : ""}
+                      value={
+                        typeof currentVal === "object"
+                          ? currentVal?.start || ""
+                          : ""
+                      }
                       onChange={(e) => {
-                        const cur = typeof currentVal === "object" ? currentVal : {};
+                        const cur =
+                          typeof currentVal === "object" ? currentVal : {};
                         onAnswerChange(qKey, { ...cur, start: e.target.value });
                       }}
                       className="w-full rounded-xl border border-[#1a253c] bg-[#0c1426] px-3.5 py-2 text-[12.5px] text-slate-100 outline-none focus:border-blue-500/80 [color-scheme:dark]"
@@ -452,9 +545,14 @@ export default function DynamicQuestionCard({
                     </span>
                     <input
                       type="date"
-                      value={typeof currentVal === "object" ? currentVal?.end || "" : ""}
+                      value={
+                        typeof currentVal === "object"
+                          ? currentVal?.end || ""
+                          : ""
+                      }
                       onChange={(e) => {
-                        const cur = typeof currentVal === "object" ? currentVal : {};
+                        const cur =
+                          typeof currentVal === "object" ? currentVal : {};
                         onAnswerChange(qKey, { ...cur, end: e.target.value });
                       }}
                       className="w-full rounded-xl border border-[#1a253c] bg-[#0c1426] px-3.5 py-2 text-[12.5px] text-slate-100 outline-none focus:border-blue-500/80 [color-scheme:dark]"
@@ -520,7 +618,10 @@ export default function DynamicQuestionCard({
                     type="url"
                     value={currentVal}
                     onChange={(e) => onAnswerChange(qKey, e.target.value)}
-                    placeholder={q.placeholder || "https://github.com/org/repo or https://example.com"}
+                    placeholder={
+                      q.placeholder ||
+                      "https://github.com/org/repo or https://example.com"
+                    }
                     className="w-full rounded-xl border border-[#1a253c] bg-[#0c1426] py-2.5 pl-10 pr-4 text-[13px] text-slate-100 placeholder:text-slate-500 outline-none transition-colors focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/30"
                   />
                 </div>
@@ -534,7 +635,9 @@ export default function DynamicQuestionCard({
                       <div className="flex items-center gap-2 truncate pr-2">
                         <FileText className="size-4 text-blue-400 shrink-0" />
                         <span className="text-[12.5px] font-medium text-slate-200 truncate">
-                          {typeof currentVal === "string" ? currentVal : currentVal?.name || "Uploaded File"}
+                          {typeof currentVal === "string"
+                            ? currentVal
+                            : currentVal?.name || "Uploaded File"}
                         </span>
                       </div>
                       <button
@@ -570,7 +673,22 @@ export default function DynamicQuestionCard({
               )}
 
               {/* ────────────────── Fallback: Custom / Unrecognized ────────────────── */}
-              {!["text", "input", "textarea", "single_select", "multi_select", "options", "dropdown", "yes_no", "date", "date_range", "number", "slider", "url", "file_upload"].includes(qType) && (
+              {![
+                "text",
+                "input",
+                "textarea",
+                "single_select",
+                "multi_select",
+                "options",
+                "dropdown",
+                "yes_no",
+                "date",
+                "date_range",
+                "number",
+                "slider",
+                "url",
+                "file_upload",
+              ].includes(qType) && (
                 <input
                   type="text"
                   value={currentVal}
@@ -629,8 +747,8 @@ export default function DynamicQuestionCard({
               {isSubmitting
                 ? "Processing Answers..."
                 : isLastStep
-                ? "Proceed to Step 2"
-                : "Next Step"}
+                  ? "Proceed to Step 2"
+                  : "Next Step"}
             </span>
             <ArrowRight className="size-4 stroke-[2.5]" />
           </button>

@@ -21,6 +21,7 @@ import {
   startPipeline,
   continuePipeline,
   followUpPipeline,
+  generatePrompt,
   saveLibraryPrompt,
   getStoredUser,
   getAuthToken,
@@ -43,7 +44,10 @@ import { evaluateGenerationGate } from "./lib/generationGate";
 import usePromptReadiness from "./hooks/usePromptReadiness";
 
 function formatTimestamp() {
-  return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function cleanTitle(query) {
@@ -134,7 +138,8 @@ export default function App() {
           if (oldSaved) {
             try {
               const oldParsed = JSON.parse(oldSaved);
-              if (Array.isArray(oldParsed) && oldParsed.length > 0) seeded = oldParsed;
+              if (Array.isArray(oldParsed) && oldParsed.length > 0)
+                seeded = oldParsed;
             } catch {}
           }
           try {
@@ -156,7 +161,10 @@ export default function App() {
   useEffect(() => {
     try {
       if (currentUser?.id) {
-        localStorage.setItem(`promptogen_active_chats_${currentUser.id}`, JSON.stringify(chats));
+        localStorage.setItem(
+          `promptogen_active_chats_${currentUser.id}`,
+          JSON.stringify(chats),
+        );
       }
     } catch {
       // ignore localStorage quota errors
@@ -188,7 +196,8 @@ export default function App() {
           if (oldSaved) {
             try {
               const oldParsed = JSON.parse(oldSaved);
-              if (Array.isArray(oldParsed) && oldParsed.length > 0) seeded = oldParsed;
+              if (Array.isArray(oldParsed) && oldParsed.length > 0)
+                seeded = oldParsed;
             } catch {}
           }
           setChats(seeded);
@@ -235,7 +244,9 @@ export default function App() {
       title: "Welcome to PromptoGen!",
       message: `Signed in as ${user.name || user.email}. Unlimited prompt generations unlocked.`,
     });
-    fetchRateLimitStatus().then((st) => setRateLimitStatus(st)).catch(() => {});
+    fetchRateLimitStatus()
+      .then((st) => setRateLimitStatus(st))
+      .catch(() => {});
 
     try {
       const userChatKey = `promptogen_active_chats_${user.id}`;
@@ -259,7 +270,8 @@ export default function App() {
         if (oldSaved) {
           try {
             const oldParsed = JSON.parse(oldSaved);
-            if (Array.isArray(oldParsed) && oldParsed.length > 0) seeded = oldParsed;
+            if (Array.isArray(oldParsed) && oldParsed.length > 0)
+              seeded = oldParsed;
           } catch {}
         }
         setChats(seeded);
@@ -290,7 +302,9 @@ export default function App() {
         title: "Signed Out",
         message: "You have been signed out successfully.",
       });
-      fetchRateLimitStatus().then((st) => setRateLimitStatus(st)).catch(() => {});
+      fetchRateLimitStatus()
+        .then((st) => setRateLimitStatus(st))
+        .catch(() => {});
     }
   };
 
@@ -302,7 +316,8 @@ export default function App() {
   const [isSaved, setIsSaved] = useState(false);
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [toastNotification, setToastNotification] = useState(null);
-  const [selectedAnalyticsPromptId, setSelectedAnalyticsPromptId] = useState(null);
+  const [selectedAnalyticsPromptId, setSelectedAnalyticsPromptId] =
+    useState(null);
 
   // Auto-dismiss toast notification after 4 seconds
   useEffect(() => {
@@ -322,9 +337,8 @@ export default function App() {
 
   // Find currently active chat
   const activeChat =
-    chats
-      .flatMap((g) => g.items)
-      .find((item) => item.id === activeChatId) || null;
+    chats.flatMap((g) => g.items).find((item) => item.id === activeChatId) ||
+    null;
 
   /* ── Prompt Readiness (behind VITE_ENABLE_PROMPT_READINESS / dev stub flag) ── */
   const readinessFeatureEnabled = isPromptReadinessEnabled();
@@ -449,9 +463,9 @@ export default function App() {
       prev.map((group) => ({
         ...group,
         items: group.items.map((item) =>
-          item.id === activeChatId ? { ...item, title: newTitle } : item
+          item.id === activeChatId ? { ...item, title: newTitle } : item,
         ),
-      }))
+      })),
     );
   };
 
@@ -467,7 +481,9 @@ export default function App() {
     }
 
     const newChatId = `chat-${Date.now()}`;
-    const generatedTitle = cleanTitle(query || attachment?.name || "Uploaded Document Analysis");
+    const generatedTitle = cleanTitle(
+      query || attachment?.name || "Uploaded Document Analysis",
+    );
 
     // Initial chat state with Step 1 and defaults
     const newChat = {
@@ -549,28 +565,36 @@ export default function App() {
                     status: "Awaiting clarification",
                     error: null,
                   }
-                : item
+                : item,
             ),
-          }))
+          })),
         );
 
         if (!currentUser) {
-          fetchRateLimitStatus().then((st) => setRateLimitStatus(st)).catch(() => {});
+          fetchRateLimitStatus()
+            .then((st) => setRateLimitStatus(st))
+            .catch(() => {});
         }
       }
     } catch (err) {
       console.error("Pipeline start error:", err);
       const isLimitError =
         err.status === 429 ||
-        (err.message && err.message.toLowerCase().includes("guest generation limit"));
+        (err.message &&
+          err.message.toLowerCase().includes("guest generation limit"));
 
       if (isLimitError) {
-        fetchRateLimitStatus().then((st) => setRateLimitStatus(st)).catch(() => {});
+        fetchRateLimitStatus()
+          .then((st) => setRateLimitStatus(st))
+          .catch(() => {});
         setGuestLockModalOpen(true);
         setChats((prev) =>
           prev
-            .map((g) => ({ ...g, items: g.items.filter((i) => i.id !== newChatId) }))
-            .filter((g) => g.items.length > 0)
+            .map((g) => ({
+              ...g,
+              items: g.items.filter((i) => i.id !== newChatId),
+            }))
+            .filter((g) => g.items.length > 0),
         );
         setActiveChatId(null);
         setHomeView("landing");
@@ -589,9 +613,9 @@ export default function App() {
                   status: "Analysis error",
                   error: errorMsg,
                 }
-              : item
+              : item,
           ),
-        }))
+        })),
       );
     }
   };
@@ -609,9 +633,9 @@ export default function App() {
         items: group.items.map((item) =>
           item.id === chatId
             ? { ...item, status: "Creating structured prompt...", error: null }
-            : item
+            : item,
         ),
-      }))
+      })),
     );
 
     try {
@@ -638,9 +662,9 @@ export default function App() {
                     status: "Awaiting clarification",
                     error: null,
                   }
-                : item
+                : item,
             ),
-          }))
+          })),
         );
       }
     } catch (err) {
@@ -657,9 +681,9 @@ export default function App() {
                   status: "Analysis error",
                   error: errorMsg,
                 }
-              : item
+              : item,
           ),
-        }))
+        })),
       );
     }
   };
@@ -674,9 +698,9 @@ export default function App() {
           items: group.items.map((item) =>
             item.id === activeChatId
               ? { ...item, model: modelId, error: null }
-              : item
+              : item,
           ),
-        }))
+        })),
       );
       setPipelineError(null);
     }
@@ -703,7 +727,7 @@ export default function App() {
           }
           return item;
         }),
-      }))
+      })),
     );
   };
 
@@ -729,9 +753,9 @@ export default function App() {
         items: group.items.map((item) =>
           item.id === currentChat.id
             ? { ...item, isSubmitting: true, status: "Optimizing prompt..." }
-            : item
+            : item,
         ),
-      }))
+      })),
     );
 
     try {
@@ -745,19 +769,23 @@ export default function App() {
 
         if (formattedAnswers.length > 0) {
           const modelToUse = currentChat.model || selectedModel;
-          result = await continuePipeline(currentChat.threadId, formattedAnswers, {
-            model: modelToUse,
-            apiKey: getKeyForModel(modelToUse),
-            provider: resolveProviderForModel(modelToUse),
-            // Saved Add Details entries and free-form context travel with generation.
-            contextAdditions: toContextAdditionsPayload(currentChat.contextAdditions),
-            additionalContext: String(answersToUse.additional_context || ""),
-          });
+
+result = await continuePipeline(currentChat.threadId, formattedAnswers, {
+  model: modelToUse,
+  apiKey: getKeyForModel(modelToUse),
+  provider: resolveProviderForModel(modelToUse),
+  // Saved Add Details entries and free-form context travel with generation.
+  contextAdditions: toContextAdditionsPayload(currentChat.contextAdditions),
+  additionalContext: String(answersToUse.additional_context || ""),
+});
+
         }
       }
 
       if (!result) {
-        throw new Error("Prompt generation failed: No response received from AI model.");
+        throw new Error(
+          "Prompt generation failed: No response received from AI model.",
+        );
       }
 
       const finalPromptData = {
@@ -813,14 +841,16 @@ export default function App() {
                     actionability: result.actionability || 90,
                   },
                 }
-              : item
+              : item,
           ),
-        }))
+        })),
       );
 
       setHomeView("result");
       if (!currentUser) {
-        fetchRateLimitStatus().then((st) => setRateLimitStatus(st)).catch(() => {});
+        fetchRateLimitStatus()
+          .then((st) => setRateLimitStatus(st))
+          .catch(() => {});
       }
     } catch (err) {
       console.error("Pipeline completion error:", err);
@@ -838,9 +868,129 @@ export default function App() {
                   status: "Synthesis error",
                   error: errorMsg,
                 }
-              : item
+              : item,
           ),
-        }))
+        })),
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDirectGeneration = async (directText) => {
+    if (!activeChat || !directText.trim()) return;
+
+    const currentChat = activeChat;
+
+    setHomeView("result");
+    setIsGenerating(true);
+    setPipelineError(null);
+
+    setChats((prev) =>
+      prev.map((group) => ({
+        ...group,
+        items: group.items.map((item) =>
+          item.id === currentChat.id
+            ? { ...item, isSubmitting: true, status: "Generating prompt..." }
+            : item,
+        ),
+      })),
+    );
+
+    try {
+      const modelToUse = currentChat.model || selectedModel;
+
+      // Create backend conversation and get thread ID
+      const startRes = await startPipeline(directText.trim(), {
+        model: modelToUse,
+        apiKey: getKeyForModel(modelToUse),
+        provider: resolveProviderForModel(modelToUse),
+      });
+
+      if (!startRes?.thread_id) {
+        throw new Error("Failed to create backend conversation thread.");
+      }
+
+      // Generate the prompt using your existing function
+      const result = await generatePrompt(directText.trim(), []);
+
+      const finalPromptData = {
+        ...result,
+        prompt_title: result.title || currentChat.title,
+        sections: result.sections || [],
+        required_attachments: result.required_attachments || [],
+        model: currentChat.model || selectedModel,
+      };
+
+      const initialConversation = [
+        {
+          id: "msg_u_init",
+          role: "user",
+          text: directText.trim(),
+          timestamp: formatTimestamp(),
+        },
+        {
+          id: "msg_p_1",
+          role: "assistant",
+          type: "prompt",
+          version: 1,
+          versionLabel: "v1: Direct Generation",
+          title: finalPromptData.prompt_title,
+          promptData: finalPromptData,
+          score: 90,
+          timestamp: formatTimestamp(),
+        },
+      ];
+
+      setChats((prev) =>
+        prev.map((group) => ({
+          ...group,
+          items: group.items.map((item) =>
+            item.id === currentChat.id
+              ? {
+                  ...item,
+                  threadId: startRes.thread_id,
+                  title: finalPromptData.prompt_title,
+                  query: directText.trim(),
+                  isComplete: true,
+                  isSubmitting: false,
+                  status: "Ready",
+                  generatedPromptData: finalPromptData,
+                  conversation: initialConversation,
+                  score: 90,
+                  metrics: {
+                    clarity: 90,
+                    specificity: 90,
+                    context: 90,
+                    structure: 90,
+                    actionability: 90,
+                  },
+                }
+              : item,
+          ),
+        })),
+      );
+    } catch (err) {
+      console.error("Direct generation error:", err);
+
+      setPipelineError(err.message || "Direct prompt generation failed.");
+
+      setHomeView("chat");
+
+      setChats((prev) =>
+        prev.map((group) => ({
+          ...group,
+          items: group.items.map((item) =>
+            item.id === currentChat.id
+              ? {
+                  ...item,
+                  isSubmitting: false,
+                  status: "Generation error",
+                  error: err.message,
+                }
+              : item,
+          ),
+        })),
       );
     } finally {
       setIsGenerating(false);
@@ -913,9 +1063,9 @@ export default function App() {
       prev.map((group) => ({
         ...group,
         items: group.items.map((item) =>
-          item.id === chatId ? { ...item, isStarred: !item.isStarred } : item
+          item.id === chatId ? { ...item, isStarred: !item.isStarred } : item,
         ),
-      }))
+      })),
     );
   };
 
@@ -934,7 +1084,9 @@ export default function App() {
         title: activeChat.title,
         model: activeChat.model || "Gemini 3.5 Flash-Lite",
         folder: publishOptions?.category || activeChat.taskDomain || "general",
-        tags: publishOptions?.tags?.length ? publishOptions.tags : ["Generated", "AI Scored"],
+        tags: publishOptions?.tags?.length
+          ? publishOptions.tags
+          : ["Generated", "AI Scored"],
         score: activeChat.score || 92,
         sections: activeChat.generatedPromptData.sections,
       });
@@ -944,9 +1096,11 @@ export default function App() {
         prev.map((group) => ({
           ...group,
           items: group.items.map((item) =>
-            item.id === activeChat.id ? { ...item, isSaved: true, isPublished: true } : item
+            item.id === activeChat.id
+              ? { ...item, isSaved: true, isPublished: true }
+              : item,
           ),
-        }))
+        })),
       );
 
       setToastNotification({
@@ -964,9 +1118,11 @@ export default function App() {
         prev.map((group) => ({
           ...group,
           items: group.items.map((item) =>
-            item.id === activeChat.id ? { ...item, isSaved: true, isPublished: true } : item
+            item.id === activeChat.id
+              ? { ...item, isSaved: true, isPublished: true }
+              : item,
           ),
-        }))
+        })),
       );
       setToastNotification({
         title: "Published Locally",
@@ -994,7 +1150,7 @@ export default function App() {
   };
 
   /* Action: Follow-up conversational prompt refinement */
-  const handleFollowUp = async (followUpText) => {
+  const handleFollowUp = async (followUpText, attachmentFile = null) => {
     if (!activeChat || !followUpText?.trim()) return;
 
     const currentChat = activeChat;
@@ -1052,9 +1208,9 @@ export default function App() {
         items: group.items.map((item) =>
           item.id === currentChat.id
             ? { ...item, conversation: updatedConv, isSubmitting: true }
-            : item
+            : item,
         ),
-      }))
+      })),
     );
 
     // Advanced Model Context Reduction:
@@ -1069,12 +1225,68 @@ export default function App() {
 
     try {
       const modelToUse = currentChat.model || selectedModel;
-      const response = await followUpPipeline(currentChat.threadId, text, {
+      let threadId = currentChat.threadId;
+
+      if (!threadId) {
+        const startRes = await startPipeline(currentChat.query || text, {
+          model: modelToUse,
+          apiKey: getKeyForModel(modelToUse),
+          provider: resolveProviderForModel(modelToUse),
+          attachment: currentChat.attachment || undefined,
+        });
+
+        threadId = startRes?.thread_id;
+
+        if (!threadId) {
+          throw new Error("Failed to create conversation thread.");
+        }
+
+        setChats((prev) =>
+          prev.map((group) => ({
+            ...group,
+            items: group.items.map((item) =>
+              item.id === currentChat.id ? { ...item, threadId } : item,
+            ),
+          })),
+        );
+      }
+
+      const attachmentData = attachmentFile
+        ? await new Promise((resolve) => {
+            const reader = new FileReader();
+            const isText =
+              attachmentFile.type.startsWith("text/") ||
+              /\.(json|sql|md|csv|py|js|ts|tsx|jsx|html|css|txt)$/i.test(
+                attachmentFile.name,
+              );
+
+            reader.onload = () => {
+              resolve({
+                name: attachmentFile.name,
+                size: attachmentFile.size,
+                type: attachmentFile.type || "application/octet-stream",
+                content: reader.result,
+                ...(!isText && { isBinary: true }),
+              });
+            };
+
+            if (isText) reader.readAsText(attachmentFile);
+            else reader.readAsDataURL(attachmentFile);
+          })
+        : null;
+
+      const response = await followUpPipeline(threadId, text, {
         model: modelToUse,
         apiKey: getKeyForModel(modelToUse),
+        attachment: attachmentData,
         provider: resolveProviderForModel(modelToUse),
         currentPrompt: currentChat.generatedPromptData?.optimized_prompt,
         historySummary: userDirectives,
+      });
+      console.log("FOLLOW-UP DEBUG:", {
+        chatId: currentChat.id,
+        threadId: currentChat.threadId,
+        chatData: currentChat,
       });
 
       if (response.action === "clarify") {
@@ -1098,11 +1310,13 @@ export default function App() {
                 ? {
                     ...item,
                     isSubmitting: false,
-                    conversation: updatedConv.map((c) => (c.id === loadingMsgId ? clarifyItem : c)),
+                    conversation: updatedConv.map((c) =>
+                      c.id === loadingMsgId ? clarifyItem : c,
+                    ),
                   }
-                : item
+                : item,
             ),
-          }))
+          })),
         );
       } else {
         // Model refined the prompt!
@@ -1139,11 +1353,13 @@ export default function App() {
                       structure: response.structure || 92,
                       actionability: response.actionability || 94,
                     },
-                    conversation: updatedConv.map((c) => (c.id === loadingMsgId ? promptItem : c)),
+                    conversation: updatedConv.map((c) =>
+                      c.id === loadingMsgId ? promptItem : c,
+                    ),
                   }
-                : item
+                : item,
             ),
-          }))
+          })),
         );
       }
     } catch (err) {
@@ -1164,11 +1380,13 @@ export default function App() {
               ? {
                   ...item,
                   isSubmitting: false,
-                  conversation: updatedConv.map((c) => (c.id === loadingMsgId ? errorItem : c)),
+                  conversation: updatedConv.map((c) =>
+                    c.id === loadingMsgId ? errorItem : c,
+                  ),
                 }
-              : item
+              : item,
           ),
-        }))
+        })),
       );
     }
   };
@@ -1192,14 +1410,20 @@ export default function App() {
           chats={chats}
           user={currentUser}
           onNavigateLogin={() => handleNavigate("login")}
-          onToggleSidebarCollapse={(collapsed) => setSidebarCollapsed(collapsed)}
+          onToggleSidebarCollapse={(collapsed) =>
+            setSidebarCollapsed(collapsed)
+          }
           onFineTuneInChat={(prompt, customFields) => {
             let fineTuneQuery = `Fine-tune and optimize prompt: "${prompt.title}"\n`;
             if (customFields) {
-              if (customFields.productName) fineTuneQuery += `Product/Subject: ${customFields.productName}\n`;
-              if (customFields.primaryGoal) fineTuneQuery += `Goal: ${customFields.primaryGoal}\n`;
-              if (customFields.targetAudience) fineTuneQuery += `Target Audience: ${customFields.targetAudience}\n`;
-              if (customFields.toneStyle) fineTuneQuery += `Tone & Style: ${customFields.toneStyle}\n`;
+              if (customFields.productName)
+                fineTuneQuery += `Product/Subject: ${customFields.productName}\n`;
+              if (customFields.primaryGoal)
+                fineTuneQuery += `Goal: ${customFields.primaryGoal}\n`;
+              if (customFields.targetAudience)
+                fineTuneQuery += `Target Audience: ${customFields.targetAudience}\n`;
+              if (customFields.toneStyle)
+                fineTuneQuery += `Tone & Style: ${customFields.toneStyle}\n`;
               if (customFields.additionalDirectives?.trim()) {
                 fineTuneQuery += `Fine-Tuning Directives: ${customFields.additionalDirectives.trim()}\n`;
               }
@@ -1237,7 +1461,9 @@ export default function App() {
             const query = prompt.snippet || prompt.title;
             handleStartChatFromPrompt(query);
           }}
-          onToggleSidebarCollapse={(collapsed) => setSidebarCollapsed(collapsed)}
+          onToggleSidebarCollapse={(collapsed) =>
+            setSidebarCollapsed(collapsed)
+          }
         />
       );
     }
@@ -1250,14 +1476,20 @@ export default function App() {
           error={activeChat.error || pipelineError}
           onRetryStart={handleRetryPipelineStart}
           onUpdateAnswers={handleUpdateAnswers}
-          onCompleteGeneration={(answers) => requestGeneration("standard", answers)}
-          onSkipQuestions={() => requestGeneration("skip", activeChat.answers)}
-          selectedModel={activeChat.model || selectedModel}
-          onSelectModel={handleSelectModel}
-          geminiApiKey={getKeyForModel(activeChat.model || selectedModel)}
-          onGeminiApiKeyChange={(k, prov) =>
-            handleApiKeyChange(k, prov || resolveProviderForModel(activeChat.model || selectedModel))
-          }
+
+onCompleteGeneration={(answers) => requestGeneration("standard", answers)}
+onDirectGeneration={handleDirectGeneration}
+onSkipQuestions={() => requestGeneration("skip", activeChat.answers)}
+selectedModel={activeChat.model || selectedModel}
+onSelectModel={handleSelectModel}
+geminiApiKey={getKeyForModel(activeChat.model || selectedModel)}
+onGeminiApiKeyChange={({ k, prop }) =>
+  handleApiKeyChange(
+    k,
+    prop || resolveProviderForModel(activeChat.model || selectedModel)
+  )
+}
+
           readiness={readinessFeatureEnabled ? readiness : null}
           contextAdditions={activeChat.contextAdditions || []}
           onSaveContextAddition={handleSaveContextAddition}
@@ -1287,7 +1519,8 @@ export default function App() {
                 Synthesizing Final Adaptive Prompt...
               </h2>
               <p className="max-w-md text-[14px] text-slate-400">
-                Packaging task context, dynamic requirements, edge cases, and input attachments with {activeChat.model || selectedModel}.
+                Packaging task context, dynamic requirements, edge cases, and
+                input attachments with {activeChat.model || selectedModel}.
               </p>
             </div>
           </div>
@@ -1308,7 +1541,9 @@ export default function App() {
             onRegenerate={() => handleCompleteGeneration()}
             onCreateVersion={() => {
               const vCount = (activeChat.versions?.length || 1) + 1;
-              alert(`Created snapshot Version ${vCount} for "${activeChat.title}".`);
+              alert(
+                `Created snapshot Version ${vCount} for "${activeChat.title}".`,
+              );
             }}
             onSaveToLibrary={() => setPublishModalOpen(true)}
             onViewAnalytics={() => handleViewPromptAnalytics(activeChat)}
@@ -1324,7 +1559,9 @@ export default function App() {
       <HomePage
         idea={idea}
         onIdeaChange={setIdea}
-        onSubmitIdea={(promptVal, att) => handleStartChatFromPrompt(promptVal || idea, att)}
+        onSubmitIdea={(promptVal, att) =>
+          handleStartChatFromPrompt(promptVal || idea, att)
+        }
         isGenerating={isGenerating}
         onViewAnalytics={() => handleNavigate("analytics")}
         onViewAllExamples={() => handleNavigate("my-prompts")}
@@ -1363,8 +1600,14 @@ export default function App() {
             <ChatHeader
               title={activeChat.title}
               onRenameTitle={handleRenameActiveChat}
-              modelName={activeChat.model || selectedModel || "gemini-3.5-flash-lite"}
-              createdTime={activeChat.timestamp ? `Created today at ${activeChat.timestamp}` : "Created just now"}
+              modelName={
+                activeChat.model || selectedModel || "gemini-3.5-flash-lite"
+              }
+              createdTime={
+                activeChat.timestamp
+                  ? `Created today at ${activeChat.timestamp}`
+                  : "Created just now"
+              }
               theme={theme}
               onThemeChange={setTheme}
               notifications={1}
@@ -1411,10 +1654,7 @@ export default function App() {
         </main>
 
         {/* Floating Bottom Navigation Dock */}
-        <BottomNavDock
-          active={activeNav}
-          onNavigate={handleNavigate}
-        />
+        <BottomNavDock active={activeNav} onNavigate={handleNavigate} />
 
         {/* ── Guest Rate Limit Lock Modal ── */}
         <GuestLimitLockModal
@@ -1450,7 +1690,9 @@ export default function App() {
               <Check className="size-4 stroke-[2.5]" />
             </div>
             <div className="text-xs">
-              <p className="font-semibold text-white">{toastNotification.title}</p>
+              <p className="font-semibold text-white">
+                {toastNotification.title}
+              </p>
               <p className="text-slate-400">{toastNotification.message}</p>
             </div>
             {toastNotification.actionLabel && (
