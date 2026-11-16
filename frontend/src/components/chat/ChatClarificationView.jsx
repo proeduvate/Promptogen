@@ -7,14 +7,21 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  RefreshCw,
+  Lock,
+  X,
 } from "lucide-react";
-import DynamicQuestionCard from "./DynamicQuestionCard";
+import DynamicQuestionCard, { getQuestionDomId } from "./DynamicQuestionCard";
 import ConversationProgressPanel from "./ConversationProgressPanel";
 import ExpectedOutputPanel from "./ExpectedOutputPanel";
 import AIModelSelectorPanel from "./AIModelSelectorPanel";
 import QuickActionsPanel from "./QuickActionsPanel";
+import PromptReadinessPanel from "./PromptReadinessPanel";
+import AddContextDetailsDialog from "./AddContextDetailsDialog";
 import ErrorMessageBanner from "../common/ErrorMessageBanner";
+import useMediaQuery from "../../hooks/useMediaQuery";
+
+// Tailwind's `xl` breakpoint: the readiness panel moves to the right rail at this width.
+const WIDE_LAYOUT_QUERY = "(min-width: 80rem)";
 
 export default function ChatClarificationView({
   chat,
@@ -27,8 +34,22 @@ export default function ChatClarificationView({
   onSelectModel,
   geminiApiKey = "",
   onGeminiApiKeyChange,
+  // Prompt Readiness (null when the feature flag is off)
+  readiness = null,
+  contextAdditions = [],
+  onSaveContextAddition,
+  onRemoveContextAddition,
+  onSaveAdditionalContext,
+  onGenerate,
+  onGenerateAnyway,
+  generationNotice = null,
+  onDismissGenerationNotice,
+  isGenerating = false,
 }) {
   const [followUpText, setFollowUpText] = useState("");
+  // { kind: "gap", gap } | { kind: "general" } | null
+  const [detailsDialog, setDetailsDialog] = useState(null);
+  const isWideLayout = useMediaQuery(WIDE_LAYOUT_QUERY);
   const currentStep = chat.step || 1;
 
   // Retrieve dynamic data from backend start response
@@ -141,6 +162,93 @@ export default function ChatClarificationView({
       onUpdateAnswers?.(chat.answers || {}, stepNum);
     }
   };
+
+  // Single entry point for the legacy skip / fast-track routes (gated in App.jsx).
+  const handleSkip = () => {
+    if (onSkipQuestions) onSkipQuestions();
+    else onCompleteGeneration?.(chat.answers || {});
+  };
+
+  // ── Prompt Readiness: Add Details ──
+  const locateQuestion = (questionId) => {
+    if (questionId === null || questionId === undefined) return null;
+    for (let s = 0; s < stepsMeta.length; s += 1) {
+      const qs = stepsMeta[s].questions;
+      for (let i = 0; i < qs.length; i += 1) {
+        if (String(qs[i].id) === String(questionId)) {
+          return { step: s + 1, key: qs[i].id || `q_${i}` };
+        }
+      }
+    }
+    return null;
+  };
+
+  const focusQuestion = (key) => {
+    let attempts = 0;
+    const tryFocus = () => {
+      const el = document.getElementById(getQuestionDomId(key));
+      if (el) {
+        el.scrollIntoView?.({ behavior: "smooth", block: "center" });
+        const field = el.querySelector("input, textarea, select, button");
+        (field || el).focus?.({ preventScroll: true });
+        return;
+      }
+      attempts += 1;
+      if (attempts < 10) requestAnimationFrame(tryFocus);
+    };
+    requestAnimationFrame(tryFocus);
+  };
+
+  const handleAddDetails = (gap) => {
+    // Gap linked to an existing question: go to that question instead of a new input.
+    const target = locateQuestion(gap?.questionId);
+    if (target) {
+      if (target.step !== safeStep) {
+        // Change only the step; answers are passed through untouched.
+        onUpdateAnswers?.((prev) => prev || {}, target.step);
+      }
+      focusQuestion(target.key);
+      return;
+    }
+    setDetailsDialog({ kind: "gap", gap });
+  };
+
+  const savedAdditionFor = (gapId) =>
+    (contextAdditions || []).find((item) => item.gap_id === String(gapId))?.value || "";
+
+  const handleDialogSave = (value) => {
+    if (!detailsDialog) return;
+    if (detailsDialog.kind === "gap") {
+      onSaveContextAddition?.({
+        gap_id: detailsDialog.gap.id,
+        label: detailsDialog.gap.label,
+        value,
+      });
+    } else {
+      onSaveAdditionalContext?.(value);
+    }
+    setDetailsDialog(null);
+  };
+
+  const handleDialogRemove = () => {
+    if (!detailsDialog) return;
+    if (detailsDialog.kind === "gap") onRemoveContextAddition?.(detailsDialog.gap.id);
+    else onSaveAdditionalContext?.("");
+    setDetailsDialog(null);
+  };
+
+  const showReadiness = Boolean(readiness) && !activeError && (hasDynamicQuestions || isSufficient);
+  const readinessPanel = showReadiness ? (
+    <PromptReadinessPanel
+      readiness={readiness}
+      contextAdditions={contextAdditions}
+      onAddDetails={handleAddDetails}
+      onGenerate={onGenerate}
+      onGenerateAnyway={onGenerateAnyway}
+      onRetry={readiness.refresh}
+      isGenerating={isGenerating || Boolean(chat.isSubmitting)}
+    />
+  ) : null;
 
   const domainBadgeLabel =
     taskDomain === "software_development"
@@ -280,7 +388,7 @@ export default function ChatClarificationView({
                   </div>
                   <button
                     type="button"
-                    onClick={() => onSkipQuestions?.() || onCompleteGeneration?.(chat.answers || {})}
+                    onClick={handleSkip}
                     className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-[12.5px] font-semibold text-white shadow-md shadow-emerald-700/30 transition-all hover:bg-emerald-500"
                   >
                     <span>Proceed to Step 2</span>
@@ -288,6 +396,9 @@ export default function ChatClarificationView({
                   </button>
                 </div>
               )}
+
+              {/* Prompt Readiness (narrow layouts: inline, before the questions) */}
+              {!isWideLayout && readinessPanel}
 
               {/* Case 5: Interactive Dynamic Question Card - ONLY rendered if dynamic questions arrived from AI and no error */}
               {!activeError && hasDynamicQuestions && currentMeta && (
@@ -301,11 +412,34 @@ export default function ChatClarificationView({
                   onAnswerChange={handleAnswerChange}
                   onNextStep={handleNextStep}
                   onPrevStep={handlePrevStep}
-                  onSkipToStep2={() => onSkipQuestions?.() || onCompleteGeneration?.(chat.answers || {})}
+                  onSkipToStep2={handleSkip}
                   isLastStep={safeStep === totalSteps}
                   isSubmitting={chat.isSubmitting}
                   isSufficient={isSufficient}
                 />
+              )}
+
+              {/* Generation blocked by the readiness gate */}
+              {generationNotice && (
+                <div
+                  role="alert"
+                  className="flex items-start justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5 text-[12.5px] leading-relaxed text-amber-100 shadow-md"
+                >
+                  <div className="flex items-start gap-2">
+                    <Lock className="mt-0.5 size-4 shrink-0 text-amber-400" aria-hidden="true" />
+                    <span>{generationNotice}</span>
+                  </div>
+                  {onDismissGenerationNotice && (
+                    <button
+                      type="button"
+                      onClick={onDismissGenerationNotice}
+                      aria-label="Dismiss message"
+                      className="grid size-6 shrink-0 place-items-center rounded-md text-amber-300/80 hover:bg-white/5 hover:text-amber-100"
+                    >
+                      <X className="size-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -357,6 +491,9 @@ export default function ChatClarificationView({
 
         {/* Right Rail Panels */}
         <div className="flex flex-col space-y-4">
+          {/* Prompt Readiness (wide layouts: top of the right rail) */}
+          {isWideLayout && readinessPanel}
+
           {/* Conversation Progress - ONLY rendered when actual AI questions exist and no error */}
           {!activeError && hasDynamicQuestions && totalSteps > 0 && (
             <ConversationProgressPanel
@@ -377,7 +514,7 @@ export default function ChatClarificationView({
           <ExpectedOutputPanel />
 
           <QuickActionsPanel
-            onSkipQuestions={() => onSkipQuestions?.() || onCompleteGeneration?.(chat.answers || {})}
+            onSkipQuestions={handleSkip}
             onUseTemplate={() => {
               if (taskDomain === "software_development") {
                 onUpdateAnswers?.({
@@ -398,11 +535,39 @@ export default function ChatClarificationView({
               }
             }}
             onAddContext={() => {
+              if (readiness) {
+                // Readiness flow: genuine free-form context instead of a hardcoded placeholder.
+                setDetailsDialog({ kind: "general" });
+                return;
+              }
               handleAnswerChange("context_profile", "Production enterprise system, high throughput requirement");
             }}
           />
         </div>
       </div>
+
+      <AddContextDetailsDialog
+        open={Boolean(detailsDialog)}
+        title={
+          detailsDialog?.kind === "gap"
+            ? `Add details: ${detailsDialog.gap.label}`
+            : "Add context"
+        }
+        description={
+          detailsDialog?.kind === "gap"
+            ? detailsDialog.gap.description
+            : "Add constraints, background or preferences that Promptogen should consider."
+        }
+        inputHint={detailsDialog?.kind === "gap" ? detailsDialog.gap.inputHint : null}
+        initialValue={
+          detailsDialog?.kind === "gap"
+            ? savedAdditionFor(detailsDialog.gap.id)
+            : String(chat.answers?.additional_context || "")
+        }
+        onSave={handleDialogSave}
+        onCancel={() => setDetailsDialog(null)}
+        onRemove={handleDialogRemove}
+      />
     </div>
   );
 }

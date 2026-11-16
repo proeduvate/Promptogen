@@ -60,6 +60,19 @@ npm install
 
 # Start Vite dev server:
 npm run dev
+
+# Run frontend tests (Vitest + Testing Library):
+npm test
 ```
 
 - **Web Dashboard**: [http://localhost:5173](http://localhost:5173)
+
+#### Prompt Readiness (feature flag)
+
+The Prompt Readiness panel in the question workspace shows the backend's readiness score, collected context, missing-context gaps and Generate / Generate Anyway actions. It is **off by default** because the backend readiness endpoint (`POST /api/v1/pipeline/readiness`) is still a proposed contract. Set these in `frontend/.env.local`:
+
+| Variable | Purpose |
+| --- | --- |
+| `VITE_ENABLE_PROMPT_READINESS=true` | Shows the panel and enforces backend generation permissions on every generate / skip path. Enable only when the backend endpoint is live. |
+| `VITE_USE_READINESS_STUB=true` | Dev server only: answers readiness requests from local fixtures (`src/mocks/promptReadinessFixtures.js`). Ignored in production builds. |
+| `VITE_READINESS_STUB_SCENARIO` | Dev server only: `sequence` (default; each saved detail moves 42% → 78% → 96%), `missing-required`, `recommended-gaps`, `ready`, `empty`, `invalid-response`, `error`. |

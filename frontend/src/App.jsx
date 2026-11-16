@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Loader2, Check, X } from "lucide-react";
 import ChatSidebar from "./components/ChatSidebar";
 import TopNavHeader from "./components/TopNavHeader";
@@ -32,6 +32,15 @@ import {
   resolveProviderForModel,
 } from "./lib/api";
 import { downloadFile, promptToMarkdown, promptToText } from "./lib/promptText";
+import {
+  formatPipelineAnswers,
+  upsertContextAddition,
+  removeContextAddition,
+  toContextAdditionsPayload,
+} from "./lib/pipelineAnswers";
+import { isPromptReadinessEnabled } from "./lib/promptReadinessApi";
+import { evaluateGenerationGate } from "./lib/generationGate";
+import usePromptReadiness from "./hooks/usePromptReadiness";
 
 function formatTimestamp() {
   return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -317,6 +326,48 @@ export default function App() {
       .flatMap((g) => g.items)
       .find((item) => item.id === activeChatId) || null;
 
+  /* ── Prompt Readiness (behind VITE_ENABLE_PROMPT_READINESS / dev stub flag) ── */
+  const readinessFeatureEnabled = isPromptReadinessEnabled();
+  const readinessChat =
+    readinessFeatureEnabled &&
+    activeNav === "home" &&
+    homeView === "chat" &&
+    activeChat &&
+    !activeChat.isComplete &&
+    !activeChat.error
+      ? activeChat
+      : null;
+
+  const readinessAnswers = useMemo(
+    () =>
+      readinessChat
+        ? formatPipelineAnswers(readinessChat.backendQuestions, readinessChat.answers, { fillDefaults: false })
+        : [],
+    [readinessChat?.backendQuestions, readinessChat?.answers]
+  );
+  const readinessContextAdditions = useMemo(
+    () => toContextAdditionsPayload(readinessChat?.contextAdditions),
+    [readinessChat?.contextAdditions]
+  );
+
+  const readiness = usePromptReadiness({
+    enabled: Boolean(readinessChat?.threadId),
+    scopeKey: readinessChat ? `${readinessChat.id}::${readinessChat.threadId}` : null,
+    threadId: readinessChat?.threadId || null,
+    answers: readinessAnswers,
+    contextAdditions: readinessContextAdditions,
+    additionalContext: String(readinessChat?.answers?.additional_context || ""),
+  });
+
+  // Message shown when the readiness gate refuses a generation request.
+  const [generationNotice, setGenerationNotice] = useState(null); // { chatId, message }
+  const generationInFlightRef = useRef(false);
+
+  // A new readiness result replaces any earlier "blocked" message.
+  useEffect(() => {
+    setGenerationNotice(null);
+  }, [readiness.data?.requestId, activeChatId]);
+
   /* Browser Back/Forward navigation listener */
   useEffect(() => {
     const handlePopState = () => {
@@ -428,6 +479,7 @@ export default function App() {
       attachment: attachment,
       step: 1,
       answers: {},
+      contextAdditions: [],
       isComplete: false,
       isSubmitting: false,
       threadId: null,
@@ -658,6 +710,9 @@ export default function App() {
   /* Action: Complete generation on Step 4 or via Skip Questions */
   const handleCompleteGeneration = async (finalAnswers = null) => {
     if (!activeChat) return;
+    // Prevent double submission (e.g. two quick clicks before state updates).
+    if (generationInFlightRef.current) return;
+    generationInFlightRef.current = true;
 
     const currentChat = activeChat;
     const answersToUse = finalAnswers || currentChat.answers || {};
@@ -684,31 +739,8 @@ export default function App() {
 
       // If we have a backend threadId, continue pipeline with answers
       if (currentChat.threadId && currentChat.backendQuestions?.length > 0) {
-        const formattedAnswers = currentChat.backendQuestions.map((q) => {
-          const val = answersToUse[q.id] ?? answersToUse[`q_${q.id}`];
-          let selectedStr = "";
-          let customStr = "";
-
-          if (Array.isArray(val)) {
-            selectedStr = val.join(", ");
-          } else if (typeof val === "object" && val !== null) {
-            selectedStr = Object.entries(val)
-              .map(([k, v]) => `${k}: ${v}`)
-              .join(", ");
-          } else {
-            selectedStr = String(val || q.options?.[0] || "Default");
-          }
-
-          if (answersToUse[`${q.id}_other`]) {
-            customStr = String(answersToUse[`${q.id}_other`]);
-          }
-
-          return {
-            question_id: q.id,
-            question: q.question,
-            selected_option: selectedStr || "Default",
-            custom_input: customStr,
-          };
+        const formattedAnswers = formatPipelineAnswers(currentChat.backendQuestions, answersToUse, {
+          fillDefaults: true,
         });
 
         if (formattedAnswers.length > 0) {
@@ -717,6 +749,9 @@ export default function App() {
             model: modelToUse,
             apiKey: getKeyForModel(modelToUse),
             provider: resolveProviderForModel(modelToUse),
+            // Saved Add Details entries and free-form context travel with generation.
+            contextAdditions: toContextAdditionsPayload(currentChat.contextAdditions),
+            additionalContext: String(answersToUse.additional_context || ""),
           });
         }
       }
@@ -809,7 +844,67 @@ export default function App() {
       );
     } finally {
       setIsGenerating(false);
+      generationInFlightRef.current = false;
     }
+  };
+
+  /* Common generation boundary for the adaptive-question workspace.
+     Every route (final step, readiness panel, Skip Questions, fast-track) passes through
+     the readiness gate here, so a disabled button is never the only protection. */
+  const requestGeneration = (mode, finalAnswers = null) => {
+    if (!activeChat) return false;
+    if (generationInFlightRef.current || isGenerating || activeChat.isSubmitting) return false;
+
+    const gate = evaluateGenerationGate({
+      featureEnabled: readinessFeatureEnabled,
+      readiness,
+      mode,
+    });
+    if (!gate.allowed) {
+      setGenerationNotice({ chatId: activeChat.id, message: gate.reason });
+      return false;
+    }
+
+    setGenerationNotice(null);
+    handleCompleteGeneration(finalAnswers);
+    return true;
+  };
+
+  /* Action: Save a gap-specific detail (merged by gap_id; answers and step untouched) */
+  const handleSaveContextAddition = (entry) => {
+    if (!activeChatId || !entry?.gap_id) return;
+    readiness.requestImmediateRefresh();
+    setChats((prev) =>
+      prev.map((group) => ({
+        ...group,
+        items: group.items.map((item) =>
+          item.id === activeChatId
+            ? { ...item, contextAdditions: upsertContextAddition(item.contextAdditions, entry) }
+            : item
+        ),
+      }))
+    );
+  };
+
+  const handleRemoveContextAddition = (gapId) => {
+    if (!activeChatId) return;
+    readiness.requestImmediateRefresh();
+    setChats((prev) =>
+      prev.map((group) => ({
+        ...group,
+        items: group.items.map((item) =>
+          item.id === activeChatId
+            ? { ...item, contextAdditions: removeContextAddition(item.contextAdditions, gapId) }
+            : item
+        ),
+      }))
+    );
+  };
+
+  /* Action: Save free-form context (same field the bottom input already uses) */
+  const handleSaveAdditionalContext = (value) => {
+    readiness.requestImmediateRefresh();
+    handleUpdateAnswers((prev) => ({ ...(prev || {}), additional_context: value }));
   };
 
   /* Action: Star / unstar chat */
@@ -1155,14 +1250,26 @@ export default function App() {
           error={activeChat.error || pipelineError}
           onRetryStart={handleRetryPipelineStart}
           onUpdateAnswers={handleUpdateAnswers}
-          onCompleteGeneration={handleCompleteGeneration}
-          onSkipQuestions={() => handleCompleteGeneration(activeChat.answers)}
+          onCompleteGeneration={(answers) => requestGeneration("standard", answers)}
+          onSkipQuestions={() => requestGeneration("skip", activeChat.answers)}
           selectedModel={activeChat.model || selectedModel}
           onSelectModel={handleSelectModel}
           geminiApiKey={getKeyForModel(activeChat.model || selectedModel)}
           onGeminiApiKeyChange={(k, prov) =>
             handleApiKeyChange(k, prov || resolveProviderForModel(activeChat.model || selectedModel))
           }
+          readiness={readinessFeatureEnabled ? readiness : null}
+          contextAdditions={activeChat.contextAdditions || []}
+          onSaveContextAddition={handleSaveContextAddition}
+          onRemoveContextAddition={handleRemoveContextAddition}
+          onSaveAdditionalContext={handleSaveAdditionalContext}
+          onGenerate={() => requestGeneration("standard")}
+          onGenerateAnyway={() => requestGeneration("anyway")}
+          generationNotice={
+            generationNotice?.chatId === activeChat.id ? generationNotice.message : null
+          }
+          onDismissGenerationNotice={() => setGenerationNotice(null)}
+          isGenerating={isGenerating}
         />
       );
     }
