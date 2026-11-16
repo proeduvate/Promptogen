@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import {
   Bot,
   Paperclip,
@@ -8,8 +8,10 @@ import {
   AlertCircle,
   Loader2,
   Lock,
+  RefreshCw,
   X,
 } from "lucide-react";
+
 import DynamicQuestionCard, { getQuestionDomId } from "./DynamicQuestionCard";
 import ConversationProgressPanel from "./ConversationProgressPanel";
 import ExpectedOutputPanel from "./ExpectedOutputPanel";
@@ -29,6 +31,7 @@ export default function ChatClarificationView({
   onRetryStart,
   onUpdateAnswers,
   onCompleteGeneration,
+  onDirectGeneration,
   onSkipQuestions,
   selectedModel = "gemini-3.5-flash-lite",
   onSelectModel,
@@ -47,18 +50,42 @@ export default function ChatClarificationView({
   isGenerating = false,
 }) {
   const [followUpText, setFollowUpText] = useState("");
+
+  // Details dialog and responsive layout
   // { kind: "gap", gap } | { kind: "general" } | null
   const [detailsDialog, setDetailsDialog] = useState(null);
   const isWideLayout = useMediaQuery(WIDE_LAYOUT_QUERY);
+
+  // Attachment and direct generation
+  const [selectedAttachment, setSelectedAttachment] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleDirectSubmit = () => {
+    const text = followUpText.trim();
+
+    if (!text || !onDirectGeneration) return;
+
+    onDirectGeneration(text);
+    setFollowUpText("");
+  };
+
+  const [validationError, setValidationError] = useState("");
+
   const currentStep = chat.step || 1;
 
   // Retrieve dynamic data from backend start response
   const activeError = error || chat.error || null;
   const backendQuestions = chat.backendQuestions || [];
   const depthAnalysis = chat.depthAnalysis || chat.depth_analysis || null;
-  const isSufficient = chat.isSufficient ?? depthAnalysis?.is_sufficient ?? false;
-  const taskDomain = chat.taskDomain || chat.task_domain || depthAnalysis?.task_domain || "general";
-  const hasDynamicQuestions = Array.isArray(backendQuestions) && backendQuestions.length > 0;
+  const isSufficient =
+    chat.isSufficient ?? depthAnalysis?.is_sufficient ?? false;
+  const taskDomain =
+    chat.taskDomain ||
+    chat.task_domain ||
+    depthAnalysis?.task_domain ||
+    "general";
+  const hasDynamicQuestions =
+    Array.isArray(backendQuestions) && backendQuestions.length > 0;
   const isAnalyzing = !activeError && !hasDynamicQuestions && !isSufficient;
 
   // Build steps ONLY if dynamic questions came from the AI
@@ -115,8 +142,8 @@ export default function ChatClarificationView({
           numSteps === 1
             ? "Promptogen analyzed your prompt. Answer these targeted questions to eliminate ambiguity:"
             : stepIdx === 1
-            ? "Promptogen identified key foundational details to clarify before generating the prompt:"
-            : "Fine-tune technical details, operational constraints, and deliverable format:",
+              ? "Promptogen identified key foundational details to clarify before generating the prompt:"
+              : "Fine-tune technical details, operational constraints, and deliverable format:",
         questions: chunk,
       });
     }
@@ -125,8 +152,21 @@ export default function ChatClarificationView({
   }, [backendQuestions, hasDynamicQuestions]);
 
   const totalSteps = stepsMeta.length;
-  const safeStep = totalSteps > 0 ? Math.min(Math.max(currentStep, 1), totalSteps) : 1;
+  const safeStep =
+    totalSteps > 0 ? Math.min(Math.max(currentStep, 1), totalSteps) : 1;
   const currentMeta = stepsMeta[safeStep - 1] || null;
+  const answers = chat.answers || {};
+
+  const answeredQuestions = backendQuestions.filter((q, index) => {
+    const key = q.id || `q_${index}`;
+    const value = answers[key];
+
+    if (value === undefined || value === null) return false;
+    if (typeof value === "string") return value.trim().length > 0;
+    if (Array.isArray(value)) return value.length > 0;
+
+    return true;
+  }).length;
 
   const handleAnswerChange = (keyOrObj, val) => {
     if (typeof keyOrObj === "object" && keyOrObj !== null) {
@@ -142,12 +182,58 @@ export default function ChatClarificationView({
     }
   };
 
+  const validateRequiredQuestions = (questions, answers) => {
+    const missingQuestions = questions.filter((q, index) => {
+      if ((q.level || "recommended").toLowerCase() !== "required") {
+        return false;
+      }
+
+      const key = q.id ?? `q_${index}`;
+      const value = answers?.[key];
+
+      return (
+        value === undefined ||
+        value === null ||
+        (typeof value === "string" && !value.trim()) ||
+        (Array.isArray(value) && value.length === 0)
+      );
+    });
+
+    if (missingQuestions.length > 0) {
+      setValidationError(
+        "Please answer all Required questions before proceeding.",
+      );
+      return false;
+    }
+    setValidationError("");
+    return true;
+  };
+
   const handleNextStep = () => {
+    const answers = chat.answers || {};
+
+    if (!validateRequiredQuestions(currentMeta?.questions || [], answers)) {
+      return;
+    }
+
     if (safeStep < totalSteps) {
-      onUpdateAnswers?.(chat.answers || {}, safeStep + 1);
+      onUpdateAnswers?.(answers, safeStep + 1);
     } else {
-      // Completed all steps!
-      onCompleteGeneration?.(chat.answers || {});
+      onCompleteGeneration?.(answers);
+    }
+  };
+
+  const handleSkipQuestions = () => {
+    const answers = chat.answers || {};
+
+    if (!validateRequiredQuestions(backendQuestions, answers)) {
+      return;
+    }
+
+    if (onSkipQuestions) {
+      onSkipQuestions();
+    } else {
+      onCompleteGeneration?.(answers);
     }
   };
 
@@ -214,7 +300,8 @@ export default function ChatClarificationView({
   };
 
   const savedAdditionFor = (gapId) =>
-    (contextAdditions || []).find((item) => item.gap_id === String(gapId))?.value || "";
+    (contextAdditions || []).find((item) => item.gap_id === String(gapId))
+      ?.value || "";
 
   const handleDialogSave = (value) => {
     if (!detailsDialog) return;
@@ -232,12 +319,14 @@ export default function ChatClarificationView({
 
   const handleDialogRemove = () => {
     if (!detailsDialog) return;
-    if (detailsDialog.kind === "gap") onRemoveContextAddition?.(detailsDialog.gap.id);
+    if (detailsDialog.kind === "gap")
+      onRemoveContextAddition?.(detailsDialog.gap.id);
     else onSaveAdditionalContext?.("");
     setDetailsDialog(null);
   };
 
-  const showReadiness = Boolean(readiness) && !activeError && (hasDynamicQuestions || isSufficient);
+  const showReadiness =
+    Boolean(readiness) && !activeError && (hasDynamicQuestions || isSufficient);
   const readinessPanel = showReadiness ? (
     <PromptReadinessPanel
       readiness={readiness}
@@ -254,12 +343,12 @@ export default function ChatClarificationView({
     taskDomain === "software_development"
       ? "Software Development"
       : taskDomain === "marketing"
-      ? "Marketing & Growth"
-      : taskDomain === "content_creation"
-      ? "Content & Writing"
-      : taskDomain === "business"
-      ? "Business & Strategy"
-      : taskDomain.replace(/_/g, " ").toUpperCase();
+        ? "Marketing & Growth"
+        : taskDomain === "content_creation"
+          ? "Content & Writing"
+          : taskDomain === "business"
+            ? "Business & Strategy"
+            : taskDomain.replace(/_/g, " ").toUpperCase();
 
   return (
     <div className="mx-auto max-w-7xl px-6 py-6 pb-28">
@@ -299,10 +388,13 @@ export default function ChatClarificationView({
                   />
                   <div className="rounded-2xl border border-[#1b2740] bg-[#0a101d] p-4 text-[12.5px] text-slate-400">
                     <p>
-                      The selected model encounterd an error while generating clarification questions.
+                      The selected model encounterd an error while generating
+                      clarification questions.
                     </p>
                     <p className="mt-1 text-slate-300">
-                      You can select a different model in the <strong>Gemini Model Engine</strong> panel on the right and click <strong>Retry</strong>.
+                      You can select a different model in the{" "}
+                      <strong>Gemini Model Engine</strong> panel on the right
+                      and click <strong>Retry</strong>.
                     </p>
                   </div>
                 </div>
@@ -318,7 +410,8 @@ export default function ChatClarificationView({
                         Analyzing Prompt with {selectedModel}...
                       </h4>
                       <p className="text-[12px] text-slate-400 mt-0.5">
-                        Evaluating task intent, domain depth, and dynamically framing precision questions.
+                        Evaluating task intent, domain depth, and dynamically
+                        framing precision questions.
                       </p>
                     </div>
                   </div>
@@ -353,7 +446,9 @@ export default function ChatClarificationView({
                         <div className="flex items-start gap-1.5 text-slate-300">
                           <CheckCircle2 className="size-3.5 text-emerald-400 shrink-0 mt-0.5" />
                           <div>
-                            <strong className="text-emerald-400">Identified: </strong>
+                            <strong className="text-emerald-400">
+                              Identified:{" "}
+                            </strong>
                             {depthAnalysis.info_present.slice(0, 3).join(", ")}
                           </div>
                         </div>
@@ -362,7 +457,9 @@ export default function ChatClarificationView({
                         <div className="flex items-start gap-1.5 text-slate-300">
                           <AlertCircle className="size-3.5 text-amber-400 shrink-0 mt-0.5" />
                           <div>
-                            <strong className="text-amber-400">Gaps to clarify: </strong>
+                            <strong className="text-amber-400">
+                              Gaps to clarify:{" "}
+                            </strong>
                             {depthAnalysis.info_missing.slice(0, 3).join(", ")}
                           </div>
                         </div>
@@ -382,7 +479,8 @@ export default function ChatClarificationView({
                         Sufficient Information Detected!
                       </div>
                       <div className="text-[12px] text-slate-300">
-                        Your prompt already has enough detail. You can proceed directly to Step 2.
+                        Your prompt already has enough detail. You can proceed
+                        directly to Step 2.
                       </div>
                     </div>
                   </div>
@@ -400,11 +498,31 @@ export default function ChatClarificationView({
               {/* Prompt Readiness (narrow layouts: inline, before the questions) */}
               {!isWideLayout && readinessPanel}
 
+              {validationError && (
+                <div className="mb-3 rounded-xl border border-red-500/60 bg-red-500/5 px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                    <h3 className="text-sm font-semibold text-red-400">
+                      Required question
+                    </h3>
+                  </div>
+
+                  <p className="mt-1 ml-6 text-xs leading-5 text-slate-300">
+                    {validationError}
+                  </p>
+                </div>
+              )}
+
               {/* Case 5: Interactive Dynamic Question Card - ONLY rendered if dynamic questions arrived from AI and no error */}
               {!activeError && hasDynamicQuestions && currentMeta && (
                 <DynamicQuestionCard
                   currentStep={safeStep}
                   totalSteps={totalSteps}
+                  totalQuestions={backendQuestions.length}
+                  answeredQuestions={answeredQuestions}
+                  questionsBeforeCurrentStep={stepsMeta
+                    .slice(0, safeStep - 1)
+                    .reduce((total, step) => total + step.questions.length, 0)}
                   stepTitle={currentMeta.title}
                   stepDescription={currentMeta.description}
                   questions={currentMeta.questions}
@@ -426,7 +544,10 @@ export default function ChatClarificationView({
                   className="flex items-start justify-between gap-3 rounded-2xl border border-amber-500/30 bg-amber-950/20 p-3.5 text-[12.5px] leading-relaxed text-amber-100 shadow-md"
                 >
                   <div className="flex items-start gap-2">
-                    <Lock className="mt-0.5 size-4 shrink-0 text-amber-400" aria-hidden="true" />
+                    <Lock
+                      className="mt-0.5 size-4 shrink-0 text-amber-400"
+                      aria-hidden="true"
+                    />
                     <span>{generationNotice}</span>
                   </div>
                   {onDismissGenerationNotice && (
@@ -447,38 +568,62 @@ export default function ChatClarificationView({
           {/* Bottom Chat Input Bar for follow-up notes */}
           <div className="relative mt-4 rounded-2xl border border-[#1b2742] bg-[#0c1322]/95 p-3 shadow-lg backdrop-blur-xl">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                title="Attach document or context"
-                className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors"
-              >
-                <Paperclip className="size-4" />
-              </button>
+              <>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) setSelectedAttachment(file);
+                    e.target.value = "";
+                  }}
+                />
+
+                <button
+                  type="button"
+                  title="Attach document or context"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors"
+                >
+                  <Paperclip className="size-4" />
+                </button>
+              </>
 
               <input
                 type="text"
                 value={followUpText}
                 onChange={(e) => setFollowUpText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && followUpText.trim()) {
+                  if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    handleAnswerChange("additional_context", followUpText);
-                    setFollowUpText("");
+                    handleDirectSubmit();
                   }
                 }}
                 placeholder="Add extra constraints, code snippets, or error messages..."
                 className="flex-1 bg-transparent text-[13px] text-slate-100 placeholder:text-slate-500 outline-none"
               />
 
+              {selectedAttachment && (
+                <div className="flex items-center gap-2 text-xs text-blue-300">
+                  <Paperclip className="size-3" />
+                  <span className="truncate">{selectedAttachment.name}</span>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAttachment(null)}
+                    title="Remove attachment"
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              )}
+
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (followUpText.trim()) {
-                      handleAnswerChange("additional_context", followUpText);
-                      setFollowUpText("");
-                    }
-                  }}
+                  onClick={handleDirectSubmit}
                   disabled={!followUpText.trim()}
                   className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white transition-all hover:bg-blue-500 disabled:opacity-40"
                 >
@@ -527,7 +672,10 @@ export default function ChatClarificationView({
               } else {
                 onUpdateAnswers?.({
                   target_audience: "B2B SaaS Founders & Product Managers",
-                  channels: ["Organic Social (LinkedIn & X)", "Content Marketing / SEO"],
+                  channels: [
+                    "Organic Social (LinkedIn & X)",
+                    "Content Marketing / SEO",
+                  ],
                   campaign_objective: "User Acquisition & Signups",
                   brand_voice: "Authoritative & Technical",
                   budget: "$1,500/month",
@@ -540,7 +688,11 @@ export default function ChatClarificationView({
                 setDetailsDialog({ kind: "general" });
                 return;
               }
-              handleAnswerChange("context_profile", "Production enterprise system, high throughput requirement");
+
+              handleAnswerChange(
+                "context_profile",
+                "Production enterprise system, high throughput requirement",
+              );
             }}
           />
         </div>
@@ -558,7 +710,9 @@ export default function ChatClarificationView({
             ? detailsDialog.gap.description
             : "Add constraints, background or preferences that Promptogen should consider."
         }
-        inputHint={detailsDialog?.kind === "gap" ? detailsDialog.gap.inputHint : null}
+        inputHint={
+          detailsDialog?.kind === "gap" ? detailsDialog.gap.inputHint : null
+        }
         initialValue={
           detailsDialog?.kind === "gap"
             ? savedAdditionFor(detailsDialog.gap.id)
