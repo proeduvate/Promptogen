@@ -33,6 +33,8 @@ export default function ChatResultView({
 }) {
   const [followUpText, setFollowUpText] = useState("");
   const [inlineAnswers, setInlineAnswers] = useState({});
+  const [followUpAttachment, setFollowUpAttachment] = useState(null);
+  const followUpFileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   const promptData = chat.generatedPromptData || {};
@@ -89,10 +91,13 @@ export default function ChatResultView({
   }, [conversation.length]);
 
   const handleFollowUpSubmit = () => {
-    if (!followUpText.trim()) return;
-    onFollowUp?.(followUpText.trim());
-    setFollowUpText("");
-  };
+  if (!followUpText.trim()) return;
+
+  onFollowUp?.(followUpText.trim(), followUpAttachment);
+
+  setFollowUpText("");
+  setFollowUpAttachment(null);
+};
 
   const handleInlineAnswerSelect = (questionId, option) => {
     setInlineAnswers((prev) => ({
@@ -112,10 +117,24 @@ export default function ChatResultView({
 
   const getAttachmentIcon = (type) => {
     const t = (type || "").toLowerCase();
-    if (t.includes("schema") || t.includes("sql") || t.includes("db")) return Database;
-    if (t.includes("image") || t.includes("screenshot") || t.includes("wireframe") || t.includes("mockup")) return Image;
-    if (t.includes("data") || t.includes("csv") || t.includes("excel")) return FileSpreadsheet;
-    if (t.includes("code") || t.includes("json") || t.includes("yaml") || t.includes("config")) return FileCode;
+    if (t.includes("schema") || t.includes("sql") || t.includes("db"))
+      return Database;
+    if (
+      t.includes("image") ||
+      t.includes("screenshot") ||
+      t.includes("wireframe") ||
+      t.includes("mockup")
+    )
+      return Image;
+    if (t.includes("data") || t.includes("csv") || t.includes("excel"))
+      return FileSpreadsheet;
+    if (
+      t.includes("code") ||
+      t.includes("json") ||
+      t.includes("yaml") ||
+      t.includes("config")
+    )
+      return FileCode;
     return FileText;
   };
 
@@ -148,13 +167,19 @@ export default function ChatResultView({
             // ── 2. Assistant Loading Indicator Turn ──
             if (msg.type === "loading") {
               return (
-                <div key={msg.id || idx} className="flex items-start gap-3 animate-pulse">
+                <div
+                  key={msg.id || idx}
+                  className="flex items-start gap-3 animate-pulse"
+                >
                   <div className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-600/20 text-blue-400 ring-1 ring-blue-500/30">
                     <Bot className="size-4" />
                   </div>
                   <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-[#091224]/80 px-4 py-3 text-[13px] text-blue-300 shadow-md">
                     <Loader2 className="size-4 animate-spin text-blue-400" />
-                    <span>{msg.message || "Analyzing conversation & synthesizing refined prompt..."}</span>
+                    <span>
+                      {msg.message ||
+                        "Analyzing conversation & synthesizing refined prompt..."}
+                    </span>
                   </div>
                 </div>
               );
@@ -170,7 +195,10 @@ export default function ChatResultView({
                   <div className="flex-1 space-y-3 rounded-2xl border border-blue-500/25 bg-[#091122]/95 p-5 shadow-lg backdrop-blur-xl">
                     <div className="flex items-center gap-2 text-[13.5px] font-semibold text-blue-300">
                       <HelpCircle className="size-4 text-blue-400" />
-                      <span>{msg.reasoning || "To accurately adapt this prompt, please clarify these details:"}</span>
+                      <span>
+                        {msg.reasoning ||
+                          "To accurately adapt this prompt, please clarify these details:"}
+                      </span>
                     </div>
 
                     <div className="space-y-4 pt-2">
@@ -181,12 +209,15 @@ export default function ChatResultView({
                           </label>
                           <div className="flex flex-wrap gap-2">
                             {(q.options || []).map((opt, oIdx) => {
-                              const isSelected = (inlineAnswers[q.id] || q.options[0]) === opt;
+                              const isSelected =
+                                (inlineAnswers[q.id] || q.options[0]) === opt;
                               return (
                                 <button
                                   key={oIdx}
                                   type="button"
-                                  onClick={() => handleInlineAnswerSelect(q.id, opt)}
+                                  onClick={() =>
+                                    handleInlineAnswerSelect(q.id, opt)
+                                  }
                                   className={`rounded-xl px-3 py-1.5 text-[12px] font-medium transition-all ${
                                     isSelected
                                       ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
@@ -223,7 +254,9 @@ export default function ChatResultView({
                     <AlertTriangle className="size-4" />
                   </div>
                   <div className="flex-1 rounded-2xl border border-red-500/30 bg-red-500/5 p-4 text-[13px] text-red-200">
-                    <p className="font-semibold text-red-300">Prompt refinement issue</p>
+                    <p className="font-semibold text-red-300">
+                      Prompt refinement issue
+                    </p>
                     <p className="mt-1 text-slate-300">{msg.error}</p>
                   </div>
                 </div>
@@ -231,9 +264,12 @@ export default function ChatResultView({
             }
 
             // ── 5. Assistant Structured Prompt Turn ──
-            const turnPromptData = msg.promptData || chat.generatedPromptData || {};
+            const turnPromptData =
+              msg.promptData || chat.generatedPromptData || {};
             const turnSections = turnPromptData.sections || [];
-            const turnAttachments = (turnPromptData.required_attachments || []).filter(Boolean);
+            const turnAttachments = (
+              turnPromptData.required_attachments || []
+            ).filter(Boolean);
 
             return (
               <div key={msg.id || idx} className="flex items-start gap-3">
@@ -247,10 +283,13 @@ export default function ChatResultView({
                     <div className="flex items-center gap-2">
                       <span className="rounded-full bg-blue-500/15 border border-blue-500/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-300 flex items-center gap-1.5">
                         <Sparkles className="size-3 text-blue-400" />
-                        {msg.versionLabel || `Version ${msg.version || idx + 1}`}
+                        {msg.versionLabel ||
+                          `Version ${msg.version || idx + 1}`}
                       </span>
                       <span className="text-[13px] text-slate-300 font-medium">
-                        {msg.version && msg.version > 1 ? "Refined Structured Prompt" : "Task-Adaptive Prompt"}
+                        {msg.version && msg.version > 1
+                          ? "Refined Structured Prompt"
+                          : "Task-Adaptive Prompt"}
                       </span>
                     </div>
                     <span className="text-[11px] text-slate-500">
@@ -271,11 +310,17 @@ export default function ChatResultView({
                               REQUIRED ATTACHMENTS & INPUT ASSETS
                             </h4>
                             <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10.5px] font-semibold text-amber-300">
-                              {turnAttachments.length} {turnAttachments.length === 1 ? "Asset" : "Assets"} To Attach
+                              {turnAttachments.length}{" "}
+                              {turnAttachments.length === 1
+                                ? "Asset"
+                                : "Assets"}{" "}
+                              To Attach
                             </span>
                           </div>
                           <p className="text-[12px] text-slate-300 mt-1 leading-relaxed">
-                            To execute this prompt with complete accuracy, attach or paste these context files when submitting this prompt to ChatGPT, Claude, or Gemini:
+                            To execute this prompt with complete accuracy,
+                            attach or paste these context files when submitting
+                            this prompt to ChatGPT, Claude, or Gemini:
                           </p>
                         </div>
                       </div>
@@ -283,10 +328,26 @@ export default function ChatResultView({
                       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                         {turnAttachments.map((att, i) => {
                           const Icon = getAttachmentIcon(att?.type);
-                          const name = typeof att === "string" ? att : (att?.name || "Asset");
-                          const desc = typeof att === "object" && att !== null ? (typeof att.description === "object" ? JSON.stringify(att.description) : (att.description || "")) : "";
-                          const fmt = typeof att === "object" && att !== null ? (typeof att.format_recommendation === "object" ? JSON.stringify(att.format_recommendation) : (att.format_recommendation || "")) : "";
-                          const isReq = typeof att === "object" && att !== null ? Boolean(att.required) : true;
+                          const name =
+                            typeof att === "string"
+                              ? att
+                              : att?.name || "Asset";
+                          const desc =
+                            typeof att === "object" && att !== null
+                              ? typeof att.description === "object"
+                                ? JSON.stringify(att.description)
+                                : att.description || ""
+                              : "";
+                          const fmt =
+                            typeof att === "object" && att !== null
+                              ? typeof att.format_recommendation === "object"
+                                ? JSON.stringify(att.format_recommendation)
+                                : att.format_recommendation || ""
+                              : "";
+                          const isReq =
+                            typeof att === "object" && att !== null
+                              ? Boolean(att.required)
+                              : true;
                           return (
                             <div
                               key={i}
@@ -332,19 +393,27 @@ export default function ChatResultView({
                   {/* Structured Prompt Card with Publish to Library provision */}
                   <StructuredPromptCard
                     score={turnPromptData.overall_score || msg.score || 92}
-                    label={(turnPromptData.overall_score || msg.score || 92) >= 90 ? "Excellent" : "Strong"}
+                    label={
+                      (turnPromptData.overall_score || msg.score || 92) >= 90
+                        ? "Excellent"
+                        : "Strong"
+                    }
                     sections={turnSections}
                     rawJson={turnPromptData}
-                    isPublished={Boolean(isSaved || chat.isPublished || chat.isSaved)}
+                    isPublished={Boolean(
+                      isSaved || chat.isPublished || chat.isSaved,
+                    )}
                     onPublishToLibrary={onSaveToLibrary}
                     onViewAnalytics={onViewAnalytics}
                     onImprove={() =>
                       onFollowUp?.(
-                        "Improve this prompt: maximize architectural determinism, add comprehensive edge cases, and eliminate all ambiguity."
+                        "Improve this prompt: maximize architectural determinism, add comprehensive edge cases, and eliminate all ambiguity.",
                       )
                     }
                     onTest={() => {
-                      alert("Feature coming soon: Direct model execution and playground is currently in development.");
+                      alert(
+                        "Feature coming soon: Direct model execution and playground is currently in development.",
+                      );
                     }}
                   />
                 </div>
@@ -357,9 +426,23 @@ export default function ChatResultView({
           {/* Bottom Chat Input Bar */}
           <div className="relative mt-6 rounded-2xl border border-[#1b2742] bg-[#0c1322]/95 p-3 shadow-xl backdrop-blur-xl">
             <div className="flex items-center gap-2">
+              <input
+                type="file"
+                ref={followUpFileInputRef}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setFollowUpAttachment(file);
+                  }
+                  e.target.value = "";
+                }}
+              />
+
               <button
                 type="button"
                 title="Attach context or document"
+                onClick={() => followUpFileInputRef.current?.click()}
                 className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors"
               >
                 <Paperclip className="size-4" />
@@ -393,15 +476,40 @@ export default function ChatResultView({
                   <ArrowUpRight className="size-4" />
                 </button>
               </div>
+               
             </div>
+         
+
+{followUpAttachment && (
+  <div className="mt-2 flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-xs text-blue-200 w-fit">
+    <Paperclip className="size-3.5 shrink-0" />
+    <span className="max-w-[220px] truncate">
+      {followUpAttachment.name}
+    </span>
+    <button
+      type="button"
+      onClick={() => setFollowUpAttachment(null)}
+      className="ml-1 text-slate-400 hover:text-white"
+      title="Remove attachment"
+    >
+      ×
+    </button>
+  </div>
+)}
+
+
           </div>
         </div>
 
         {/* Right Rail Panels */}
         <div className="flex flex-col space-y-4">
           <PromptDetailsPanel
-            modelName={chat.model || promptData.model || "Gemini 3.5 Flash-Lite"}
-            createdAt={chat.timestamp ? `Today at ${chat.timestamp}` : "Just now"}
+            modelName={
+              chat.model || promptData.model || "Gemini 3.5 Flash-Lite"
+            }
+            createdAt={
+              chat.timestamp ? `Today at ${chat.timestamp}` : "Just now"
+            }
             updatedAt="Just now"
             messagesCount={`${conversation.length} Messages in Thread`}
           />
@@ -409,14 +517,16 @@ export default function ChatResultView({
           <UsedContextPanel
             answers={chat.answers || {}}
             questions={chat.backendQuestions || []}
-            taskIntent={chat.taskIntent || chat.depthAnalysis?.task_intent || ""}
+            taskIntent={
+              chat.taskIntent || chat.depthAnalysis?.task_intent || ""
+            }
             onViewAllAnswers={() => {}}
           />
 
           <ResultQuickActionsPanel
             onRegenerate={() =>
               onFollowUp?.(
-                "Regenerate and deepen this prompt with maximum technical depth, determinism, and defensive edge-case handling."
+                "Regenerate and deepen this prompt with maximum technical depth, determinism, and defensive edge-case handling.",
               )
             }
             onCreateVersion={() => {

@@ -3,9 +3,10 @@
  * Defaults to relative '/api/v1' for unified Vercel deployment and local Vite proxy.
  */
 
-const API_BASE = (import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.trim())
-  ? import.meta.env.VITE_API_BASE_URL.trim()
-  : "/api/v1";
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.trim()
+    ? import.meta.env.VITE_API_BASE_URL.trim()
+    : "/api/v1";
 
 export function getAuthToken() {
   try {
@@ -61,8 +62,12 @@ async function request(path, options = {}) {
           errorDetail = errorJson.detail
             .map((item) => {
               if (typeof item === "string") return item;
-              const field = item.loc ? item.loc.filter((l) => l !== "body").join(".") : "";
-              return field ? `${field}: ${item.msg}` : (item.msg || JSON.stringify(item));
+              const field = item.loc
+                ? item.loc.filter((l) => l !== "body").join(".")
+                : "";
+              return field
+                ? `${field}: ${item.msg}`
+                : item.msg || JSON.stringify(item);
             })
             .join("; ");
         } else if (typeof errorJson.detail === "string") {
@@ -84,7 +89,10 @@ async function request(path, options = {}) {
 
     return await res.json();
   } catch (error) {
-    console.warn(`[API Error] ${options.method || "GET"} ${path}:`, error.message);
+    console.warn(
+      `[API Error] ${options.method || "GET"} ${path}:`,
+      error.message,
+    );
     throw error;
   }
 }
@@ -107,7 +115,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "gemini",
     provider_label: "Google Gemini",
     badge: "Recommended (Free Tier)",
-    description: "Ultra low-latency multimodal reasoning with high active throughput on Google free tier",
+    description:
+      "Ultra low-latency multimodal reasoning with high active throughput on Google free tier",
     free_tier: true,
     recommended: true,
     limits: "15 RPM / 1M TPM / 1,500 RPD",
@@ -119,7 +128,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "gemini",
     provider_label: "Google Gemini",
     badge: "High Throughput",
-    description: "Cost-efficient, high-throughput extraction and classification on Google infrastructure",
+    description:
+      "Cost-efficient, high-throughput extraction and classification on Google infrastructure",
     free_tier: true,
     recommended: false,
     limits: "30 RPM / 1M TPM / 1,500 RPD",
@@ -131,7 +141,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "gemini",
     provider_label: "Google Gemini",
     badge: "Next-Gen Reasoning",
-    description: "Next-generation multimodal reasoning and complex structured prompt synthesis",
+    description:
+      "Next-generation multimodal reasoning and complex structured prompt synthesis",
     free_tier: true,
     recommended: false,
     limits: "15 RPM / 1M TPM / 1,500 RPD",
@@ -143,7 +154,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "gemini",
     provider_label: "Google Gemini",
     badge: "Flagship Multimodal",
-    description: "Google's latest flagship high-speed architecture with advanced analytical depth",
+    description:
+      "Google's latest flagship high-speed architecture with advanced analytical depth",
     free_tier: true,
     recommended: false,
     limits: "15 RPM / 1M TPM / 1,500 RPD",
@@ -155,7 +167,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "groq",
     provider_label: "Groq",
     badge: "300+ Tokens/Sec",
-    description: "Meta's flagship open model running on Groq LPUs at 300+ tokens/second",
+    description:
+      "Meta's flagship open model running on Groq LPUs at 300+ tokens/second",
     free_tier: false,
     recommended: false,
   },
@@ -166,7 +179,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "groq",
     provider_label: "Groq",
     badge: "Instant Latency",
-    description: "Sub-second response times for rapid question generation and refinement",
+    description:
+      "Sub-second response times for rapid question generation and refinement",
     free_tier: false,
     recommended: false,
   },
@@ -177,7 +191,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "openai",
     provider_label: "OpenAI",
     badge: "Fast & Efficient",
-    description: "Affordable, lightweight model optimized for high-volume structured outputs",
+    description:
+      "Affordable, lightweight model optimized for high-volume structured outputs",
     free_tier: false,
     recommended: false,
   },
@@ -188,7 +203,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "anthropic",
     provider_label: "Anthropic",
     badge: "Fast & Nuanced",
-    description: "Next-generation high-speed Claude model with exceptional instruction following",
+    description:
+      "Next-generation high-speed Claude model with exceptional instruction following",
     free_tier: false,
     recommended: false,
   },
@@ -199,7 +215,8 @@ export const GEMINI_FREE_TIER_MODELS = [
     provider: "gemini",
     provider_label: "Google Gemini",
     badge: "Routed to 3.5 Flash-Lite",
-    description: "Legacy alias routed automatically to active Gemini 3.5 Flash-Lite",
+    description:
+      "Legacy alias routed automatically to active Gemini 3.5 Flash-Lite",
     free_tier: true,
     recommended: false,
   },
@@ -212,7 +229,10 @@ export async function fetchAvailableModels() {
       return data;
     }
   } catch (err) {
-    console.warn("Could not fetch models from backend, using fallback list:", err.message);
+    console.warn(
+      "Could not fetch models from backend, using fallback list:",
+      err.message,
+    );
   }
   return {
     models: GEMINI_FREE_TIER_MODELS,
@@ -234,8 +254,15 @@ export function resolveProviderForModel(modelId, modelsList = []) {
 
   const id = modelId.toLowerCase();
   if (id.includes("claude")) return "anthropic";
-  if (id.includes("llama") || id.includes("mixtral") || id.includes("gemma") || id.includes("qwen")) return "groq";
-  if (id.includes("gpt") || id.includes("o1") || id.includes("o3")) return "openai";
+  if (
+    id.includes("llama") ||
+    id.includes("mixtral") ||
+    id.includes("gemma") ||
+    id.includes("qwen")
+  )
+    return "groq";
+  if (id.includes("gpt") || id.includes("o1") || id.includes("o3"))
+    return "openai";
   return "gemini";
 }
 
@@ -271,10 +298,16 @@ export async function continuePipeline(threadId, answers, options = {}) {
   if (options.apiKey) payload.api_key = options.apiKey;
   // Extra context for generation. Sent only when present; the current backend ignores
   // unknown fields, so this is forward-compatible with the readiness contract.
-  if (Array.isArray(options.contextAdditions) && options.contextAdditions.length > 0) {
+  if (
+    Array.isArray(options.contextAdditions) &&
+    options.contextAdditions.length > 0
+  ) {
     payload.context_additions = options.contextAdditions;
   }
-  if (typeof options.additionalContext === "string" && options.additionalContext.trim()) {
+  if (
+    typeof options.additionalContext === "string" &&
+    options.additionalContext.trim()
+  ) {
     payload.additional_context = options.additionalContext.trim();
   }
 
@@ -294,8 +327,10 @@ export async function followUpPipeline(threadId, message, options = {}) {
     provider,
   };
   if (options.apiKey) payload.api_key = options.apiKey;
+  if (options.attachment) payload.attachment = options.attachment;
   if (options.currentPrompt) payload.current_prompt = options.currentPrompt;
-  if (options.currentSections) payload.current_sections = options.currentSections;
+  if (options.currentSections)
+    payload.current_sections = options.currentSections;
   if (options.historySummary) payload.history_summary = options.historySummary;
 
   return request("/pipeline/followup", {
@@ -317,6 +352,16 @@ export async function analyzeReadinessViaApi(payload, { signal } = {}) {
     method: "POST",
     body: JSON.stringify(payload),
     ...(signal ? { signal } : {}),
+  });
+}
+
+export async function generatePrompt(originalQuery, answers = []) {
+  return request("/generate-prompt", {
+    method: "POST",
+    body: JSON.stringify({
+      original_query: originalQuery,
+      answers,
+    }),
   });
 }
 
@@ -442,4 +487,3 @@ export async function logoutUser() {
 export async function resetRateLimit() {
   return request("/auth/reset-rate-limit", { method: "POST" });
 }
-
