@@ -67,70 +67,54 @@ export default function LoginPage({ onLoginSuccess, onBack }) {
     setError("");
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-    // Production Google OAuth2 flow attached directly to our custom UI button
-    if (clientId && window.google?.accounts?.oauth2) {
-      setLoading(true);
-      try {
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: "openid email profile",
-          callback: async (tokenResponse) => {
-            if (tokenResponse?.error) {
-              setError(`Google authentication failed: ${tokenResponse.error_description || tokenResponse.error}`);
-              setLoading(false);
-              return;
-            }
-            if (!tokenResponse?.access_token) {
-              setError("No access token received from Google.");
-              setLoading(false);
-              return;
-            }
-
-            try {
-              // Send verified access token to backend for production verification and user sync
-              const res = await loginWithGoogle({ access_token: tokenResponse.access_token });
-              if (res?.user) {
-                setSuccessMsg("Signed in with Google successfully!");
-                setTimeout(() => {
-                  onLoginSuccess?.(res.user);
-                }, 400);
-              }
-            } catch (err) {
-              setError(err.message || "Failed to authenticate with backend.");
-            } finally {
-              setLoading(false);
-            }
-          },
-        });
-
-        tokenClient.requestAccessToken();
-        return;
-      } catch (err) {
-        console.warn("Google token client init failed, falling back to direct sign-in:", err);
-      }
+    if (!clientId) {
+      setError("Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in your frontend .env file.");
+      return;
     }
 
-    // Direct fallback for offline/test environments or when client ID is missing
+    if (!window.google?.accounts?.oauth2) {
+      setError("Google Identity services are loading or blocked by your browser. Please refresh and try again.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const googleEmail = email && email.includes("@") ? email.trim() : "dhanush@proeduvate.com";
-      const googleName = name ? name.trim() : "Dhanush C";
-      const res = await loginWithGoogle({
-        email: googleEmail,
-        name: googleName,
-        picture: "https://lh3.googleusercontent.com/a/default-user",
-        google_id: "google_oauth_" + Math.random().toString(36).substring(2, 9),
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: "openid email profile",
+        callback: async (tokenResponse) => {
+          if (tokenResponse?.error) {
+            setError(`Google authentication failed: ${tokenResponse.error_description || tokenResponse.error}`);
+            setLoading(false);
+            return;
+          }
+          if (!tokenResponse?.access_token) {
+            setError("No access token received from Google.");
+            setLoading(false);
+            return;
+          }
+
+          try {
+            // Send verified access token to backend for production verification and user sync
+            const res = await loginWithGoogle({ access_token: tokenResponse.access_token });
+            if (res?.user) {
+              setSuccessMsg("Signed in with Google successfully!");
+              setTimeout(() => {
+                onLoginSuccess?.(res.user);
+              }, 400);
+            }
+          } catch (err) {
+            setError(err.message || "Failed to authenticate with backend.");
+          } finally {
+            setLoading(false);
+          }
+        },
       });
 
-      if (res?.user) {
-        setSuccessMsg("Authenticated with Google successfully!");
-        setTimeout(() => {
-          onLoginSuccess?.(res.user);
-        }, 400);
-      }
+      tokenClient.requestAccessToken({ prompt: "select_account" });
     } catch (err) {
-      setError(err.message || "Google authentication failed.");
-    } finally {
+      console.error("Google token client init failed:", err);
+      setError("Failed to initialize Google Sign-In: " + (err.message || String(err)));
       setLoading(false);
     }
   };

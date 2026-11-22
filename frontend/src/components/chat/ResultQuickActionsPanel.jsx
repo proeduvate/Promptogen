@@ -8,6 +8,7 @@ export default function ResultQuickActionsPanel({
   onExport,
   onViewAnalytics,
   isSaved = false,
+  disabled = false,
 }) {
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -23,7 +24,8 @@ export default function ResultQuickActionsPanel({
         <button
           type="button"
           onClick={onRegenerate}
-          className="group flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white"
+          disabled={disabled}
+          className="group flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-slate-300"
         >
           <RefreshCw className="size-3.5 text-slate-400 group-hover:text-blue-400 transition-transform group-hover:rotate-180 duration-500" />
           <span>Regenerate Prompt</span>
@@ -33,7 +35,8 @@ export default function ResultQuickActionsPanel({
         <button
           type="button"
           onClick={onCreateVersion}
-          className="group flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white"
+          disabled={disabled}
+          className="group flex w-full items-center gap-2.5 rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-slate-300"
         >
           <CopyPlus className="size-3.5 text-slate-400 group-hover:text-blue-400" />
           <span>Create a New Version</span>
@@ -43,7 +46,8 @@ export default function ResultQuickActionsPanel({
         <button
           type="button"
           onClick={onViewAnalytics}
-          className="group flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white"
+          disabled={disabled}
+          className="group flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-slate-300"
         >
           <div className="flex items-center gap-2.5">
             <BarChart2 className="size-3.5 text-blue-400 group-hover:scale-110 transition-transform" />
@@ -56,11 +60,13 @@ export default function ResultQuickActionsPanel({
         <button
           type="button"
           onClick={onSaveToLibrary}
-          disabled={isSaved}
+          disabled={disabled || isSaved}
           className={`group flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-2 text-left font-medium transition-colors ${
             isSaved
               ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20 cursor-default"
-              : "text-slate-300 hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white"
+              : disabled
+                ? "text-slate-300 opacity-40 cursor-not-allowed"
+                : "text-slate-300 hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white"
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -76,8 +82,9 @@ export default function ResultQuickActionsPanel({
         <div className="relative">
           <button
             type="button"
-            onClick={() => setExportOpen(!exportOpen)}
-            className="group flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white"
+            disabled={disabled}
+            onClick={() => !disabled && setExportOpen(!exportOpen)}
+            className="group flex w-full items-center justify-between rounded-xl border border-transparent px-3 py-2 text-left font-medium text-slate-300 transition-colors hover:border-[#1b2740] hover:bg-[#0c1426] hover:text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-transparent disabled:hover:bg-transparent disabled:hover:text-slate-300"
           >
             <div className="flex items-center gap-2.5">
               <Download className="size-3.5 text-slate-400 group-hover:text-blue-400" />

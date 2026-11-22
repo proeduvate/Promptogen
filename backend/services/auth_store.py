@@ -127,7 +127,7 @@ class AuthStore:
                 # Update existing user profile with Google metadata
                 if google_id and not existing.get("google_id"):
                     existing["google_id"] = google_id
-                if avatar_url and not existing.get("avatar_url"):
+                if avatar_url:
                     existing["avatar_url"] = avatar_url
                 if not existing.get("name") or existing.get("name") == "Google User":
                     existing["name"] = name.strip()

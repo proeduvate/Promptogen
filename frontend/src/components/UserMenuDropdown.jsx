@@ -1,4 +1,5 @@
 import { Settings, HelpCircle, Crown, LogOut } from "lucide-react";
+import UserAvatar from "./common/UserAvatar";
 
 export default function UserMenuDropdown({
   isOpen,
@@ -19,17 +20,7 @@ export default function UserMenuDropdown({
     <div className="absolute right-0 top-14 z-50 w-64 rounded-2xl border border-[#1b2740] bg-[#0c1322]/95 p-3 shadow-2xl shadow-black/80 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
       {/* Profile Header */}
       <div className="flex items-center gap-3 p-2">
-        {user?.avatar_url ? (
-          <img
-            src={user.avatar_url}
-            alt={displayName}
-            className="size-10 shrink-0 rounded-xl object-cover ring-1 ring-white/10"
-          />
-        ) : (
-          <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-[15px] font-semibold text-white ring-1 ring-white/10 shadow-sm">
-            {initial}
-          </div>
-        )}
+        <UserAvatar user={user} size="lg" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14px] font-semibold text-white">
             {displayName}

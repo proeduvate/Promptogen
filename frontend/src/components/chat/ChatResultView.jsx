@@ -30,6 +30,7 @@ export default function ChatResultView({
   onExport,
   onViewAnalytics,
   isSaved,
+  isGenerating = false,
 }) {
   const [followUpText, setFollowUpText] = useState("");
   const [inlineAnswers, setInlineAnswers] = useState({});
@@ -37,38 +38,71 @@ export default function ChatResultView({
   const followUpFileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  const promptData = chat.generatedPromptData || {};
+  const isCurrentlyGenerating = Boolean(isGenerating || chat?.isSubmitting);
+  const promptData = chat?.generatedPromptData || {};
 
   // Build the conversation history from chat.conversation or generate the baseline
-  const conversation =
-    chat.conversation && chat.conversation.length > 0
-      ? chat.conversation
-      : [
-          {
-            id: "msg_u_init",
-            role: "user",
-            text: chat.query || "Create a structured prompt",
-            timestamp: chat.timestamp || "Just now",
-          },
-          {
-            id: "msg_p_1",
-            role: "assistant",
-            type: "prompt",
-            version: 1,
-            versionLabel: "v1: Initial Synthesis",
-            title: chat.title || "Optimized Prompt",
-            promptData: promptData,
-            score: promptData.overall_score || chat.score || 92,
-            timestamp: chat.timestamp || "Just now",
-          },
-        ];
+  let conversation =
+    chat?.conversation && chat.conversation.length > 0
+      ? [...chat.conversation]
+      : [];
+
+  const userInitialMsg = {
+    id: "msg_u_init",
+    role: "user",
+    text: chat?.query || "Create a structured prompt",
+    timestamp: chat?.timestamp || "Just now",
+    attachment: chat?.attachment,
+  };
+
+  if (conversation.length === 0) {
+    if (isCurrentlyGenerating) {
+      conversation = [
+        userInitialMsg,
+        {
+          id: "msg_generating_loader",
+          role: "assistant",
+          type: "loading",
+          message:
+            chat?.status ||
+            "Synthesizing final adaptive prompt...",
+          timestamp: "Just now",
+        },
+      ];
+    } else {
+      conversation = [
+        userInitialMsg,
+        {
+          id: "msg_p_1",
+          role: "assistant",
+          type: "prompt",
+          version: 1,
+          versionLabel: "v1: Initial Synthesis",
+          title: chat?.title || "Optimized Prompt",
+          promptData: promptData,
+          score: promptData.overall_score || chat?.score || 92,
+          timestamp: chat?.timestamp || "Just now",
+        },
+      ];
+    }
+  } else if (isCurrentlyGenerating && !conversation.some((m) => m.type === "loading")) {
+    conversation.push({
+      id: "msg_generating_loader",
+      role: "assistant",
+      type: "loading",
+      message:
+        chat?.status ||
+        "Synthesizing final adaptive prompt...",
+      timestamp: "Just now",
+    });
+  }
 
   const prevCountRef = useRef(conversation.length);
 
-  // Auto-scroll to latest message ONLY when a new message is appended during active chat
+  // Auto-scroll to latest message ONLY when a new message is appended during active chat or generating starts
   useEffect(() => {
-    // Only scroll if a new message was added after initial mount
-    if (conversation.length > prevCountRef.current) {
+    // Only scroll if a new message was added after initial mount or when generating
+    if (conversation.length > prevCountRef.current || isCurrentlyGenerating) {
       // Guard: do not scroll if the view is in an exiting transition state or hidden
       if (
         !messagesEndRef.current ||
@@ -79,8 +113,8 @@ export default function ChatResultView({
         return;
       }
 
-      const scrollContainer = messagesEndRef.current.closest("main");
-      if (scrollContainer) {
+      const scrollContainer = messagesEndRef.current.closest("main") || messagesEndRef.current.closest(".overflow-y-auto");
+      if (scrollContainer && typeof scrollContainer.scrollTo === "function") {
         scrollContainer.scrollTo({
           top: scrollContainer.scrollHeight,
           behavior: "smooth",
@@ -88,7 +122,7 @@ export default function ChatResultView({
       }
     }
     prevCountRef.current = conversation.length;
-  }, [conversation.length]);
+  }, [conversation.length, isCurrentlyGenerating]);
 
   const handleFollowUpSubmit = () => {
   if (!followUpText.trim()) return;
@@ -169,17 +203,30 @@ export default function ChatResultView({
               return (
                 <div
                   key={msg.id || idx}
-                  className="flex items-start gap-3 animate-pulse"
+                  className="flex items-start gap-3"
                 >
-                  <div className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-600/20 text-blue-400 ring-1 ring-blue-500/30">
+                  <div className="relative grid size-8 shrink-0 place-items-center rounded-full bg-blue-600/20 text-blue-400 ring-1 ring-blue-500/30">
                     <Bot className="size-4" />
+                    <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-blue-400 animate-ping" />
                   </div>
-                  <div className="flex items-center gap-3 rounded-2xl border border-blue-500/20 bg-[#091224]/80 px-4 py-3 text-[13px] text-blue-300 shadow-md">
-                    <Loader2 className="size-4 animate-spin text-blue-400" />
-                    <span>
-                      {msg.message ||
-                        "Analyzing conversation & synthesizing refined prompt..."}
-                    </span>
+                  <div className="flex-1 max-w-2xl rounded-2xl border border-blue-500/30 bg-[#091224]/90 p-4 shadow-lg backdrop-blur-md">
+                    <div className="flex items-center justify-between gap-3 pb-2 border-b border-[#172339]">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="size-4 animate-spin text-blue-400" />
+                        <span className="text-[13.5px] font-semibold text-slate-100">
+                          {msg.message || "Synthesizing final adaptive prompt..."}
+                        </span>
+                      </div>
+                      {/* Typing indicator dots */}
+                      <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400">
+                        <span className="size-1.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.3s]" />
+                        <span className="size-1.5 rounded-full bg-blue-400 animate-bounce [animation-delay:-0.15s]" />
+                        <span className="size-1.5 rounded-full bg-blue-400 animate-bounce" />
+                      </div>
+                    </div>
+                    <p className="mt-2.5 text-[12.5px] leading-relaxed text-slate-400">
+                      Packaging task context, dynamic requirements, edge cases, and input assets with {chat?.model || "AI Model"}. The generated prompt will appear here once synthesis is complete.
+                    </p>
                   </div>
                 </div>
               );
@@ -215,6 +262,7 @@ export default function ChatResultView({
                                 <button
                                   key={oIdx}
                                   type="button"
+                                  disabled={isCurrentlyGenerating}
                                   onClick={() =>
                                     handleInlineAnswerSelect(q.id, opt)
                                   }
@@ -222,7 +270,7 @@ export default function ChatResultView({
                                     isSelected
                                       ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
                                       : "border border-[#1b2740] bg-[#0c1426] text-slate-300 hover:border-slate-500"
-                                  }`}
+                                  } ${isCurrentlyGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
                                 >
                                   {opt}
                                 </button>
@@ -235,8 +283,9 @@ export default function ChatResultView({
 
                     <button
                       type="button"
+                      disabled={isCurrentlyGenerating}
                       onClick={() => handleInlineClarificationSubmit(msg)}
-                      className="mt-3 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-[12.5px] font-semibold text-white shadow-md transition-all hover:bg-blue-500 active:scale-95"
+                      className="mt-3 flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-[12.5px] font-semibold text-white shadow-md transition-all hover:bg-blue-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       <span>Submit Answers & Refine Prompt</span>
                       <ArrowUpRight className="size-4" />
@@ -441,9 +490,10 @@ export default function ChatResultView({
 
               <button
                 type="button"
-                title="Attach context or document"
+                title={isCurrentlyGenerating ? "Prompt generation in progress" : "Attach context or document"}
+                disabled={isCurrentlyGenerating}
                 onClick={() => followUpFileInputRef.current?.click()}
-                className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors"
+                className="grid size-8 place-items-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Paperclip className="size-4" />
               </button>
@@ -451,29 +501,40 @@ export default function ChatResultView({
               <input
                 type="text"
                 value={followUpText}
+                disabled={isCurrentlyGenerating}
                 onChange={(e) => setFollowUpText(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
+                  if (e.key === "Enter" && !e.shiftKey && !isCurrentlyGenerating) {
                     e.preventDefault();
                     handleFollowUpSubmit();
                   }
                 }}
-                placeholder="Ask a follow-up or refine the prompt (e.g. 'Add Redis caching', 'Support PostgreSQL RLS')..."
-                className="flex-1 bg-transparent text-[13px] text-slate-100 placeholder:text-slate-500 outline-none"
+                placeholder={
+                  isCurrentlyGenerating
+                    ? "Synthesizing prompt, please wait..."
+                    : "Ask a follow-up or refine the prompt (e.g. 'Add Redis caching', 'Support PostgreSQL RLS')..."
+                }
+                className={`flex-1 bg-transparent text-[13px] text-slate-100 placeholder:text-slate-500 outline-none ${
+                  isCurrentlyGenerating ? "cursor-not-allowed opacity-60" : ""
+                }`}
               />
 
               <div className="flex items-center gap-3">
                 <span className="hidden sm:inline text-[11px] text-slate-500">
-                  Shift + Enter for new line
+                  {isCurrentlyGenerating ? "Generating..." : "Shift + Enter for new line"}
                 </span>
 
                 <button
                   type="button"
                   onClick={handleFollowUpSubmit}
-                  disabled={!followUpText.trim()}
-                  className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white transition-all hover:bg-blue-500 active:scale-95 disabled:opacity-40"
+                  disabled={isCurrentlyGenerating || !followUpText.trim()}
+                  className="grid size-8 place-items-center rounded-xl bg-blue-600 text-white transition-all hover:bg-blue-500 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  <ArrowUpRight className="size-4" />
+                  {isCurrentlyGenerating ? (
+                    <Loader2 className="size-4 animate-spin text-white" />
+                  ) : (
+                    <ArrowUpRight className="size-4" />
+                  )}
                 </button>
               </div>
                
@@ -488,8 +549,9 @@ export default function ChatResultView({
     </span>
     <button
       type="button"
+      disabled={isCurrentlyGenerating}
       onClick={() => setFollowUpAttachment(null)}
-      className="ml-1 text-slate-400 hover:text-white"
+      className="ml-1 text-slate-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
       title="Remove attachment"
     >
       ×
@@ -524,6 +586,7 @@ export default function ChatResultView({
           />
 
           <ResultQuickActionsPanel
+            disabled={isCurrentlyGenerating}
             onRegenerate={() =>
               onFollowUp?.(
                 "Regenerate and deepen this prompt with maximum technical depth, determinism, and defensive edge-case handling.",

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Sun, Moon, Bell, ChevronDown, Menu, LogIn, Lock } from "lucide-react";
 import UserMenuDropdown from "./UserMenuDropdown";
+import UserAvatar from "./common/UserAvatar";
 
 export default function TopNavHeader({
   theme,
@@ -102,17 +103,7 @@ export default function TopNavHeader({
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex items-center gap-1.5 rounded-full p-1 pl-1.5 text-slate-200 transition-colors hover:bg-white/5"
             >
-              {user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={displayName}
-                  className="size-8 rounded-full object-cover ring-1 ring-white/10"
-                />
-              ) : (
-                <div className="grid size-8 place-items-center rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-[13px] font-semibold text-white ring-1 ring-white/10 shadow-sm">
-                  {initial}
-                </div>
-              )}
+              <UserAvatar user={user} size="md" />
               <ChevronDown className="size-3.5 text-slate-400" />
             </button>
 

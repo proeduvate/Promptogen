@@ -16,8 +16,10 @@ from core.config import settings
 from core.database import database
 from graph.workflow import clarify_workflow, gen_assess_workflow
 from schemas.prompt_generation import PipelineFollowUpRequest, PipelineFollowUpResponse
+from schemas.readiness import ReadinessAnalysisRequest, ReadinessAnalysisResponse
 from services.auth_store import auth_store
 from services.prompt_generation.service import PromptGenerationService
+from services.readiness_service import ReadinessService
 
 logger = logging.getLogger("promptgen.api.pipeline")
 
@@ -109,6 +111,8 @@ class PipelineContinueRequest(BaseModel):
     model: Optional[str] = "gemini-3.5-flash-lite"
     api_key: Optional[str] = None
     provider: Optional[str] = None
+    context_additions: Optional[List[dict]] = None
+    additional_context: Optional[str] = None
 
 
 class PipelineContinueResponse(BaseModel):
@@ -300,6 +304,29 @@ async def start_pipeline(
 
 
 @router.post(
+    "/readiness",
+    response_model=ReadinessAnalysisResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Analyze prompt readiness and missing context",
+    description="Evaluates user answers, context additions, and original requirements to provide real-time readiness scoring, missing context detection, and generation policy gating.",
+)
+async def analyze_readiness(
+    request: ReadinessAnalysisRequest,
+) -> ReadinessAnalysisResponse:
+    stored = None
+    if database.enabled and database.is_connected:
+        try:
+            stored = await database.get_prompt_creation(request.thread_id)
+        except Exception as db_err:
+            logger.warning("Database lookup warning for readiness: %s", db_err)
+
+    if stored is None:
+        stored = _state_store.get(request.thread_id)
+
+    return ReadinessService.analyze(request, stored)
+
+
+@router.post(
     "/continue",
     response_model=PipelineContinueResponse,
     status_code=status.HTTP_200_OK,
@@ -311,7 +338,7 @@ async def continue_pipeline(
     current_user: Optional[dict] = Depends(get_optional_current_user),
 ) -> PipelineContinueResponse:
     stored = None
-    if database.enabled:
+    if database.enabled and database.is_connected:
         try:
             stored = await database.get_prompt_creation(request.thread_id)
         except Exception as db_err:
@@ -360,11 +387,23 @@ async def continue_pipeline(
         },
     }
 
+    effective_query = stored["original_query"]
+    if request.context_additions:
+        additions_str = "\n".join(
+            f"- {add.get('label') or add.get('gap_id')}: {add.get('value')}"
+            for add in request.context_additions
+            if add.get("value")
+        )
+        if additions_str:
+            effective_query += f"\n\n[Additional Context Additions]:\n{additions_str}"
+    if request.additional_context and request.additional_context.strip():
+        effective_query += f"\n\n[User Extra Instructions]:\n{request.additional_context.strip()}"
+
     try:
         with _lc_context():
             result = await gen_assess_workflow.ainvoke(
                 {
-                    "original_query": stored["original_query"],
+                    "original_query": effective_query,
                     "answers": answers_payload,
                     "model": request.model,
                     "api_key": request.api_key,
@@ -471,7 +510,7 @@ async def pipeline_followup(
     current_user: Optional[dict] = Depends(get_optional_current_user),
 ) -> PipelineFollowUpResponse:
     stored = None
-    if database.enabled:
+    if database.enabled and database.is_connected:
         try:
             stored = await database.get_prompt_creation(request.thread_id)
         except Exception as db_err:

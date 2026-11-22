@@ -86,16 +86,21 @@ class Database:
         return url
 
     async def connect(self) -> None:
+        import os
+        import sys
+        is_test_env = "pytest" in sys.modules or os.getenv("TESTING") == "true"
+
         if not self.enabled:
-            import os
-            import sys
-            is_test_env = "pytest" in sys.modules or os.getenv("TESTING") == "true"
             if is_test_env:
                 logger.info("DATABASE_URL is not configured; running in test mode without PostgreSQL")
                 return
             raise RuntimeError(
                 "DATABASE_URL is not configured. Database connection is required; in-memory fallback is disabled."
             )
+
+        if is_test_env and os.getenv("TEST_REAL_DATABASE") != "true":
+            logger.info("Test environment detected; skipping live database connection")
+            return
 
         if self._pool is not None:
             return

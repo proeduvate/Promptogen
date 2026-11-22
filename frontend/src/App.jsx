@@ -416,10 +416,10 @@ export default function App() {
     setSidebarCollapsed(false);
 
     if (normalized === "home") {
-      if (activeChat && !activeChat.isComplete) {
-        setHomeView("chat");
-      } else if (activeChat && activeChat.isComplete) {
+      if (activeChat && (activeChat.isComplete || activeChat.isSubmitting || isGenerating)) {
         setHomeView("result");
+      } else if (activeChat) {
+        setHomeView("chat");
       } else {
         setHomeView("landing");
       }
@@ -449,7 +449,7 @@ export default function App() {
     setSidebarCollapsed(false);
     setIsSaved(Boolean(chatItem.isSaved));
 
-    if (chatItem.isComplete) {
+    if (chatItem.isComplete || chatItem.isSubmitting) {
       setHomeView("result");
     } else {
       setHomeView("chat");
@@ -740,19 +740,54 @@ export default function App() {
 
     const currentChat = activeChat;
     const answersToUse = finalAnswers || currentChat.answers || {};
+    const modelToUse = currentChat.model || selectedModel;
 
-    // Immediately transition homeView to "result" and show synthesis loader
+    const initialLoadingConv = [
+      {
+        id: `msg_u_init`,
+        role: "user",
+        text: currentChat.query || "Create a structured prompt",
+        timestamp: currentChat.timestamp || formatTimestamp(),
+        attachment: currentChat.attachment,
+      },
+      {
+        id: `msg_load_${Date.now()}`,
+        role: "assistant",
+        type: "loading",
+        message: `Synthesizing final adaptive prompt with ${modelToUse}...`,
+        timestamp: formatTimestamp(),
+      },
+    ];
+
+    // Immediately transition homeView to "result" and show chat interface with loading turn
     setHomeView("result");
     setIsGenerating(true);
     setPipelineError(null);
 
-    // Set loading state on chat
+    // Set loading state on chat and establish loading turn in conversation
     setChats((prev) =>
       prev.map((group) => ({
         ...group,
         items: group.items.map((item) =>
           item.id === currentChat.id
-            ? { ...item, isSubmitting: true, status: "Optimizing prompt..." }
+            ? {
+                ...item,
+                isSubmitting: true,
+                status: "Optimizing prompt...",
+                conversation:
+                  item.conversation && item.conversation.length > 0
+                    ? [
+                        ...item.conversation.filter((m) => m.type !== "loading"),
+                        {
+                          id: `msg_load_${Date.now()}`,
+                          role: "assistant",
+                          type: "loading",
+                          message: `Synthesizing final adaptive prompt with ${modelToUse}...`,
+                          timestamp: formatTimestamp(),
+                        },
+                      ]
+                    : initialLoadingConv,
+              }
             : item,
         ),
       })),
@@ -768,17 +803,14 @@ export default function App() {
         });
 
         if (formattedAnswers.length > 0) {
-          const modelToUse = currentChat.model || selectedModel;
-
-result = await continuePipeline(currentChat.threadId, formattedAnswers, {
-  model: modelToUse,
-  apiKey: getKeyForModel(modelToUse),
-  provider: resolveProviderForModel(modelToUse),
-  // Saved Add Details entries and free-form context travel with generation.
-  contextAdditions: toContextAdditionsPayload(currentChat.contextAdditions),
-  additionalContext: String(answersToUse.additional_context || ""),
-});
-
+          result = await continuePipeline(currentChat.threadId, formattedAnswers, {
+            model: modelToUse,
+            apiKey: getKeyForModel(modelToUse),
+            provider: resolveProviderForModel(modelToUse),
+            // Saved Add Details entries and free-form context travel with generation.
+            contextAdditions: toContextAdditionsPayload(currentChat.contextAdditions),
+            additionalContext: String(answersToUse.additional_context || ""),
+          });
         }
       }
 
@@ -795,54 +827,59 @@ result = await continuePipeline(currentChat.threadId, formattedAnswers, {
         model: selectedModel,
       };
 
-      const initialConversation = [
-        {
-          id: `msg_u_init`,
-          role: "user",
-          text: currentChat.query,
-          timestamp: currentChat.timestamp || formatTimestamp(),
-        },
-        {
-          id: `msg_p_1`,
-          role: "assistant",
-          type: "prompt",
-          version: 1,
-          versionLabel: "v1: Initial Synthesis",
-          title: result.prompt_title || currentChat.title,
-          promptData: finalPromptData,
-          score: result.overall_score || 90,
-          timestamp: formatTimestamp(),
-        },
-      ];
+      const finalPromptMsg = {
+        id: `msg_p_${Date.now()}`,
+        role: "assistant",
+        type: "prompt",
+        version: 1,
+        versionLabel: "v1: Initial Synthesis",
+        title: result.prompt_title || currentChat.title,
+        promptData: finalPromptData,
+        score: result.overall_score || 90,
+        timestamp: formatTimestamp(),
+      };
 
       // Update chat with real generated adaptive prompt data
       setChats((prev) =>
         prev.map((group) => ({
           ...group,
-          items: group.items.map((item) =>
-            item.id === currentChat.id
-              ? {
-                  ...item,
-                  title: result.prompt_title || item.title,
-                  isComplete: true,
-                  isSubmitting: false,
-                  status: "Ready",
-                  generatedPromptData: finalPromptData,
-                  conversation:
-                    item.conversation && item.conversation.length > 0
-                      ? item.conversation
-                      : initialConversation,
-                  score: result.overall_score || 90,
-                  metrics: {
-                    clarity: result.clarity || 90,
-                    specificity: result.specificity || 90,
-                    context: result.context || 90,
-                    structure: result.structure || 90,
-                    actionability: result.actionability || 90,
-                  },
-                }
-              : item,
-          ),
+          items: group.items.map((item) => {
+            if (item.id !== currentChat.id) return item;
+            const existingWithoutLoading = (item.conversation || []).filter(
+              (m) => m.type !== "loading",
+            );
+            const conv =
+              existingWithoutLoading.length > 0
+                ? [...existingWithoutLoading, finalPromptMsg]
+                : [
+                    {
+                      id: `msg_u_init`,
+                      role: "user",
+                      text: currentChat.query,
+                      timestamp: currentChat.timestamp || formatTimestamp(),
+                      attachment: currentChat.attachment,
+                    },
+                    finalPromptMsg,
+                  ];
+
+            return {
+              ...item,
+              title: result.prompt_title || item.title,
+              isComplete: true,
+              isSubmitting: false,
+              status: "Ready",
+              generatedPromptData: finalPromptData,
+              conversation: conv,
+              score: result.overall_score || 90,
+              metrics: {
+                clarity: result.clarity || 90,
+                specificity: result.specificity || 90,
+                context: result.context || 90,
+                structure: result.structure || 90,
+                actionability: result.actionability || 90,
+              },
+            };
+          }),
         })),
       );
 
@@ -867,6 +904,9 @@ result = await continuePipeline(currentChat.threadId, formattedAnswers, {
                   isSubmitting: false,
                   status: "Synthesis error",
                   error: errorMsg,
+                  conversation: (item.conversation || []).filter(
+                    (m) => m.type !== "loading",
+                  ),
                 }
               : item,
           ),
@@ -881,6 +921,23 @@ result = await continuePipeline(currentChat.threadId, formattedAnswers, {
     if (!activeChat || !directText.trim()) return;
 
     const currentChat = activeChat;
+    const modelToUse = currentChat.model || selectedModel;
+
+    const initialLoadingConv = [
+      {
+        id: "msg_u_init",
+        role: "user",
+        text: directText.trim(),
+        timestamp: formatTimestamp(),
+      },
+      {
+        id: `msg_load_${Date.now()}`,
+        role: "assistant",
+        type: "loading",
+        message: `Synthesizing final prompt with ${modelToUse}...`,
+        timestamp: formatTimestamp(),
+      },
+    ];
 
     setHomeView("result");
     setIsGenerating(true);
@@ -891,15 +948,30 @@ result = await continuePipeline(currentChat.threadId, formattedAnswers, {
         ...group,
         items: group.items.map((item) =>
           item.id === currentChat.id
-            ? { ...item, isSubmitting: true, status: "Generating prompt..." }
+            ? {
+                ...item,
+                isSubmitting: true,
+                status: "Generating prompt...",
+                conversation:
+                  item.conversation && item.conversation.length > 0
+                    ? [
+                        ...item.conversation.filter((m) => m.type !== "loading"),
+                        {
+                          id: `msg_load_${Date.now()}`,
+                          role: "assistant",
+                          type: "loading",
+                          message: `Synthesizing final prompt with ${modelToUse}...`,
+                          timestamp: formatTimestamp(),
+                        },
+                      ]
+                    : initialLoadingConv,
+              }
             : item,
         ),
       })),
     );
 
     try {
-      const modelToUse = currentChat.model || selectedModel;
-
       // Create backend conversation and get thread ID
       const startRes = await startPipeline(directText.trim(), {
         model: modelToUse,
@@ -922,61 +994,65 @@ result = await continuePipeline(currentChat.threadId, formattedAnswers, {
         model: currentChat.model || selectedModel,
       };
 
-      const initialConversation = [
-        {
-          id: "msg_u_init",
-          role: "user",
-          text: directText.trim(),
-          timestamp: formatTimestamp(),
-        },
-        {
-          id: "msg_p_1",
-          role: "assistant",
-          type: "prompt",
-          version: 1,
-          versionLabel: "v1: Direct Generation",
-          title: finalPromptData.prompt_title,
-          promptData: finalPromptData,
-          score: 90,
-          timestamp: formatTimestamp(),
-        },
-      ];
+      const promptMsg = {
+        id: `msg_p_${Date.now()}`,
+        role: "assistant",
+        type: "prompt",
+        version: 1,
+        versionLabel: "v1: Direct Generation",
+        title: finalPromptData.prompt_title,
+        promptData: finalPromptData,
+        score: 90,
+        timestamp: formatTimestamp(),
+      };
 
       setChats((prev) =>
         prev.map((group) => ({
           ...group,
-          items: group.items.map((item) =>
-            item.id === currentChat.id
-              ? {
-                  ...item,
-                  threadId: startRes.thread_id,
-                  title: finalPromptData.prompt_title,
-                  query: directText.trim(),
-                  isComplete: true,
-                  isSubmitting: false,
-                  status: "Ready",
-                  generatedPromptData: finalPromptData,
-                  conversation: initialConversation,
-                  score: 90,
-                  metrics: {
-                    clarity: 90,
-                    specificity: 90,
-                    context: 90,
-                    structure: 90,
-                    actionability: 90,
-                  },
-                }
-              : item,
-          ),
+          items: group.items.map((item) => {
+            if (item.id !== currentChat.id) return item;
+            const existingWithoutLoading = (item.conversation || []).filter(
+              (m) => m.type !== "loading",
+            );
+            const conv =
+              existingWithoutLoading.length > 0
+                ? [...existingWithoutLoading, promptMsg]
+                : [
+                    {
+                      id: "msg_u_init",
+                      role: "user",
+                      text: directText.trim(),
+                      timestamp: formatTimestamp(),
+                    },
+                    promptMsg,
+                  ];
+
+            return {
+              ...item,
+              threadId: startRes.thread_id,
+              title: finalPromptData.prompt_title,
+              query: directText.trim(),
+              isComplete: true,
+              isSubmitting: false,
+              status: "Ready",
+              generatedPromptData: finalPromptData,
+              conversation: conv,
+              score: 90,
+              metrics: {
+                clarity: 90,
+                specificity: 90,
+                context: 90,
+                structure: 90,
+                actionability: 90,
+              },
+            };
+          }),
         })),
       );
     } catch (err) {
       console.error("Direct generation error:", err);
-
       setPipelineError(err.message || "Direct prompt generation failed.");
-
       setHomeView("chat");
-
       setChats((prev) =>
         prev.map((group) => ({
           ...group,
@@ -987,6 +1063,9 @@ result = await continuePipeline(currentChat.threadId, formattedAnswers, {
                   isSubmitting: false,
                   status: "Generation error",
                   error: err.message,
+                  conversation: (item.conversation || []).filter(
+                    (m) => m.type !== "loading",
+                  ),
                 }
               : item,
           ),
@@ -1508,25 +1587,6 @@ onGeminiApiKeyChange={({ k, prop }) =>
 
     // 4. Home View: Structured Adaptive Prompt Result
     if (activeNav === "home" && homeView === "result" && activeChat) {
-      if (isGenerating || activeChat.isSubmitting) {
-        return (
-          <div className="flex flex-1 flex-col items-center justify-center p-20">
-            <div className="flex flex-col items-center gap-4 text-center">
-              <span className="grid size-14 place-items-center rounded-2xl bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/20">
-                <Loader2 className="size-7 animate-spin" />
-              </span>
-              <h2 className="text-[20px] font-semibold text-white">
-                Synthesizing Final Adaptive Prompt...
-              </h2>
-              <p className="max-w-md text-[14px] text-slate-400">
-                Packaging task context, dynamic requirements, edge cases, and
-                input attachments with {activeChat.model || selectedModel}.
-              </p>
-            </div>
-          </div>
-        );
-      }
-
       return (
         <ErrorBoundary
           title="Unable to display generated prompt"
@@ -1537,6 +1597,7 @@ onGeminiApiKeyChange={({ k, prop }) =>
         >
           <ChatResultView
             chat={activeChat}
+            isGenerating={Boolean(isGenerating || activeChat.isSubmitting)}
             onFollowUp={handleFollowUp}
             onRegenerate={() => handleCompleteGeneration()}
             onCreateVersion={() => {
