@@ -22,6 +22,7 @@ import {
   continuePipeline,
   followUpPipeline,
   generatePrompt,
+  assessPrompt,
   saveLibraryPrompt,
   getStoredUser,
   getAuthToken,
@@ -42,6 +43,12 @@ import {
 import { isPromptReadinessEnabled } from "./lib/promptReadinessApi";
 import { evaluateGenerationGate } from "./lib/generationGate";
 import usePromptReadiness from "./hooks/usePromptReadiness";
+import {
+  normalizeQualityAssessment,
+  toMetrics,
+  getPromptTextForAssessment,
+} from "./lib/promptQualityContract";
+import { buildImprovementRequest } from "./lib/qualityImprovement";
 
 function formatTimestamp() {
   return new Date().toLocaleTimeString([], {
@@ -507,14 +514,10 @@ export default function App() {
       model: selectedModel,
       generatedPromptData: null,
       conversation: [],
-      score: 92,
-      metrics: {
-        clarity: 92,
-        specificity: 88,
-        context: 85,
-        structure: 90,
-        actionability: 94,
-      },
+      // Quality scores come only from a backend assessment (none yet).
+      score: null,
+      metrics: null,
+      qualityAssessments: {},
     };
 
     // 1. Immediately prepend to Today in chats sidebar
@@ -826,6 +829,7 @@ export default function App() {
         required_attachments: result.required_attachments || [],
         model: selectedModel,
       };
+      const resultAssessment = normalizeQualityAssessment(result);
 
       const finalPromptMsg = {
         id: `msg_p_${Date.now()}`,
@@ -835,7 +839,7 @@ export default function App() {
         versionLabel: "v1: Initial Synthesis",
         title: result.prompt_title || currentChat.title,
         promptData: finalPromptData,
-        score: result.overall_score || 90,
+        score: resultAssessment.overallScore,
         timestamp: formatTimestamp(),
       };
 
@@ -870,14 +874,8 @@ export default function App() {
               status: "Ready",
               generatedPromptData: finalPromptData,
               conversation: conv,
-              score: result.overall_score || 90,
-              metrics: {
-                clarity: result.clarity || 90,
-                specificity: result.specificity || 90,
-                context: result.context || 90,
-                structure: result.structure || 90,
-                actionability: result.actionability || 90,
-              },
+              score: resultAssessment.overallScore,
+              metrics: toMetrics(resultAssessment),
             };
           }),
         })),
@@ -993,6 +991,7 @@ export default function App() {
         required_attachments: result.required_attachments || [],
         model: currentChat.model || selectedModel,
       };
+      const directAssessment = normalizeQualityAssessment(result);
 
       const promptMsg = {
         id: `msg_p_${Date.now()}`,
@@ -1002,7 +1001,7 @@ export default function App() {
         versionLabel: "v1: Direct Generation",
         title: finalPromptData.prompt_title,
         promptData: finalPromptData,
-        score: 90,
+        score: directAssessment.overallScore,
         timestamp: formatTimestamp(),
       };
 
@@ -1037,14 +1036,8 @@ export default function App() {
               status: "Ready",
               generatedPromptData: finalPromptData,
               conversation: conv,
-              score: 90,
-              metrics: {
-                clarity: 90,
-                specificity: 90,
-                context: 90,
-                structure: 90,
-                actionability: 90,
-              },
+              score: directAssessment.overallScore,
+              metrics: toMetrics(directAssessment),
             };
           }),
         })),
@@ -1229,6 +1222,50 @@ export default function App() {
   };
 
   /* Action: Follow-up conversational prompt refinement */
+  /* Action: (Re)assess one prompt version's quality. Throws on failure so the panel can
+     show an error with Retry; stores the backend response per version (by message id). */
+  const handleReassessPrompt = async (message, { isLatest = false } = {}) => {
+    const chatId = activeChat?.id;
+    if (!chatId || !message) return;
+    const promptData = message.promptData || activeChat.generatedPromptData || {};
+    const promptText = getPromptTextForAssessment(promptData);
+    if (!promptText) {
+      throw new Error("There is no prompt text to assess for this version.");
+    }
+
+    const raw = await assessPrompt(promptText, {
+      threadId: activeChat.threadId,
+      promptVersion: message.version ?? null,
+    });
+    const assessment = normalizeQualityAssessment(raw);
+    if (!assessment.available) {
+      throw new Error("The assessment service did not return any quality scores.");
+    }
+
+    setChats((prev) =>
+      prev.map((group) => ({
+        ...group,
+        items: group.items.map((item) =>
+          item.id === chatId
+            ? {
+                ...item,
+                qualityAssessments: { ...(item.qualityAssessments || {}), [message.id]: raw },
+                ...(isLatest
+                  ? { score: assessment.overallScore, metrics: toMetrics(assessment) }
+                  : {}),
+              }
+            : item
+        ),
+      }))
+    );
+  };
+
+  /* Action: entry point into the improvement-suggestions workflow (see lib/qualityImprovement). */
+  const handleImproveWithSuggestions = (assessment) => {
+    const { message } = buildImprovementRequest(assessment);
+    handleFollowUp(message);
+  };
+
   const handleFollowUp = async (followUpText, attachmentFile = null) => {
     if (!activeChat || !followUpText?.trim()) return;
 
@@ -1255,7 +1292,7 @@ export default function App() {
               versionLabel: "v1: Initial Synthesis",
               title: currentChat.title,
               promptData: currentChat.generatedPromptData || {},
-              score: currentChat.score || 90,
+              score: currentChat.score ?? null,
               timestamp: currentChat.timestamp || timestamp,
             },
           ];
@@ -1399,6 +1436,7 @@ export default function App() {
         );
       } else {
         // Model refined the prompt!
+        const refinedAssessment = normalizeQualityAssessment(response);
         const promptItem = {
           id: `msg_p_${nextVersion}`,
           role: "assistant",
@@ -1410,7 +1448,7 @@ export default function App() {
             ...response,
             model: currentChat.model || selectedModel,
           },
-          score: response.overall_score || currentChat.score || 92,
+          score: refinedAssessment.overallScore,
           timestamp: formatTimestamp(),
         };
 
@@ -1424,14 +1462,9 @@ export default function App() {
                     title: response.prompt_title || item.title,
                     isSubmitting: false,
                     generatedPromptData: promptItem.promptData,
-                    score: response.overall_score || item.score,
-                    metrics: {
-                      clarity: response.clarity || 92,
-                      specificity: response.specificity || 90,
-                      context: response.context || 90,
-                      structure: response.structure || 92,
-                      actionability: response.actionability || 94,
-                    },
+                    // The new version's own assessment (null when none was returned).
+                    score: refinedAssessment.overallScore,
+                    metrics: toMetrics(refinedAssessment),
                     conversation: updatedConv.map((c) =>
                       c.id === loadingMsgId ? promptItem : c,
                     ),
@@ -1610,6 +1643,8 @@ onGeminiApiKeyChange={({ k, prop }) =>
             onViewAnalytics={() => handleViewPromptAnalytics(activeChat)}
             onExport={(format) => handleExport(format)}
             isSaved={Boolean(activeChat.isSaved || isSaved)}
+            onReassessPrompt={handleReassessPrompt}
+            onImproveWithSuggestions={handleImproveWithSuggestions}
           />
         </ErrorBoundary>
       );
@@ -1737,7 +1772,7 @@ onGeminiApiKeyChange={({ k, prop }) =>
           onClose={() => setPublishModalOpen(false)}
           onConfirm={handleConfirmPublish}
           promptTitle={activeChat?.title || "Structured Prompt"}
-          promptScore={activeChat?.score || 92}
+          promptScore={activeChat?.score ?? null}
           initialCategory={activeChat?.taskDomain || "General"}
         />
 
