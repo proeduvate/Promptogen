@@ -22,8 +22,9 @@ import {
 } from "lucide-react";
 
 export default function StructuredPromptCard({
-  score = 92,
-  label = "Excellent",
+  // Overall quality score and classification from the backend assessment (null when not assessed).
+  score = null,
+  label = null,
   sections = [],
   rawJson = null,
   onCopy,
@@ -40,7 +41,8 @@ export default function StructuredPromptCard({
 
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference * (1 - score / 100);
+  const hasScore = typeof score === "number" && Number.isFinite(score);
+  const strokeDashoffset = circumference * (1 - (hasScore ? score : 0) / 100);
 
   const getItemText = (it) => {
     if (it == null) return "";
@@ -205,8 +207,9 @@ export default function StructuredPromptCard({
         {/* Right Score Gauge Tag */}
         <button
           type="button"
-          onClick={onViewAnalytics || onViewStrength}
-          title="Click to view detailed analytics for this prompt"
+          onClick={onViewStrength || onViewAnalytics}
+          title="View the quality breakdown for this prompt version"
+          aria-label={`Prompt Strength ${hasScore ? `${score} out of 100` : "not assessed"}${label ? `, ${label}` : ""}. View quality breakdown`}
           className="group flex items-center gap-3 rounded-xl border border-[#1a2b38] bg-[#091522]/80 px-3 py-1.5 transition-colors hover:border-emerald-500/40 cursor-pointer"
         >
           {/* Radial Ring */}
@@ -233,14 +236,14 @@ export default function StructuredPromptCard({
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center text-[12px] font-bold text-white">
-              {score}
+              {hasScore ? score : "—"}
             </div>
           </div>
 
           <div className="text-left text-[11px] leading-tight">
             <div className="text-slate-400">Prompt Strength</div>
             <div className="flex items-center gap-1 font-semibold text-emerald-400">
-              <span>{label}</span>
+              <span>{label || (hasScore ? "View breakdown" : "Not assessed")}</span>
               <ChevronRight className="size-3 transition-transform group-hover:translate-x-0.5" />
             </div>
           </div>

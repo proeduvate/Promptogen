@@ -16,7 +16,7 @@ export default function PublishConfirmationModal({
   onClose,
   onConfirm,
   promptTitle = "Structured Prompt",
-  promptScore = 92,
+  promptScore = null,
   initialCategory = "General",
 }) {
   const [category, setCategory] = useState(initialCategory || "General");
@@ -103,7 +103,7 @@ export default function PublishConfirmationModal({
 
             <div className="shrink-0 flex items-center gap-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-emerald-400 font-semibold text-xs">
               <Sparkles className="size-3.5" />
-              <span>{promptScore}/100</span>
+              <span>{promptScore != null ? `${promptScore}/100` : "Not assessed"}</span>
             </div>
           </div>
 

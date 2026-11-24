@@ -365,10 +365,20 @@ export async function generatePrompt(originalQuery, answers = []) {
   });
 }
 
-export async function assessPrompt(promptText) {
+/**
+ * (Re)assess a prompt's quality. `thread_id` and `prompt_version` are PROPOSED optional
+ * fields that let the backend tie the assessment to a version (ignored by the current
+ * backend). The response may be the legacy flat shape or the proposed rich
+ * `quality_assessment` shape; normalize it with `lib/promptQualityContract.js`.
+ */
+export async function assessPrompt(promptText, { threadId, promptVersion, signal } = {}) {
+  const payload = { prompt: promptText };
+  if (threadId) payload.thread_id = threadId;
+  if (promptVersion !== undefined && promptVersion !== null) payload.prompt_version = promptVersion;
   return request("/assess", {
     method: "POST",
-    body: JSON.stringify({ prompt: promptText }),
+    body: JSON.stringify(payload),
+    ...(signal ? { signal } : {}),
   });
 }
 

@@ -20,6 +20,11 @@ import StructuredPromptCard from "./StructuredPromptCard";
 import PromptDetailsPanel from "./PromptDetailsPanel";
 import UsedContextPanel from "./UsedContextPanel";
 import ResultQuickActionsPanel from "./ResultQuickActionsPanel";
+import PromptQualityPanel from "./PromptQualityPanel";
+import { normalizeQualityAssessment } from "../../lib/promptQualityContract";
+
+const NON_PROMPT_TYPES = ["loading", "clarification", "error"];
+const isPromptMessage = (msg) => msg && msg.role !== "user" && !NON_PROMPT_TYPES.includes(msg.type);
 
 export default function ChatResultView({
   chat,
@@ -31,6 +36,9 @@ export default function ChatResultView({
   onViewAnalytics,
   isSaved,
   isGenerating = false,
+  // Prompt quality breakdown
+  onReassessPrompt,
+  onImproveWithSuggestions,
 }) {
   const [followUpText, setFollowUpText] = useState("");
   const [inlineAnswers, setInlineAnswers] = useState({});
@@ -80,7 +88,7 @@ export default function ChatResultView({
           versionLabel: "v1: Initial Synthesis",
           title: chat?.title || "Optimized Prompt",
           promptData: promptData,
-          score: promptData.overall_score || chat?.score || 92,
+          score: promptData.overall_score ?? null,
           timestamp: chat?.timestamp || "Just now",
         },
       ];
@@ -98,6 +106,67 @@ export default function ChatResultView({
   }
 
   const prevCountRef = useRef(conversation.length);
+
+  // ── Prompt quality breakdown: one assessment per prompt version ──
+  const qualityPanelRef = useRef(null);
+  const promptMessages = conversation.filter(isPromptMessage);
+  const latestPromptMsg = promptMessages[promptMessages.length - 1] || null;
+  const [selectedPromptId, setSelectedPromptId] = useState(null);
+  const [qualityRequest, setQualityRequest] = useState(null); // { messageId, status, error }
+  const qualityRequestSeq = useRef(0);
+
+  // A new version (regenerate / improve / follow-up) or another chat shows the latest assessment.
+  useEffect(() => {
+    setSelectedPromptId(null);
+  }, [latestPromptMsg?.id, chat?.id]);
+  useEffect(() => {
+    qualityRequestSeq.current += 1;
+    setQualityRequest(null);
+  }, [chat?.id]);
+
+  const selectedPromptMsg =
+    promptMessages.find((m) => m.id === selectedPromptId) || latestPromptMsg;
+  const assessmentFor = (msg) =>
+    normalizeQualityAssessment(
+      chat?.qualityAssessments?.[msg?.id] ?? msg?.promptData ?? chat?.generatedPromptData
+    );
+  const selectedAssessment = selectedPromptMsg ? assessmentFor(selectedPromptMsg) : null;
+  const selectedRequest =
+    qualityRequest && selectedPromptMsg && qualityRequest.messageId === selectedPromptMsg.id
+      ? qualityRequest
+      : null;
+  const qualityStatus =
+    selectedRequest?.status ||
+    (!selectedPromptMsg && isCurrentlyGenerating ? "loading" : "ready");
+
+  const showQualityFor = (msg) => {
+    setSelectedPromptId(msg.id);
+    const panel = qualityPanelRef.current;
+    if (panel) {
+      panel.scrollIntoView?.({ behavior: "smooth", block: "start" });
+      panel.focus?.({ preventScroll: true });
+    }
+  };
+
+  const handleReassess = async () => {
+    const msg = selectedPromptMsg;
+    if (!msg || !onReassessPrompt) return;
+    qualityRequestSeq.current += 1;
+    const seq = qualityRequestSeq.current;
+    setQualityRequest({ messageId: msg.id, status: "loading", error: null });
+    try {
+      await onReassessPrompt(msg, { isLatest: msg.id === latestPromptMsg?.id });
+      if (seq === qualityRequestSeq.current) setQualityRequest(null);
+    } catch (err) {
+      if (seq === qualityRequestSeq.current) {
+        setQualityRequest({
+          messageId: msg.id,
+          status: "error",
+          error: err?.message || "The quality assessment could not be completed.",
+        });
+      }
+    }
+  };
 
   // Auto-scroll to latest message ONLY when a new message is appended during active chat or generating starts
   useEffect(() => {
@@ -319,6 +388,7 @@ export default function ChatResultView({
             const turnAttachments = (
               turnPromptData.required_attachments || []
             ).filter(Boolean);
+            const turnAssessment = assessmentFor(msg);
 
             return (
               <div key={msg.id || idx} className="flex items-start gap-3">
@@ -441,12 +511,9 @@ export default function ChatResultView({
 
                   {/* Structured Prompt Card with Publish to Library provision */}
                   <StructuredPromptCard
-                    score={turnPromptData.overall_score || msg.score || 92}
-                    label={
-                      (turnPromptData.overall_score || msg.score || 92) >= 90
-                        ? "Excellent"
-                        : "Strong"
-                    }
+                    score={turnAssessment.overallScore}
+                    label={turnAssessment.classificationLabel}
+                    onViewStrength={() => showQualityFor(msg)}
                     sections={turnSections}
                     rawJson={turnPromptData}
                     isPublished={Boolean(
@@ -565,6 +632,30 @@ export default function ChatResultView({
 
         {/* Right Rail Panels */}
         <div className="flex flex-col space-y-4">
+          {(selectedPromptMsg || isCurrentlyGenerating) && (
+            <PromptQualityPanel
+              ref={qualityPanelRef}
+              assessment={selectedAssessment}
+              status={qualityStatus}
+              error={selectedRequest?.error || null}
+              versionLabel={
+                selectedPromptMsg
+                  ? selectedPromptMsg.versionLabel ||
+                    (selectedPromptMsg.version ? `Version ${selectedPromptMsg.version}` : null)
+                  : null
+              }
+              isLatestVersion={!selectedPromptMsg || selectedPromptMsg.id === latestPromptMsg?.id}
+              onShowLatest={() => setSelectedPromptId(null)}
+              onReassess={selectedPromptMsg && onReassessPrompt ? handleReassess : undefined}
+              onImprove={
+                selectedPromptMsg && onImproveWithSuggestions
+                  ? () => onImproveWithSuggestions(selectedAssessment)
+                  : undefined
+              }
+              disabled={isCurrentlyGenerating}
+            />
+          )}
+
           <PromptDetailsPanel
             modelName={
               chat.model || promptData.model || "Gemini 3.5 Flash-Lite"
