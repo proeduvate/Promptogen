@@ -27,6 +27,7 @@ MOCK_QUESTIONS = [
 
 MOCK_GEN_ASSESS_RESULT = {
     "prompt_title": "Fitness App Prompt",
+    "domain": "Software Development",
     "optimized_prompt": "You are an expert mobile app developer. Your task is to build a fitness tracking app.",
     "overall_score": 88,
     "clarity": 91,
@@ -102,6 +103,7 @@ class TestPipelineContinue:
         assert body["status"] == "complete"
         assert body["optimized_prompt"]
         assert body["prompt_title"] == "Fitness App Prompt"
+        assert body["domain"] == "Software Development"
         assert body["overall_score"] == 88
         assert body["clarity"] == 91
         assert body["specificity"] == 85
@@ -163,6 +165,7 @@ class TestPipelineContinue:
 
         mock_followup = {
             "action": "refine_prompt",
+            "domain": "Software Development",
             "version_label": "v2: Added Push Notifications",
             "prompt_title": "Fitness Tracker with Push Notifications",
             "optimized_prompt": "You are a senior mobile engineer. Implement push notifications with APNS.",
@@ -183,6 +186,7 @@ class TestPipelineContinue:
             assert resp.status_code == status.HTTP_200_OK
             data = resp.json()
             assert data["action"] == "refine_prompt"
+            assert data["domain"] == "Software Development"
             assert data["thread_id"] == thread_id
             assert data["version_label"] == "v2: Added Push Notifications"
             assert "push notifications" in data["optimized_prompt"].lower()

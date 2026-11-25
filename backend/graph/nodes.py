@@ -130,6 +130,7 @@ async def generate_node(state: PromptGenState) -> dict:
     )
     return {
         "prompt_title": response.title,
+        "domain": response.domain or state.get("task_domain", ""),
         "optimized_prompt": response.optimized_prompt,
         "sections": [s.model_dump() for s in response.sections],
         "required_attachments": [a.model_dump() for a in response.required_attachments],

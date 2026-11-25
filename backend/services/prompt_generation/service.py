@@ -50,6 +50,7 @@ class PromptGenerationService:
         current_prompt: str,
         user_followup: str,
         history_summary: str = "",
+        domain: str = "",
     ) -> dict:
         logger.info(
             "Refining prompt via conversational follow-up | followup_len=%d",
@@ -60,6 +61,7 @@ class PromptGenerationService:
             current_prompt=current_prompt,
             user_followup=user_followup,
             history_summary=history_summary,
+            domain=domain,
         )
         try:
             raw = await self._client.chat_completion(
@@ -85,6 +87,7 @@ class PromptGenerationService:
             questions = data.get("questions") or []
             return {
                 "action": "clarify",
+                "domain": data.get("domain"),
                 "reasoning": data.get("reasoning", "Additional clarification needed to refine the prompt."),
                 "questions": questions,
             }
@@ -95,6 +98,7 @@ class PromptGenerationService:
         parsed = self._parser._validate(data, original_query=original_query)
         return {
             "action": "refine_prompt",
+            "domain": parsed.domain or data.get("domain"),
             "version_label": data.get("version_label", "Refined Prompt"),
             "prompt_title": parsed.title,
             "optimized_prompt": parsed.optimized_prompt,

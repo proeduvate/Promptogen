@@ -118,6 +118,7 @@ class PipelineContinueRequest(BaseModel):
 class PipelineContinueResponse(BaseModel):
     thread_id: str
     prompt_title: str
+    domain: Optional[str] = None
     optimized_prompt: str
     overall_score: int
     clarity: int
@@ -408,6 +409,7 @@ async def continue_pipeline(
                     "model": request.model,
                     "api_key": request.api_key,
                     "provider": request.provider,
+                    "task_domain": stored.get("task_domain", "general"),
                 },
                 config=lc_config,
             )
@@ -425,6 +427,7 @@ async def continue_pipeline(
     required_attachments = result.get("required_attachments") or []
 
     prompt_title = result.get("prompt_title", "Optimized Prompt")
+    domain = result.get("domain") or stored.get("task_domain", "general")
     overall_score = result.get("overall_score", 85)
     clarity = result.get("clarity", 85)
     specificity = result.get("specificity", 85)
@@ -465,6 +468,7 @@ async def continue_pipeline(
             "optimized_prompt": optimized_prompt,
             "sections": sections,
             "prompt_title": prompt_title,
+            "domain": domain,
             "overall_score": overall_score,
             "clarity": clarity,
             "specificity": specificity,
@@ -482,6 +486,7 @@ async def continue_pipeline(
         thread_id=request.thread_id,
         prompt_title=prompt_title,
         optimized_prompt=optimized_prompt,
+        domain=domain,
         overall_score=overall_score,
         clarity=clarity,
         specificity=specificity,
@@ -534,6 +539,7 @@ async def pipeline_followup(
     )
 
     original_query = stored.get("original_query", "")
+    domain = stored.get("domain") or stored.get("task_domain", "")
     current_prompt = request.current_prompt or stored.get("optimized_prompt", "")
     service = PromptGenerationService(client=client)
 
@@ -543,6 +549,7 @@ async def pipeline_followup(
             current_prompt=current_prompt,
             user_followup=request.message,
             history_summary=request.history_summary or "",
+            domain=domain,
         )
     except Exception as exc:
         logger.error("Pipeline followup error: %s", exc, exc_info=True)
@@ -552,11 +559,13 @@ async def pipeline_followup(
         ) from exc
 
     action = followup_res.get("action", "refine_prompt")
+    domain = followup_res.get("domain") or domain
 
     if action == "clarify":
         return PipelineFollowUpResponse(
             thread_id=request.thread_id,
             action="clarify",
+            domain=domain,
             questions=followup_res.get("questions", []),
             reasoning=followup_res.get("reasoning", "Additional clarification requested."),
         )
@@ -598,6 +607,7 @@ async def pipeline_followup(
             "sections": sections,
             "prompt_title": prompt_title,
             "overall_score": overall_score,
+            "domain": domain,
             "clarity": clarity,
             "specificity": specificity,
             "context": context,
@@ -635,6 +645,7 @@ async def pipeline_followup(
         action="refine_prompt",
         version_label=followup_res.get("version_label", "Refined Prompt"),
         prompt_title=prompt_title,
+        domain=domain,
         optimized_prompt=optimized_prompt,
         overall_score=overall_score,
         clarity=clarity,

@@ -50,6 +50,11 @@ class PromptGenerationParser:
         # 1. If it has JSON-like keys for title or prompt
         title_m = re.search(r'"(?:prompt_)?title"\s*:\s*"([^"\n\r]+)"', text)
         title = title_m.group(1).strip() if title_m else "Optimized Prompt"
+        domain_m = re.search(
+    r'"domain"\s*:\s*"([^"]+)"',
+    text
+)
+        domain = domain_m.group(1).strip() if domain_m else None
 
         prompt_m = re.search(r'"(?:optimized_)?prompt"\s*:\s*"([\s\S]*?)"\s*,\s*"[a-zA-Z_]+"\s*:', text)
         if not prompt_m:
@@ -64,6 +69,7 @@ class PromptGenerationParser:
                 .replace("\\t", "\t")
             )
             return {
+                "domain": domain,
                 "title": title,
                 "optimized_prompt": prompt_content,
                 "required_attachments": [],
@@ -75,6 +81,7 @@ class PromptGenerationParser:
             if first_line and len(first_line) < 60:
                 title = first_line
             return {
+                "domain": domain,
                 "title": title,
                 "optimized_prompt": text,
                 "required_attachments": [],
