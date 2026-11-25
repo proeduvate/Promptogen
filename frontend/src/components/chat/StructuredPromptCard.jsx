@@ -37,6 +37,7 @@ export default function StructuredPromptCard({
 }) {
   const [activeTab, setActiveTab] = useState("prompt"); // "prompt" | "json"
   const [copied, setCopied] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState({});
 
   const radius = 24;
   const circumference = 2 * Math.PI * radius;
@@ -53,7 +54,9 @@ export default function StructuredPromptCard({
         it.content ||
         Object.entries(it)
           .filter(([k]) => k !== "key")
-          .map(([k, v]) => (typeof v === "object" ? JSON.stringify(v) : `${k}: ${v}`))
+          .map(([k, v]) =>
+            typeof v === "object" ? JSON.stringify(v) : `${k}: ${v}`,
+          )
           .join(" - ") ||
         JSON.stringify(it)
       );
@@ -64,19 +67,70 @@ export default function StructuredPromptCard({
   // Section icon mapping
   const getSectionIcon = (labelName) => {
     const l = (labelName || "").toLowerCase();
-    if (l.includes("role") || l.includes("persona") || l.includes("system")) return User;
-    if (l.includes("objective") || l.includes("goal") || l.includes("mission")) return Target;
-    if (l.includes("context") || l.includes("background") || l.includes("environment")) return FileText;
-    if (l.includes("input") || l.includes("attachment") || l.includes("asset") || l.includes("data")) return Paperclip;
-    if (l.includes("process") || l.includes("instruction") || l.includes("step") || l.includes("method")) return Sparkles;
-    if (l.includes("requirement") || l.includes("spec") || l.includes("rule")) return ListOrdered;
-    if (l.includes("edge") || l.includes("boundary") || l.includes("error") || l.includes("defens")) return AlertCircle;
-    if (l.includes("constraint") || l.includes("negative") || l.includes("guardrail") || l.includes("avoid")) return ShieldAlert;
-    if (l.includes("example") || l.includes("few-shot") || l.includes("sample") || l.includes("pattern")) return Bookmark;
-    if (l.includes("quality") || l.includes("criteria") || l.includes("benchmark") || l.includes("accept")) return CheckCircle2;
-    if (l.includes("output") || l.includes("deliverable") || l.includes("format")) return Layout;
-    if (l.includes("code") || l.includes("snippet") || l.includes("schema")) return Code2;
-    if (l.includes("final") || l.includes("command") || l.includes("execut")) return Play;
+    if (l.includes("role") || l.includes("persona") || l.includes("system"))
+      return User;
+    if (l.includes("objective") || l.includes("goal") || l.includes("mission"))
+      return Target;
+    if (
+      l.includes("context") ||
+      l.includes("background") ||
+      l.includes("environment")
+    )
+      return FileText;
+    if (
+      l.includes("input") ||
+      l.includes("attachment") ||
+      l.includes("asset") ||
+      l.includes("data")
+    )
+      return Paperclip;
+    if (
+      l.includes("process") ||
+      l.includes("instruction") ||
+      l.includes("step") ||
+      l.includes("method")
+    )
+      return Sparkles;
+    if (l.includes("requirement") || l.includes("spec") || l.includes("rule"))
+      return ListOrdered;
+    if (
+      l.includes("edge") ||
+      l.includes("boundary") ||
+      l.includes("error") ||
+      l.includes("defens")
+    )
+      return AlertCircle;
+    if (
+      l.includes("constraint") ||
+      l.includes("negative") ||
+      l.includes("guardrail") ||
+      l.includes("avoid")
+    )
+      return ShieldAlert;
+    if (
+      l.includes("example") ||
+      l.includes("few-shot") ||
+      l.includes("sample") ||
+      l.includes("pattern")
+    )
+      return Bookmark;
+    if (
+      l.includes("quality") ||
+      l.includes("criteria") ||
+      l.includes("benchmark") ||
+      l.includes("accept")
+    )
+      return CheckCircle2;
+    if (
+      l.includes("output") ||
+      l.includes("deliverable") ||
+      l.includes("format")
+    )
+      return Layout;
+    if (l.includes("code") || l.includes("snippet") || l.includes("schema"))
+      return Code2;
+    if (l.includes("final") || l.includes("command") || l.includes("execut"))
+      return Play;
     return Sparkles;
   };
 
@@ -88,7 +142,11 @@ export default function StructuredPromptCard({
     let list = [];
     if (Array.isArray(sections) && sections.length > 0) {
       list = [...sections];
-    } else if (rawJson?.sections && Array.isArray(rawJson.sections) && rawJson.sections.length > 0) {
+    } else if (
+      rawJson?.sections &&
+      Array.isArray(rawJson.sections) &&
+      rawJson.sections.length > 0
+    ) {
       list = [...rawJson.sections];
     }
 
@@ -109,9 +167,11 @@ export default function StructuredPromptCard({
             let secTitle = "PROMPT SECTION";
             let secBody = trimmed;
             if (trimmed.startsWith("#")) {
-              const headerLine = firstLineEnd > 0 ? trimmed.slice(0, firstLineEnd) : trimmed;
+              const headerLine =
+                firstLineEnd > 0 ? trimmed.slice(0, firstLineEnd) : trimmed;
               secTitle = headerLine.replace(/^#+\s*/, "").trim();
-              secBody = firstLineEnd > 0 ? trimmed.slice(firstLineEnd).trim() : "";
+              secBody =
+                firstLineEnd > 0 ? trimmed.slice(firstLineEnd).trim() : "";
             }
             return {
               id: `sec_dyn_${pIdx}`,
@@ -134,6 +194,26 @@ export default function StructuredPromptCard({
         }
       }
     }
+    list = list.filter((sec) => {
+      if (typeof sec === "string") {
+        return sec.trim().length > 0;
+      }
+
+      if (!sec || typeof sec !== "object") {
+        return false;
+      }
+
+      const hasContent =
+        typeof sec.content === "string"
+          ? sec.content.trim().length > 0
+          : sec.content != null;
+
+      const hasItems =
+        Array.isArray(sec.items) &&
+        sec.items.some((item) => getItemText(item).trim().length > 0);
+
+      return hasContent || hasItems;
+    });
 
     return list.map((sec, idx) => {
       if (typeof sec === "string") {
@@ -157,7 +237,11 @@ export default function StructuredPromptCard({
   const handleCopyClick = () => {
     let textToCopy = "";
     if (activeTab === "json") {
-      textToCopy = JSON.stringify(rawJson || { sections: normalizedSections }, null, 2);
+      textToCopy = JSON.stringify(
+        rawJson || { sections: normalizedSections },
+        null,
+        2,
+      );
     } else if (rawJson?.optimized_prompt) {
       textToCopy = rawJson.optimized_prompt;
     } else if (normalizedSections.length > 0) {
@@ -166,14 +250,21 @@ export default function StructuredPromptCard({
           let body = s.content || "";
           if (Array.isArray(s.items)) {
             body = s.items
-              .map((it) => (typeof it === "string" ? `• ${it}` : `• ${it.key ? `${it.key}: ` : ""}${getItemText(it)}`))
+              .map((it) =>
+                typeof it === "string"
+                  ? `• ${it}`
+                  : `• ${it.key ? `${it.key}: ` : ""}${getItemText(it)}`,
+              )
               .join("\n");
           }
           return `### ${s.label || s.title || "SECTION"}\n${body}`;
         })
         .join("\n\n");
     } else {
-      textToCopy = typeof rawJson === "string" ? rawJson : JSON.stringify(rawJson || {}, null, 2);
+      textToCopy =
+        typeof rawJson === "string"
+          ? rawJson
+          : JSON.stringify(rawJson || {}, null, 2);
     }
 
     if (navigator.clipboard) {
@@ -309,7 +400,11 @@ export default function StructuredPromptCard({
           {/* Test Button (Coming Soon) */}
           <button
             type="button"
-            onClick={() => alert("Feature coming soon: Model playground and direct prompt execution are currently under development.")}
+            onClick={() =>
+              alert(
+                "Feature coming soon: Model playground and direct prompt execution are currently under development.",
+              )
+            }
             className="flex items-center gap-1.5 rounded-lg bg-[#19243a] border border-[#233454] px-3 py-1.5 text-[12px] font-medium text-slate-200 shadow-md transition-all hover:bg-blue-600 hover:text-white active:scale-95"
           >
             <Play className="size-3 fill-current text-blue-400" />
@@ -356,75 +451,103 @@ export default function StructuredPromptCard({
       {/* ── 3. Structured Content Body ── */}
       {activeTab === "json" ? (
         <pre className="overflow-x-auto rounded-xl border border-[#1a253c] bg-[#080d17] p-4 text-[12px] font-mono text-slate-300 leading-relaxed">
-          {JSON.stringify(rawJson || { score, label, sections: normalizedSections }, null, 2)}
+          {JSON.stringify(
+            rawJson || { score, label, sections: normalizedSections },
+            null,
+            2,
+          )}
         </pre>
       ) : normalizedSections.length > 0 ? (
         <div className="space-y-6">
           {normalizedSections.map((section, idx) => {
-            const displayTitle = section.label || section.title || `SECTION ${idx + 1}`;
+            const displayTitle =
+              section.label || section.title || `SECTION ${idx + 1}`;
             const Icon = getSectionIcon(displayTitle);
             return (
               <div key={section.id || idx} className="space-y-2">
                 {/* Section Header with Icon Badge */}
-                <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCollapsedSections((prev) => ({
+                      ...prev,
+                      [section.id || idx]: !prev[section.id || idx],
+                    }))
+                  }
+                  aria-expanded={!collapsedSections[section.id || idx]}
+                  className="flex w-full items-center gap-2 text-left"
+                >
                   <span className="grid size-5 place-items-center rounded bg-blue-500/10 text-blue-400">
                     <Icon className="size-3.5" />
                   </span>
                   <span className="text-[12px] font-bold tracking-wider uppercase text-blue-400">
                     {displayTitle}
                   </span>
-                </div>
+                </button>
 
                 {/* Section Content */}
-                <div className="pl-7 text-[13px] leading-relaxed text-slate-200 font-normal">
-                  {section.type === "list" || (Array.isArray(section.items) && section.items.length > 0) ? (
-                    <ul className="space-y-1.5">
-                      {(section.items || []).map((item, iIdx) => (
-                        <li key={iIdx} className="flex items-start gap-2">
-                          <span className="text-blue-400/80 font-bold">•</span>
-                          <span>
-                            {item?.key && (
-                              <strong className="text-slate-200 font-semibold mr-1.5">
-                                {item.key}:
-                              </strong>
-                            )}
+                {!collapsedSections[section.id || idx] && (
+                  <div className="pl-7 text-[13px] leading-relaxed text-slate-200 font-normal">
+                    {section.type === "list" ||
+                    (Array.isArray(section.items) &&
+                      section.items.length > 0) ? (
+                      <ul className="space-y-1.5">
+                        {(section.items || []).map((item, iIdx) => (
+                          <li key={iIdx} className="flex items-start gap-2">
+                            <span className="text-blue-400/80 font-bold">
+                              •
+                            </span>
+                            <span>
+                              {item?.key && (
+                                <strong className="text-slate-200 font-semibold mr-1.5">
+                                  {item.key}:
+                                </strong>
+                              )}
+                              <span className="text-slate-300">
+                                {getItemText(item)}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : section.type === "numbered" ? (
+                      <ol className="space-y-1.5">
+                        {(section.items || []).map((item, iIdx) => (
+                          <li key={iIdx} className="flex items-start gap-2">
+                            <span className="shrink-0 font-mono text-[11px] font-semibold text-blue-400">
+                              {iIdx + 1}.
+                            </span>
                             <span className="text-slate-300">
+                              {item?.key && (
+                                <strong className="text-slate-200 font-semibold mr-1.5">
+                                  {item.key}:
+                                </strong>
+                              )}
                               {getItemText(item)}
                             </span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : section.type === "numbered" ? (
-                    <ol className="space-y-1.5">
-                      {(section.items || []).map((item, iIdx) => (
-                        <li key={iIdx} className="flex items-start gap-2">
-                          <span className="shrink-0 font-mono text-[11px] font-semibold text-blue-400">
-                            {iIdx + 1}.
-                          </span>
-                          <span className="text-slate-300">
-                            {item?.key && (
-                              <strong className="text-slate-200 font-semibold mr-1.5">
-                                {item.key}:
-                              </strong>
-                            )}
-                            {getItemText(item)}
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : section.type === "code" ? (
-                    <pre className="overflow-x-auto rounded-lg border border-[#1b2740] bg-[#070d18] p-3 font-mono text-[12px] text-blue-300">
-                      <code>{typeof section.content === "object" ? JSON.stringify(section.content, null, 2) : section.content}</code>
-                    </pre>
-                  ) : (
-                    <div className="space-y-2 whitespace-pre-line text-slate-300 leading-relaxed">
-                      {typeof section.content === "object"
-                        ? JSON.stringify(section.content, null, 2)
-                        : (section.content || (Array.isArray(section.items) ? section.items.map(getItemText).join("\n") : ""))}
-                    </div>
-                  )}
-                </div>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : section.type === "code" ? (
+                      <pre className="overflow-x-auto rounded-lg border border-[#1b2740] bg-[#070d18] p-3 font-mono text-[12px] text-blue-300">
+                        <code>
+                          {typeof section.content === "object"
+                            ? JSON.stringify(section.content, null, 2)
+                            : section.content}
+                        </code>
+                      </pre>
+                    ) : (
+                      <div className="space-y-2 whitespace-pre-line text-slate-300 leading-relaxed">
+                        {typeof section.content === "object"
+                          ? JSON.stringify(section.content, null, 2)
+                          : section.content ||
+                            (Array.isArray(section.items)
+                              ? section.items.map(getItemText).join("\n")
+                              : "")}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -432,7 +555,9 @@ export default function StructuredPromptCard({
       ) : (
         <div className="rounded-xl border border-[#1a253c] bg-[#080d17] p-5 text-[13px] leading-relaxed text-slate-200 whitespace-pre-line">
           {rawJson?.optimized_prompt ||
-            (typeof rawJson === "string" ? rawJson : JSON.stringify(rawJson, null, 2)) ||
+            (typeof rawJson === "string"
+              ? rawJson
+              : JSON.stringify(rawJson, null, 2)) ||
             "Prompt synthesized successfully."}
         </div>
       )}
