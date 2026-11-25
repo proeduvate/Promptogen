@@ -14,7 +14,11 @@ Your mission is to transform a user's prompt and clarification answers into an E
 - The prompt itself must be long, rich, and rigorous (minimum 400–1200 words depending on complexity).
 
 ### ADAPTIVE ARCHITECTURAL SECTIONS:
-Select and order the relevant sections tailored to the domain (include detailed content for every section):
+Select and order the relevant sections tailored to the domain.
+Include detailed content for every selected section.
+The 12 sections listed below are reference sections, not mandatory sections.
+Select only sections relevant to the user's domain and requirements.
+Do not force irrelevant sections into the generated prompt.
 1. ROLE & PERSONA:
    Specify the exact principal-level expert persona, behavioral principles, cognitive framework, and strict operational standards.
 2. OBJECTIVE & DELIVERABLE:
@@ -42,7 +46,79 @@ Select and order the relevant sections tailored to the domain (include detailed 
 12. FINAL INSTRUCTION:
     Decisive closing command compelling immediate, thorough execution.
 
+
+### DOMAIN-AWARE DYNAMIC SECTION SELECTION:
+
+Identify the user's primary domain and generate section headings
+that naturally match the user's actual request.
+
+IMPORTANT RULES:
+- The section names below are optional concepts, not mandatory headings.
+- Do not force the same headings across all domains.
+- Generate only sections that are relevant to the user's request.
+- Section headings must accurately describe their content.
+- Use natural, domain-specific names instead of generic technical headings.
+- Do not include empty, duplicate, irrelevant, or invented sections.
+- Preserve the user's requirements and context.
+
+Possible section concepts include:
+1. Role & Persona
+2. Objective
+3. Context
+4. Task
+5. Requirements
+6. Constraints
+7. Input
+8. Output Format
+9. Tone & Style
+10. Examples
+11. Success Criteria
+
+Domain-specific examples (guidance only):
+
+MARKETING:
+Brand Identity, Target Audience, Marketing Strategy,
+Content Plan, Campaign Budget, Success Metrics.
+
+SOFTWARE DEVELOPMENT:
+System Architecture, Technology Stack, Functional Requirements,
+API Specifications, Data Models, Testing Strategy.
+
+BUSINESS:
+Business Objectives, Market Analysis, Revenue Model,
+Operational Strategy, Financial Planning, Risk Assessment.
+
+RESEARCH:
+Research Objectives, Research Questions, Methodology,
+Data Collection, Analysis Framework, Expected Findings.
+
+WRITING:
+Writing Objective, Target Audience, Tone & Style,
+Content Structure, Key Messages, Final Format.
+
+EDUCATION:
+Learning Objectives, Target Learners, Course Structure,
+Teaching Methodology, Learning Activities, Assessment Criteria.
+
+PRODUCTIVITY:
+Goals, Priorities, Workflow, Schedule,
+Resources, Progress Tracking.
+
+CREATIVE TASKS:
+Creative Direction, Concept, Style,
+Inspiration, Execution Plan, Final Deliverable.
+
+These examples are not fixed templates.
+Choose and rename sections according to the actual task.
+
+Always return the identified domain and dynamically selected
+sections in the required JSON response format.
+    
+
 ### OUTPUT SPECIFICATION:
+0. "domain": The identified primary domain of the user's request
+   (e.g. "Marketing", "Software Development", "Business", "Research",
+   "Writing", "Education", "Productivity", "Creative Tasks").
 1. "title": 4–8 word Title Case title summarizing the prompt.
 2. "optimized_prompt": The complete, exhaustive markdown prompt containing all sections starting with markdown headers `### <NUMBER>. <SECTION NAME>`.
 3. "required_attachments": Array of required external assets with `name`, `type` ("document" | "image" | "schema" | "code_file" | "dataset"), `description`, `required` (boolean), and `format_recommendation`.
@@ -54,6 +130,7 @@ IMPORTANT JSON ENCODING RULES:
 
 Output JSON schema:
 {
+"domain": "<Identified domain>",
   "title": "<4-8 word Title Case title>",
   "optimized_prompt": "<Full exhaustive markdown text with ### headers for every section>",
   "required_attachments": [
@@ -93,6 +170,16 @@ Do not waste context on conversational filler. Distill the delta:
 - Preserve all existing architectural stack choices, conventions, and database tables unless the user explicitly requested modifying them.
 - Merge the previous prompt specifications with the new directives.
 
+
+### DOMAIN PRESERVATION:
+- Preserve the domain identified during the initial prompt generation.
+- Do not change the domain unless the user explicitly requests it.
+- Select sections relevant to the existing domain and the new follow-up request.
+- Do not force all 12 sections into every refined prompt.
+- Preserve existing requirements and remove only sections that are no longer relevant.
+- Do not introduce unrelated technical, marketing, or business sections.
+
+
 ### PROMPT DEPTH & SPECIFICITY RULES:
 - The refined prompt must be EXHAUSTIVE and DETERMINISTIC.
 - Include concrete schemas, exact route signatures, algorithms, error status codes, edge cases, negative constraints, and exact deliverable formats.
@@ -103,6 +190,7 @@ Return ONLY a valid JSON object matching:
 If refining the prompt:
 {
   "action": "refine_prompt",
+    "domain": "<Existing or updated domain>",
   "version_label": "<Short 3-6 word summary of what changed, e.g. v2: Multi-Tenant RLS & JWT Middleware>",
   "title": "<Concise Title Case title>",
   "optimized_prompt": "<Full markdown prompt with ### headers for every section>",
@@ -137,13 +225,20 @@ def build_followup_message(
     current_prompt: str,
     user_followup: str,
     history_summary: str = "",
+    domain: str = "",
 ) -> str:
     parts = [
         f"Original User Goal:\n{original_query}\n",
         f"Current Baseline Structured Prompt:\n{current_prompt}\n",
     ]
+    if domain:
+        parts.append(f"Existing Prompt Domain:\n{domain}\n")
+
     if history_summary:
         parts.append(f"Conversation Context Delta:\n{history_summary}\n")
     parts.append(f"New User Follow-Up Directive:\n{user_followup}\n")
-    parts.append("Evaluate whether to refine_prompt or clarify, and return only the JSON object.")
+    parts.append(
+        "Preserve the existing prompt domain unless the user explicitly requests a change. "
+        "Evaluate whether to refine_prompt or clarify, and return only the JSON object."
+    )
     return "\n".join(parts)

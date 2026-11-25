@@ -55,6 +55,10 @@ class PromptGenerationRequest(BaseModel):
 
 
 class PromptGenerationResponse(BaseModel):
+    domain: Optional[str] = Field(
+        None,
+        description="Identified primary domain of the generated prompt."
+    )
     title: str = Field(..., description="Short descriptive title for this prompt.")
     optimized_prompt: str = Field(..., description="The fully structured, optimized prompt in markdown.")
     original_query: str = Field(..., description="Echo of the original query for reference.")
@@ -75,6 +79,7 @@ class PipelineFollowUpRequest(BaseModel):
 
 class PipelineFollowUpResponse(BaseModel):
     thread_id: str
+    domain: Optional[str] = None
     action: str = Field(default="refine_prompt", description="'refine_prompt' or 'clarify'")
     version_label: Optional[str] = None
     prompt_title: Optional[str] = None

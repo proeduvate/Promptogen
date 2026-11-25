@@ -26,6 +26,7 @@ class PromptGenState(TypedDict, total=False):
     optimized_prompt: str
     sections: List[dict]
     required_attachments: List[dict]
+    domain: Optional[str]
 
     # Stage 5: quality assessment
     overall_score: int
